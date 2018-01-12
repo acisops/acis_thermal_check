@@ -249,7 +249,8 @@ def make_state_builder(name, args):
 def get_acis_limits(msid):
     """
     Get the current red and yellow hi limits for a given 
-    ACIS-related MSID. 
+    ACIS-related MSID, or the various limits for the 
+    focal plane temperature.
 
     Parameters
     ----------
@@ -258,18 +259,43 @@ def get_acis_limits(msid):
     """
     import requests
 
+    if msid == "fptemp":
+        fp_sens = -118.7
+        acis_i = -114.0
+        acis_s = -112.0
+        return fp_sens, acis_i, acis_s
+
     yellow_hi = None
     red_hi = None
 
-    url = "http://hea-www.cfa.harvard.edu/~acisweb/htdocs/acis/RT-ACIS60-V/limits.txt"
+    pmon_file = "PMON/pmon_limits.txt"
+    eng_file = "Thermal/MSID_Limits.txt"
+    file_root = "/proj/web-cxc-dmz/htdocs/acis/"
 
-    u = requests.get(url)
+    if msid.startswith("tmp_"):
+        limits_file = pmon_file
+        cols = (5, 6)
+        msid = "ADC_"+msid.upper()
+    else:
+        limits_file = eng_file
+        cols = (3, 5)
 
-    for line in u.text.split("\n"):
-        words = line.strip().split("\t")
+    if os.path.exists(file_root):
+        mylog.info("Obtaining limits from local file.")
+        f = open(os.path.join(file_root, limits_file), "r")
+        lines = f.readlines()
+        f.close()
+    else:
+        mylog.info("Obtaining limits from remote file.")
+        url = "http://cxc.cfa.harvard.edu/acis/"+limits_file
+        u = requests.get(url)
+        lines = u.text.split("\n")
+
+    for line in lines:
+        words = line.strip().split()
         if len(words) > 1 and words[0] == msid.upper():
-            yellow_hi = float(words[3])
-            red_hi = float(words[5])
+            yellow_hi = float(words[cols[0]])
+            red_hi = float(words[cols[1]])
             break
 
     return yellow_hi, red_hi
