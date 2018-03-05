@@ -4,6 +4,7 @@ import glob
 from acis_thermal_check import __version__
 
 templates = glob.glob("templates/*")
+scripts = glob.glob("scripts/*")
 
 url = 'https://github.com/acisops/acis_thermal_check/tarball/{}'.format(__version__)
 
@@ -16,6 +17,7 @@ setup(name='acis_thermal_check',
       url='http://github.com/acisops/acis_thermal_check',
       download_url=url,
       data_files=[('templates', templates)],
+      scripts=scripts,
       include_package_data=True,
       classifiers=[
           'Intended Audience :: Science/Research',
