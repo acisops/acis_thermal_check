@@ -94,6 +94,7 @@ class TestArgs(object):
         if name == "acisfp":
             self.fps_nopref = os.path.join(model_path, "FPS_NoPref.txt")
 
+
 # Large, multi-layer dictionary which encodes the datatypes for the
 # different quantities that are being checked against.
 data_dtype = {'temperatures': {'names': ('time', 'date', 'temperature'),
@@ -115,6 +116,7 @@ data_dtype = {'temperatures': {'names': ('time', 'date', 'temperature'),
                         }
              }
 
+
 def exception_catcher(test, old, new, data_type, **kwargs):
     if new.dtype.kind == "S":
         new = new.astype("U")
@@ -124,6 +126,7 @@ def exception_catcher(test, old, new, data_type, **kwargs):
         test(old, new, **kwargs)
     except AssertionError:
         raise AssertionError("%s are not the same!" % data_type)
+
 
 class RegressionTester(object):
     def __init__(self, msid, name, model_path, valid_limits,
@@ -148,7 +151,7 @@ class RegressionTester(object):
             os.mkdir(self.outdir)
 
     def run_model(self, load_week, run_start=None, state_builder='acis',
-                  interrupt=False, cmd_states_db="sybase"):
+                  interrupt=False, cmd_states_db="sqlite"):
         out_dir = os.path.join(self.outdir, load_week)
         args = TestArgs(self.name, out_dir, self.model_path, run_start=run_start,
                         load_week=load_week, interrupt=interrupt,
