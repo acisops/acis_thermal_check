@@ -21,6 +21,7 @@ test_loads = {"normal": ["MAR0617A", "MAR2017E", "JUL3117B", "SEP0417A"],
                             "MAR0817B", "MAR1117A", "APR0217B", "SEP0917C"]}
 all_loads = test_loads["normal"]+test_loads["interrupt"]
 
+
 class TestArgs(object):
     """
     A mock-up of a command-line parser object to be used with
@@ -161,13 +162,18 @@ class RegressionTester(object):
                                     **self.atc_kwargs)
         msid_check.run()
 
-    def run_models(self, normal=True, interrupt=True):
+    def run_models(self, normal=True, interrupt=True, run_start=None,
+                   state_builder='acis', cmd_states_db='sqlite'):
         if normal:
             for load in test_loads["normal"]:
-                self.run_model(load)
+                self.run_model(load, run_start=run_start,
+                               state_builder=state_builder,
+                               cmd_states_db=cmd_states_db)
         if interrupt:
             for load in test_loads["interrupt"]:
-                self.run_model(load, interrupt=True)
+                self.run_model(load, interrupt=True, run_start=run_start,
+                               state_builder=state_builder,
+                               cmd_states_db=cmd_states_db)
 
     def _set_answer_dir(self, answer_dir, load_week):
         if answer_dir is not None:
