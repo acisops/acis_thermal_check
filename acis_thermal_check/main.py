@@ -101,7 +101,7 @@ class ACISThermalCheck(object):
         ["greater_equal", "greater_equal"] for two histogram limits.
         Options are "greater", "less", "greater_equal", 
         "less_equal" Defaults to "greater_equal" for all values 
-        in *hist_limit*. 
+        in *hist_limit*.
     """
     def __init__(self, msid, name, validation_limits, hist_limit, 
                  calc_model, args, other_telem=None, other_map=None,
@@ -131,13 +131,34 @@ class ACISThermalCheck(object):
             hist_ops = ["greater_equal"]*len(hist_limit)
         self.hist_ops = hist_ops
 
-    def run(self):
+    def run(self, override_limits=None):
         """
         The main interface to all of ACISThermalCheck's functions.
         This method must be called by the particular thermal model
         implementation to actually run the code and make the webpage.
+
+        Parameters
+        ----------
+        override_limits : dict, optional
+            Override any margin by setting a new value to its name
+            in this dictionary. SHOULD ONLY BE USED FOR TESTING.
+            This is deliberately hidden from command-line operation
+            to avoid it being used accidentally.
         """
         proc = self._setup_proc_and_logger(self.args)
+
+        # This allows one to override the planning and yellow limits
+        # for a particular model run. THIS SHOULD ONLY BE USED FOR
+        # TESTING PURPOSES.
+        if override_limits is not None:
+            for k, v in override_limits.items():
+                if hasattr(self, k):
+                    limit = getattr(self, k)
+                    mylog.warning("Replacing %s %.2f with %.2f" % (k, limit, v))
+                    setattr(self, k, v)
+
+        if self.msid != "fptemp":
+            proc["msid_limit"] = self.plan_limit_hi
 
         # Determine the start and stop times either from whatever was
         # stored in state_builder or punt by using NOW and None for
@@ -146,7 +167,7 @@ class ACISThermalCheck(object):
         tstart, tstop, tnow = self._determine_times(self.args.run_start,
                                                     is_weekly_load)
 
-        # Store off the start date, and, if yiou have it, the 
+        # Store off the start date, and, if yiou have it, the
         # stop date in proc
         proc["datestart"] = DateTime(tstart).date
         if tstop is not None:
@@ -362,8 +383,8 @@ class ACISThermalCheck(object):
         elif lim_type == "max":
             bad = temp >= limit
         op = getattr(np, lim_type)
-        # The NumPy black magic of the next two lines is to figure 
-        # out which time periods have planning limit violations and 
+        # The NumPy black magic of the next two lines is to figure
+        # out which time periods have planning limit violations and
         # to find the bounding indexes of these times. This will also
         # find violations which happen for one discrete time value also.
         bad = np.concatenate(([False], bad, [False]))
@@ -886,8 +907,6 @@ class ACISThermalCheck(object):
                     msid=self.msid.upper(),
                     name=self.name.upper(),
                     hist_limit=self.hist_limit)
-        if self.msid != "fptemp":
-            proc["msid_limit"] = self.yellow_hi - self.margin
         mylog.info('##############################'
                    '#######################################')
         mylog.info('# %s_check run at %s by %s'
