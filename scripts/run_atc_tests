@@ -4,7 +4,7 @@ from importlib import import_module
 import argparse 
 
 all_models = ["dpa", "dea", "psmc", "acisfp", "fep1_mong",
-              "fep1_actel", bep_pcb"]
+              "fep1_actel", "bep_pcb"]
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--models', type=str)
@@ -20,4 +20,3 @@ else:
 for model in models:
     model_check = import_module("{}_check".format(model))
     model_check.test(args.args)
-    
