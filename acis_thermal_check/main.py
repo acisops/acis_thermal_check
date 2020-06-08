@@ -28,6 +28,8 @@ from acis_thermal_check.utils import \
     paint_perigee
 from kadi import events
 from astropy.table import Table
+import ska_helpers
+
 
 op_map = {"greater": ">",
           "greater_equal": ">=",
@@ -135,6 +137,12 @@ class ACISThermalCheck(object):
             to avoid it being used accidentally.
         """
         # First, record the selected state builder in the class attributes
+        if args.version:
+            pkg_version = ska_helpers.get_version("{}_check".format(self.name))
+            print(f"{self.name}_check version {pkg_version}")
+            print(f"acis_thermal_check version {version}")
+            return
+
         self.state_builder = make_state_builder(args.state_builder, args)
 
         proc = self._setup_proc_and_logger(args)
@@ -1161,7 +1169,6 @@ class ACISThermalCheck(object):
             The command-line options object, which has the options
             attached to it as attributes
         """
-        import ska_helpers
         import hashlib
         import json
 
