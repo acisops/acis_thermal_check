@@ -115,7 +115,7 @@ class SQLStateBuilder(StateBuilder):
         if os.path.isdir(self.backstop_file):
             # Returns a list but requires exactly 1 match
             backstop_file = get_globfiles(os.path.join(self.backstop_file,
-                                                       'CR*.backstop'))[0]
+                                                       'CR[0-9]*.backstop'))[0]
             self.backstop_file = backstop_file
 
         self.logger.info('Using backstop file %s' % self.backstop_file)
