@@ -1093,7 +1093,7 @@ class ACISThermalCheck(object):
         pass
 
     def rst_to_html(self, outdir, proc):
-        """Run rst2html.py to render index.rst as HTML]
+        """Render index.rst as HTML
 
         Parameters
         ----------
@@ -1104,27 +1104,20 @@ class ACISThermalCheck(object):
             A dictionary of general information used in the output
         """
         # First copy CSS files to outdir
-        import Ska.Shell
         import docutils.writers.html4css1
+        from docutils.core import publish_file
         dirname = os.path.dirname(docutils.writers.html4css1.__file__)
         shutil.copy2(os.path.join(dirname, 'html4css1.css'), outdir)
 
         shutil.copy2(os.path.join(TASK_DATA, 'acis_thermal_check', 'templates',
                                   'acis_thermal_check.css'), outdir)
 
-        # Spawn a shell and call rst2html to generate HTML from the reST.
-        spawn = Ska.Shell.Spawn(stdout=None)
+        stylesheet_path = os.path.join(outdir, 'acis_thermal_check.css')
         infile = os.path.join(outdir, 'index.rst')
         outfile = os.path.join(outdir, 'index.html')
-        status = spawn.run(['rst2html.py',
-                            '--stylesheet-path={}'
-                            .format(os.path.join(outdir, 'acis_thermal_check.css')),
-                            infile, outfile])
-        if status != 0:
-            proc['errors'].append('rst2html.py failed with status {}: see run log'
-                                  .format(status))
-            mylog.error('rst2html.py failed')
-            mylog.error(''.join(spawn.outlines) + '\n')
+        publish_file(source_path=infile, destination_path=outfile, 
+                     writer_name="html", 
+                     settings_overrides={"stylesheet_path": stylesheet_path})
 
         # Remove the stupid <colgroup> field that docbook inserts.  This
         # <colgroup> prevents HTML table auto-sizing.
