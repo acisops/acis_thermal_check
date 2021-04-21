@@ -136,13 +136,13 @@ class ACISThermalCheck(object):
             This is deliberately hidden from command-line operation
             to avoid it being used accidentally.
         """
-        # First, record the selected state builder in the class attributes
         if args.version:
             pkg_version = ska_helpers.get_version("{}_check".format(self.name))
             print(f"{self.name}_check version {pkg_version}")
             print(f"acis_thermal_check version {version}")
             return
 
+        # First, record the selected state builder in the class attributes
         self.state_builder = make_state_builder(args.state_builder, args)
 
         proc = self._setup_proc_and_logger(args)
