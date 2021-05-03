@@ -28,6 +28,8 @@ from acis_thermal_check.utils import \
     paint_perigee
 from kadi import events
 from astropy.table import Table
+import ska_helpers
+
 
 op_map = {"greater": ">",
           "greater_equal": ">=",
@@ -134,6 +136,12 @@ class ACISThermalCheck(object):
             This is deliberately hidden from command-line operation
             to avoid it being used accidentally.
         """
+        if args.version:
+            pkg_version = ska_helpers.get_version("{}_check".format(self.name))
+            print(f"{self.name}_check version {pkg_version}")
+            print(f"acis_thermal_check version {version}")
+            return
+
         # First, record the selected state builder in the class attributes
         self.state_builder = make_state_builder(args.state_builder, args)
 
@@ -1085,7 +1093,7 @@ class ACISThermalCheck(object):
         pass
 
     def rst_to_html(self, outdir, proc):
-        """Run rst2html.py to render index.rst as HTML]
+        """Render index.rst as HTML
 
         Parameters
         ----------
@@ -1096,27 +1104,20 @@ class ACISThermalCheck(object):
             A dictionary of general information used in the output
         """
         # First copy CSS files to outdir
-        import Ska.Shell
         import docutils.writers.html4css1
+        from docutils.core import publish_file
         dirname = os.path.dirname(docutils.writers.html4css1.__file__)
         shutil.copy2(os.path.join(dirname, 'html4css1.css'), outdir)
 
         shutil.copy2(os.path.join(TASK_DATA, 'acis_thermal_check', 'templates',
                                   'acis_thermal_check.css'), outdir)
 
-        # Spawn a shell and call rst2html to generate HTML from the reST.
-        spawn = Ska.Shell.Spawn(stdout=None)
+        stylesheet_path = os.path.join(outdir, 'acis_thermal_check.css')
         infile = os.path.join(outdir, 'index.rst')
         outfile = os.path.join(outdir, 'index.html')
-        status = spawn.run(['rst2html.py',
-                            '--stylesheet-path={}'
-                            .format(os.path.join(outdir, 'acis_thermal_check.css')),
-                            infile, outfile])
-        if status != 0:
-            proc['errors'].append('rst2html.py failed with status {}: see run log'
-                                  .format(status))
-            mylog.error('rst2html.py failed')
-            mylog.error(''.join(spawn.outlines) + '\n')
+        publish_file(source_path=infile, destination_path=outfile, 
+                     writer_name="html", 
+                     settings_overrides={"stylesheet_path": stylesheet_path})
 
         # Remove the stupid <colgroup> field that docbook inserts.  This
         # <colgroup> prevents HTML table auto-sizing.
@@ -1161,7 +1162,6 @@ class ACISThermalCheck(object):
             The command-line options object, which has the options
             attached to it as attributes
         """
-        import ska_helpers
         import hashlib
         import json
 
