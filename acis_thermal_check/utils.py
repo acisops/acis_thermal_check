@@ -476,19 +476,18 @@ def get_acis_limits(msid):
     if msid.startswith("tmp_"):
         limits_file = pmon_file
         cols = (4, 5)
-        msid = "ADC_"+msid.upper()
+        msid = f"ADC_{msid.upper()}"
     else:
         limits_file = eng_file
         cols = (2, 3)
 
     if os.path.exists(file_root):
         loc = "local"
-        f = open(os.path.join(file_root, limits_file), "r")
+        with open(os.path.join(file_root, limits_file), "r") as f:
         lines = f.readlines()
-        f.close()
     else:
         loc = "remote"
-        url = "http://cxc.cfa.harvard.edu/acis/{}".format(limits_file)
+        url = f"http://cxc.cfa.harvard.edu/acis/{limits_file}"
         u = requests.get(url)
         lines = u.text.split("\n")
 

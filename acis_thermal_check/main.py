@@ -35,7 +35,8 @@ op_map = {"greater": ">",
           "less": "<",
           "less_equal": "<="}
 
-class ACISThermalCheck(object):
+
+class ACISThermalCheck:
     r"""
     ACISThermalCheck class for making thermal model predictions
     and validating past model data against telemetry
