@@ -105,47 +105,6 @@ class ACISFPCheck(ACISThermalCheck):
         model.comp['1cbat'].set_data(-53.0)
         model.comp['sim_px'].set_data(-120.0)
 
-    def _make_state_plots(self, plots, num_figs, w1, plot_start,
-                          states, load_start, figsize=(12, 6)):
-        # Make a plot of ACIS CCDs and SIM-Z position
-        plots['pow_sim'] = plot_two(
-            fig_id=num_figs+1,
-            title='ACIS CCDs and SIM-Z position',
-            xlabel='Date',
-            x=pointpair(states['tstart'], states['tstop']),
-            y=pointpair(states['ccd_count']),
-            yy=pointpair(states['fep_count']),
-            ylabel='CCD/FEP Count',
-            ylim=(-0.1, 6.1),
-            xmin=plot_start,
-            x2=pointpair(states['tstart'], states['tstop']),
-            y2=pointpair(states['simpos']),
-            ylabel2='SIM-Z (steps)',
-            ylim2=(-105000, 105000),
-            figsize=figsize, width=w1, load_start=load_start)
-        plots['pow_sim']['ax'].lines[0].set_label('CCDs')
-        plots['pow_sim']['ax'].lines[1].set_label('FEPs')
-        plots['pow_sim']['ax'].legend(fancybox=True, framealpha=0.5, loc=2)
-        plots['pow_sim']['filename'] = 'pow_sim.png'
-
-        # Make a plot of off-nominal roll
-        plots['roll_taco'] = plot_two(
-            fig_id=num_figs+2,
-            title='Off-Nominal Roll and Earth Solid Angle in Rad FOV',
-            xlabel='Date',
-            x=self.predict_model.times,
-            y=self.predict_model.comp["roll"].dvals,
-            xmin=plot_start,
-            ylabel='Roll Angle (deg)',
-            ylim=(-20.0, 20.0),
-            x2=self.predict_model.times,
-            y2=self.predict_model.comp['earthheat__fptemp'].dvals,
-            ylabel2='Earth Solid Angle (sr)',
-            ylim2=(1.0e-3, 1.0),
-            figsize=figsize, width=w1, load_start=load_start)
-        plots['roll_taco']['ax2'].set_yscale("log")
-        plots['roll_taco']['filename'] = 'roll_taco.png'
-
     def make_prediction_plots(self, outdir, states, temps, load_start):
         """
         Make plots of the thermal prediction as well as associated 

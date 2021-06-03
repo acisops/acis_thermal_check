@@ -664,18 +664,38 @@ class ACISThermalCheck(object):
         plots['pow_sim']['ax'].legend(fancybox=True, framealpha=0.5, loc=2)
         plots['pow_sim']['filename'] = 'pow_sim.png'
 
-        # Make a plot of off-nominal roll
-        plots['roll'] = plot_one(
-            fig_id=num_figs+2,
-            title='Off-Nominal Roll',
-            xlabel='Date',
-            x=self.predict_model.times,
-            y=self.predict_model.comp["roll"].mvals,
-            xmin=plot_start,
-            ylabel='Roll Angle (deg)',
-            ylim=(-20.0, 20.0),
-            figsize=figsize, width=w1, load_start=load_start)
-        plots['roll']['filename'] = 'roll.png'
+        if self.msid == "fptemp":
+            plt_name = "roll_taco"
+            # Make a plot of off-nominal roll and earth solid angle
+            plots['roll_taco'] = plot_two(
+                fig_id=num_figs + 2,
+                title='Off-Nominal Roll and Earth Solid Angle in Rad FOV',
+                xlabel='Date',
+                x=self.predict_model.times,
+                y=self.predict_model.comp["roll"].dvals,
+                xmin=plot_start,
+                ylabel='Roll Angle (deg)',
+                ylim=(-20.0, 20.0),
+                x2=self.predict_model.times,
+                y2=self.predict_model.comp['earthheat__fptemp'].dvals,
+                ylabel2='Earth Solid Angle (sr)',
+                ylim2=(1.0e-3, 1.0),
+                figsize=figsize, width=w1, load_start=load_start)
+            plots['roll_taco']['ax2'].set_yscale("log")
+        else:
+            plt_name = "roll"
+            # Make a plot of off-nominal roll
+            plots['roll'] = plot_one(
+                fig_id=num_figs+2,
+                title='Off-Nominal Roll',
+                xlabel='Date',
+                x=self.predict_model.times,
+                y=self.predict_model.comp["roll"].mvals,
+                xmin=plot_start,
+                ylabel='Roll Angle (deg)',
+                ylim=(-20.0, 20.0),
+                figsize=figsize, width=w1, load_start=load_start)
+        plots[plt_name]['filename'] = f'{plt_name}.png'
 
     def make_prediction_plots(self, outdir, states, temps, load_start):
         """
