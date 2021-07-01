@@ -19,10 +19,7 @@ matplotlib.use('Agg')
 from acis_thermal_check import \
     ACISThermalCheck, \
     get_options
-import os
 import sys
-
-model_path = os.path.abspath(os.path.dirname(__file__))
 
 
 class PSMCCheck(ACISThermalCheck):
@@ -48,7 +45,7 @@ class PSMCCheck(ACISThermalCheck):
 
 
 def main():
-    args = get_options("psmc", model_path)
+    args = get_options("psmc")
     psmc_check = PSMCCheck()
     try:
         psmc_check.run(args)

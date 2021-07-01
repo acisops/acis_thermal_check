@@ -20,9 +20,6 @@ import sys
 from acis_thermal_check import \
     ACISThermalCheck, \
     get_options
-import os
-
-model_path = os.path.abspath(os.path.dirname(__file__))
 
 
 class DPACheck(ACISThermalCheck):
@@ -114,7 +111,7 @@ class DPACheck(ACISThermalCheck):
 
 
 def main():
-    args = get_options("dpa", model_path)
+    args = get_options("dpa")
     dpa_check = DPACheck()
     try:
         dpa_check.run(args)

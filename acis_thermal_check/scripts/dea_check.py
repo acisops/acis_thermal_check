@@ -20,9 +20,6 @@ import sys
 from acis_thermal_check import \
     ACISThermalCheck, \
     get_options
-import os
-
-model_path = os.path.abspath(os.path.dirname(__file__))
 
 
 class DEACheck(ACISThermalCheck):
@@ -56,7 +53,7 @@ class DEACheck(ACISThermalCheck):
 
 
 def main():
-    args = get_options("dea", model_path)
+    args = get_options("dea")
     dea_check = DEACheck()
     try:
         dea_check.run(args)

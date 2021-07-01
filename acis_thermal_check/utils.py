@@ -320,7 +320,7 @@ def plot_two(fig_id, x, y, x2, y2, yy=None, linewidth=2,
     return {'fig': fig, 'ax': ax, 'ax2': ax2}
 
 
-def get_options(name, model_path, opts=None):
+def get_options(name, opts=None):
     """
     Construct the argument parser for command-line options for running
     predictions and validations for a load. Sets up the parser and 
@@ -331,9 +331,6 @@ def get_options(name, model_path, opts=None):
     ----------
     name : string
         The name of the ACIS component whose temperature is being modeled.
-    model_path : string
-        The default directory path where the model JSON files are located.
-        This is internal to the ``acis_thermal_check`` package.
     opts: dictionary
         A (key, value) dictionary of additional options for the parser. These
         may be defined by the thermal model checking tool if necessary.

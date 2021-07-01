@@ -35,8 +35,6 @@ from astropy.table import Table
 from acis_thermal_check.acis_obs import find_obsid_intervals, \
     hrc_science_obs_filter, acis_filter
 
-model_path = os.path.abspath(os.path.dirname(__file__))
-
 
 class ACISFPCheck(ACISThermalCheck):
     def __init__(self):
@@ -471,7 +469,7 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
 
 
 def main():
-    args = get_options("acisfp", model_path)
+    args = get_options("acisfp")
     acisfp_check = ACISFPCheck()
     try:
         acisfp_check.run(args)
