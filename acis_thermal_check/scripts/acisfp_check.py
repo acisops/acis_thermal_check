@@ -16,26 +16,23 @@ previous three weeks.
 import matplotlib
 matplotlib.use('Agg')
 
-from Ska.Matplotlib import pointpair, \
-    cxctime2plotdate
+from Ska.Matplotlib import cxctime2plotdate
 from cxotime import CxoTime
-from collections import defaultdict
 from acis_thermal_check import \
     ACISThermalCheck, \
     get_options, \
-    mylog, get_acis_limits
+    mylog
 from acis_thermal_check.utils import \
     plot_two, paint_perigee
 import os
 import sys
-from kadi import events
 from astropy.table import Table
 
 #
 # Import ACIS-specific observation extraction, filtering
 # and attribute support routines.
 #
-from .acis_obs import find_obsid_intervals, \
+from acis_thermal_check.acis_obs import find_obsid_intervals, \
     hrc_science_obs_filter, acis_filter
 
 model_path = os.path.abspath(os.path.dirname(__file__))
