@@ -2,8 +2,22 @@
 from setuptools import setup
 import glob
 
+try:
+    from testr.setup_helper import cmdclass
+except ImportError:
+    cmdclass = {}
+
 templates = glob.glob("templates/*")
 data = glob.glob("data/*")
+
+entry_points = {
+    'console_scripts': [
+        'dea_check = acis_thermal_check.scripts.dea_check:main',
+        'dpa_check = acis_thermal_check.scripts.dpa_check:main',
+        'psmc_check = acis_thermal_check.scripts.psmc_check:main',
+        'acisfp_check = acis_thermal_check.scripts.acisfp_check:main',
+    ]
+}
 
 setup(name='acis_thermal_check',
       packages=["acis_thermal_check"],
@@ -12,7 +26,11 @@ setup(name='acis_thermal_check',
       description='ACIS Thermal Model Library',
       author='John ZuHone',
       author_email='john.zuhone@cfa.harvard.edu',
-      url='http://github.com/acisops/acis_thermal_check',
+      url='https://github.com/acisops/acis_thermal_check',
       data_files=[('templates', templates), ('data', data)],
       include_package_data=True,
+      entry_points=entry_points,
+      zip_safe=False,
+      tests_require=["pytest"],
+      cmdclass=cmdclass,
       )

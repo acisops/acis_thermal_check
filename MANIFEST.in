@@ -1,3 +1,7 @@
 include acis_thermal_check/templates/*
 include acis_thermal_check/data/*
-include acis_thermal_check/data/nlets/*
+include acis_thermal_check/tests/data/nlets/*
+include acis_thermal_check/tests/dea/answers/*
+include acis_thermal_check/tests/dpa/answers/*
+include acis_thermal_check/tests/psmc/answers/*
+include acis_thermal_check/tests/acisfp/answers/*

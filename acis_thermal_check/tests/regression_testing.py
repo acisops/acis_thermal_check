@@ -36,7 +36,10 @@ def get_lr_root():
     return str(path)
 
 
-class TestArgs(object):
+tests_path = os.path.abspath(os.path.dirname(__file__))
+
+
+class TestArgs:
     """
     A mock-up of a command-line parser object to be used with
     ACISThermalCheck testing.
@@ -125,7 +128,7 @@ def exception_catcher(test, old, new, data_type, **kwargs):
         raise AssertionError("%s are not the same!" % data_type)
 
 
-class RegressionTester(object):
+class RegressionTester:
     def __init__(self, atc_class, model_path, model_spec, atc_args=None,
                  atc_kwargs=None, test_root=None, sub_dir=None):
         self.model_path = model_path
@@ -146,7 +149,7 @@ class RegressionTester(object):
         if sub_dir is not None:
             rootdir = os.path.join(rootdir, sub_dir)
         self.outdir = os.path.abspath(rootdir)
-        self.test_model_spec = os.path.join(model_path, "tests", model_spec)
+        self.test_model_spec = os.path.join(model_path, "", model_spec)
         if not os.path.exists(self.outdir):
             os.makedirs(self.outdir, exist_ok=True)
 
@@ -210,7 +213,8 @@ class RegressionTester(object):
                                state_builder=state_builder)
 
     def _set_answer_dir(self, load_week):
-        answer_dir = os.path.join(self.model_path, "tests/answers",
+        answer_dir = os.path.join(tests_path, 
+                                  f"{self.name}/answers",
                                   load_week)
         if not os.path.exists(answer_dir):
             os.makedirs(answer_dir)
@@ -268,7 +272,7 @@ class RegressionTester(object):
         # and current
         new_answer_file = os.path.join(out_dir, filenames[0])
         new_results = pickle.load(open(new_answer_file, "rb"))
-        old_answer_file = os.path.join(self.model_path, "tests/answers", load_week,
+        old_answer_file = os.path.join(tests_path, f"{self.name}/answers", load_week,
                                        filenames[0])
         old_results = pickle.load(open(old_answer_file, "rb"))
         # Compare predictions
@@ -316,7 +320,8 @@ class RegressionTester(object):
         from astropy.io import ascii
         for fn in filenames:
             new_fn = os.path.join(out_dir, fn)
-            old_fn = os.path.join(self.model_path, "tests/answers", load_week, fn)
+            old_fn = os.path.join(tests_path, 
+                                  f"{self.name}/answers", load_week, fn)
             new_data = ascii.read(new_fn).as_array()
             old_data = ascii.read(old_fn).as_array()
             # Compare test run data to gold standard. Since we're loading from
