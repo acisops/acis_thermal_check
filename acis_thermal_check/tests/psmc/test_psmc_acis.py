@@ -1,5 +1,5 @@
-from ..psmc_check import model_path, PSMCCheck
-from acis_thermal_check.regression_testing import \
+from acis_thermal_check.scripts.psmc_check import model_path, PSMCCheck
+from acis_thermal_check.tests.regression_testing import \
     RegressionTester, all_loads
 import pytest
 
