@@ -351,7 +351,6 @@ def get_options(name, model_path, opts=None):
                                           "override the value of the backstop_file "
                                           "argument. Default: None")
     parser.add_argument("--model-spec", 
-                        default=os.path.join(model_path, '%s_model_spec.json' % name),
                         help="Model specification file. Defaults to the one included with "
                              "the model package.")
     parser.add_argument("--days", type=float, default=21.0,
@@ -484,7 +483,7 @@ def get_acis_limits(msid):
     if os.path.exists(file_root):
         loc = "local"
         with open(os.path.join(file_root, limits_file), "r") as f:
-        lines = f.readlines()
+            lines = f.readlines()
     else:
         loc = "remote"
         url = f"http://cxc.cfa.harvard.edu/acis/{limits_file}"

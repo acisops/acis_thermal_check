@@ -12,6 +12,7 @@ import getpass
 import numpy as np
 import Ska.DBI
 import Ska.Numpy
+from xija.get_model_spec import get_xija_model_spec
 from cxotime import CxoTime
 import matplotlib.pyplot as plt
 from Ska.Matplotlib import cxctime2plotdate, \
@@ -28,7 +29,7 @@ from acis_thermal_check.utils import \
     paint_perigee
 from kadi import events
 from astropy.table import Table
-import ska_helpers
+
 
 op_map = {"greater": ">",
           "greater_equal": ">=",
@@ -137,13 +138,17 @@ class ACISThermalCheck:
             to avoid it being used accidentally.
         """
         if args.version:
-            pkg_version = ska_helpers.get_version("{}_check".format(self.name))
-            print(f"{self.name}_check version {pkg_version}")
             print(f"acis_thermal_check version {version}")
             return
 
         # First, do some initial setup and log important information.
-        proc = self._setup_proc_and_logger(args)
+
+        if args.model_spec is None:
+            model_spec = get_xija_model_spec(self.name)[0]
+        else:
+            model_spec = args.model_spec
+
+        proc = self._setup_proc_and_logger(args, model_spec)
 
         # Record the selected state builder in the class attributes
         self.state_builder = make_state_builder(args.state_builder, args)
@@ -184,7 +189,7 @@ class ACISThermalCheck:
         # make predictions on a backstop file if defined
         if args.backstop_file is not None:
             pred = self.make_week_predict(tstart, tstop, tlm, args.T_init,
-                                          args.model_spec, args.outdir, args.run_start)
+                                          model_spec, args.outdir)
         else:
             pred = defaultdict(lambda: None)
 
@@ -223,7 +228,7 @@ class ACISThermalCheck:
         self.write_index_rst(args.outdir, context)
 
         # Second, convert reST to HTML
-        self.rst_to_html(args.outdir, proc)
+        self.rst_to_html(args.outdir)
 
         return
 
@@ -276,7 +281,7 @@ class ACISThermalCheck:
         return states, state0
 
     def make_week_predict(self, tstart, tstop, tlm, T_init, model_spec,
-                          outdir, run_start_val):
+                          outdir):
         """
         Parameters
         ----------
@@ -1122,7 +1127,7 @@ class ACISThermalCheck:
         """
         pass
 
-    def rst_to_html(self, outdir, proc):
+    def rst_to_html(self, outdir):
         """Render index.rst as HTML
 
         Parameters
@@ -1130,8 +1135,6 @@ class ACISThermalCheck:
         outdir : string
             The path to the directory to which the outputs will be
             written to.
-        proc : dict
-            A dictionary of general information used in the output
         """
         # First copy CSS files to outdir
         import docutils.writers.html4css1
@@ -1181,7 +1184,7 @@ class ACISThermalCheck:
         with open(outfile, "w") as fout:
             fout.write(template.render(**context))
 
-    def _setup_proc_and_logger(self, args):
+    def _setup_proc_and_logger(self, args, model_spec):
         """
         This method does some initial setup and logs important
         information.
@@ -1210,15 +1213,13 @@ class ACISThermalCheck:
                     name=self.name.upper(),
                     hist_limit=self.hist_limit)
 
-        # Figure out the MD5 sum of model spec file
-        md5sum = hashlib.md5(open(args.model_spec, 'rb').read()).hexdigest()
-        pkg_version = ska_helpers.get_version("{}_check".format(self.name))
+        # Figure out the MD5 sum of the model spec file
+        md5sum = hashlib.md5(open(model_spec, 'rb').read()).hexdigest()
         mylog.info('##############################'
                    '#######################################')
-        mylog.info('# %s_check (version %s) run at %s by %s'
-                   % (self.name, pkg_version, proc['run_time'], proc['run_user']))
+        mylog.info('# %s_check run at %s by %s'
+                   % (self.name, proc['run_time'], proc['run_user']))
         mylog.info('# acis_thermal_check version = %s' % version)
-        mylog.info('# model_spec file = %s' % os.path.abspath(args.model_spec))
         mylog.info('# model_spec file MD5sum = %s' % md5sum)
         mylog.info('###############################'
                    '######################################\n')
