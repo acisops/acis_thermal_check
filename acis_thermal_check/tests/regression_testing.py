@@ -4,7 +4,7 @@ from numpy.testing import assert_array_equal, \
 import shutil
 import tempfile
 import pickle
-from pathlib import Path
+from pathlib import Path, PurePath
 
 months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
           "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
@@ -33,10 +33,10 @@ def get_lr_root():
         path = os.environ['SKA'] / data_acis_lr
         if not path.exists():
             raise FileNotFoundError('no available ACIS load review directory')
-    return str(path)
+    return path
 
 
-tests_path = os.path.abspath(os.path.dirname(__file__))
+tests_path = Path(PurePath(__file__).parent).resolve()
 
 
 class TestArgs:
@@ -46,12 +46,8 @@ class TestArgs:
 
     Parameters
     ----------
-    name : string
-        The "short name" of the temperature to be modeled.
     outdir : string
         The path to the output directory.
-    model_path : string
-        The path to the model code itself.
     run_start : string, optional
         The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
         specified, one will be created 3 days prior to the model run.
@@ -76,10 +72,10 @@ class TestArgs:
         use the model specification file stored in the model package.
     nlet_file : string, optional
         The path to an alternative NLET file to be used. Default: None,
-        which is to use the default one. 
+        which is to use the default one.
     """
-    def __init__(self, name, outdir, model_path, run_start=None,
-                 load_week=None, days=21.0, T_init=None, interrupt=False,
+    def __init__(self, outdir, run_start=None, load_week=None, 
+                 days=21.0, T_init=None, interrupt=False,
                  state_builder='acis', verbose=0, model_spec=None,
                  nlet_file=None):
         from datetime import datetime
@@ -90,18 +86,19 @@ class TestArgs:
             day = int(load_week[3:5])
             run_start = datetime(year, month, day).strftime("%Y:%j:%H:%M:%S")
         self.run_start = run_start
-        self.outdir = outdir
+        self.outdir = Path(outdir)
         lr_root = get_lr_root()  # Directory containing ACIS load review data
         # load_week sets the bsdir
         if load_week is None:
             self.backstop_file = None
         else:
-            load_year = "20%s" % load_week[-3:-1]
+            load_year = f"20{load_week[-3:-1]}"
             load_letter = load_week[-1].lower()
-            self.backstop_file = "%s/%s/%s/ofls%s" % (lr_root, load_year, load_week[:-1], load_letter)
+            self.backstop_file = lr_root / load_year / load_week[:-1] \
+                                 / f"ofls{load_letter}"
         self.days = days
         if nlet_file is None:
-            nlet_file = f'{lr_root}/NonLoadTrackedEvents.txt'
+            nlet_file = lr_root / "NonLoadTrackedEvents.txt"
         self.nlet_file = nlet_file
         self.interrupt = interrupt
         self.state_builder = state_builder
@@ -109,12 +106,8 @@ class TestArgs:
         self.T_init = T_init
         self.traceback = True
         self.verbose = verbose
-        if model_spec is None:
-            model_spec = os.path.join(model_path, "%s_model_spec.json" % name)
         self.model_spec = model_spec
         self.version = None
-        if name == "acisfp":
-            self.fps_nopref = os.path.join(model_path, "FPS_NoPref.txt")
 
 
 def exception_catcher(test, old, new, data_type, **kwargs):
@@ -129,9 +122,8 @@ def exception_catcher(test, old, new, data_type, **kwargs):
 
 
 class RegressionTester:
-    def __init__(self, atc_class, model_path, model_spec, atc_args=None,
-                 atc_kwargs=None, test_root=None, sub_dir=None):
-        self.model_path = model_path
+    def __init__(self, atc_class, atc_args=None, atc_kwargs=None, 
+                 test_root=None, sub_dir=None):
         if atc_args is None:
             atc_args = ()
         if atc_kwargs is None:
@@ -143,13 +135,14 @@ class RegressionTester:
         self.hist_limit = self.atc_obj.hist_limit
         self.curdir = os.getcwd()
         if test_root is None:
-            rootdir = tempfile.mkdtemp()
+            rootdir = Path(tempfile.mkdtemp())
         else:
-            rootdir = test_root
+            rootdir = Path(test_root)
         if sub_dir is not None:
-            rootdir = os.path.join(rootdir, sub_dir)
+            rootdir = rootdir / sub_dir
         self.outdir = os.path.abspath(rootdir)
-        self.test_model_spec = os.path.join(model_path, "", model_spec)
+        self.test_model_spec = tests_path / self.name / \
+                               f"{self.name}_test_spec.json"
         if not os.path.exists(self.outdir):
             os.makedirs(self.outdir, exist_ok=True)
 
@@ -176,12 +169,11 @@ class RegressionTester:
         """
         out_dir = os.path.join(self.outdir, load_week)
         if load_week in nlets:
-            nlet_file = os.path.join(os.path.dirname(__file__), 
-                                     f'data/nlets/TEST_NLET_{load_week}.txt')
+            nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
         else:
             nlet_file = None
-        args = TestArgs(self.name, out_dir, self.model_path, run_start=run_start,
-                        load_week=load_week, interrupt=interrupt, nlet_file=nlet_file,
+        args = TestArgs(out_dir, run_start=run_start, load_week=load_week,
+                        interrupt=interrupt, nlet_file=nlet_file,
                         state_builder=state_builder, model_spec=self.test_model_spec)
         self.atc_obj.run(args, override_limits=override_limits)
 

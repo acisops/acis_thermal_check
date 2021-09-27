@@ -1,4 +1,4 @@
-from acis_thermal_check.scripts.dea_check import model_path, DEACheck
+from acis_thermal_check.scripts.dea_check import DEACheck
 from acis_thermal_check.tests.regression_testing import \
     RegressionTester, all_loads
 import pytest
@@ -7,8 +7,7 @@ import pytest
 @pytest.fixture(autouse=True, scope='module')
 def dea_rt(test_root):
     # SQL state builder tests
-    rt = RegressionTester(DEACheck, model_path, "dea_test_spec.json",
-                          test_root=test_root, sub_dir='sql')
+    rt = RegressionTester(DEACheck, test_root=test_root, sub_dir='sql')
     rt.run_models(state_builder='sql')
     return rt
 
