@@ -16,6 +16,9 @@ entry_points = {
         'dpa_check = acis_thermal_check.scripts.dpa_check:main',
         'psmc_check = acis_thermal_check.scripts.psmc_check:main',
         'acisfp_check = acis_thermal_check.scripts.acisfp_check:main',
+        'fep1_mong_check = acis_thermal_check.scripts.fep1_mong_check:main',
+        'fep1_actel_check = acis_thermal_check.scripts.fep1_actel_check:main',
+        'bep_pcb_check = acis_thermal_check.scripts.bep_pcb_check:main'
     ]
 }
 
