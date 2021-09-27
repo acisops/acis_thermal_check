@@ -613,7 +613,7 @@ class ACISThermalCheck:
         # lines denoting each perigee passage on the plots
         #
         # Open the file
-        crm_file_path = glob.glob(self.bsdir + "/*CRM*")[0]
+        crm_file_path = glob.glob(f"{self.bsdir}/*CRM*")[0]
         crm_file = open(crm_file_path, 'r')
 
         alines = crm_file.readlines()
@@ -1000,12 +1000,12 @@ class ACISThermalCheck:
                 if ok2.any():
                     ax.hist(diff2 / scale, bins=50, log=(histscale == 'log'),
                             color=thermal_red, histtype='step', linewidth=2)
-                ax.set_title(msid.upper() + ' residuals: data - model')
+                ax.set_title(f'{msid.upper()} residuals: data - model')
                 ax.set_xlabel(labels[msid])
             fig.subplots_adjust(bottom=0.18, left=0.15, wspace=0.6)
             plot['hist'] = {'fig': fig,
                             "ax": ax,
-                            'filename': '%s_valid_hist.png' % msid}
+                            'filename': f'{msid}_valid_hist.png'}
             fig_id += 1
             plots.append(plot)
 
