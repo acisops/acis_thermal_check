@@ -1,4 +1,4 @@
-from acis_thermal_check.scripts.psmc_check import PSMCCheck
+from acis_thermal_check.apps.psmc_check import PSMCCheck
 from acis_thermal_check.tests.regression_testing import \
     RegressionTester, all_loads
 import pytest

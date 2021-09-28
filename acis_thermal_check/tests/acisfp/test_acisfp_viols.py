@@ -1,4 +1,4 @@
-from acis_thermal_check.scripts.acisfp_check import ACISFPCheck
+from acis_thermal_check.apps.acisfp_check import ACISFPCheck
 from acis_thermal_check.tests.regression_testing import \
     RegressionTester, tests_path
 

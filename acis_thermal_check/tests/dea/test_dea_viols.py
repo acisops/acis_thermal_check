@@ -1,4 +1,4 @@
-from acis_thermal_check.scripts.dea_check import DEACheck
+from acis_thermal_check.apps.dea_check import DEACheck
 from acis_thermal_check.tests.regression_testing import \
     RegressionTester, tests_path
 

@@ -1,4 +1,4 @@
-from acis_thermal_check.scripts.dpa_check import DPACheck
+from acis_thermal_check.apps.dpa_check import DPACheck
 from acis_thermal_check.tests.regression_testing import \
     RegressionTester, all_loads
 import pytest
