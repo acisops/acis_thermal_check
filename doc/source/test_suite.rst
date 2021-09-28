@@ -1,7 +1,7 @@
 .. _test_suite:
 
-Using the ``acis_thermal_check`` Regression Testing
----------------------------------------------------
+Using the ``acis_thermal_check`` Regression Testing Framework
+-------------------------------------------------------------
 
 ``acis_thermal_check`` includes a regression test fremework which allows one to
 develop tests for a given thermal model against a set of "gold standard" model 
@@ -29,44 +29,47 @@ different from the one currently in use for thermal models. It should only be
 updated sparingly, usually if there are major changes to the structure of a 
 model.
 
-Running the Test Suite for a Particular Model
-+++++++++++++++++++++++++++++++++++++++++++++
+Running the Entire ``acis_thermal_check`` Test Suite
+++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-There are two equivalent ways to invoke the ``acis_thermal_check``
-tests for a given model. 
-
-If you are making changes to a model, you can go to the root of the model code
-directory (e.g., ``dpa_check``) and run ``py.test`` like so:
-
-.. code-block:: bash
-
-    [~]$ cd ~/Source/dpa_check
-
-    [~]$ py.test -s .
-
-The ``-s`` flag is optionally included here so that the output has maximum verbosity.
-
-Normally, the outputs of the thermal model runs are stored in a temporary directory
-which is discarded after the tests have been carried out. If you want to dump these
-outputs to a different location for later examination, use the ``test_root`` argument
-on the command line:
+There are two equivalent ways to run the entire ``acis_thermal_check`` test 
+suite. The first is to go to the root of the ``acis_thermal_check`` directory
+and run ``py.test`` like so (this assumes you have the Ska environment 
+activated):
 
 .. code-block:: bash
 
-    [~]$ cd ~/Source/dpa_check
+    [~]$ cd ~/Source/acis_thermal_check # or wherever you put it
 
-    [~]$ py.test -s . --test_root=/Users/jzuhone/dpa_tests
+    [~]$ py.test -s acis_thermal_check
 
-You can also import any model package from an interactive Python session and run the 
-``test()`` method on it:
+The ``-s`` flag is optionally included here so that the output has maximum
+verbosity.
+
+Normally, the outputs of the thermal model runs used in the tests are stored 
+in a temporary directory which is discarded after the tests have been carried 
+out. If you want to dump these outputs to a different location for later 
+examination, use the ``test_root`` argument on the command line:
+
+.. code-block:: bash
+
+    [~]$ cd ~/Source/acis_thermal_check
+
+    [~]$ py.test -s acis_thermal_check --test_root=/Users/jzuhone/test_outputs
+
+You can also import the ``acis_thermal_check`` package from an interactive 
+Python session and run the ``test()`` method on it to run all of the tests:
 
 .. code-block:: pycon
 
-    >>> import acisfp_check
-    >>> acisfp_check.test()
+    >>> import acis_thermal_check
+    >>> acis_thermal_check.test()
 
-Updating the "Gold Standard" Answers for a Particular Model
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Running the Test Suite for a Particular Model
++++++++++++++++++++++++++++++++++++++++++++++
+
+Updating the "Gold Standard" Answers
+++++++++++++++++++++++++++++++++++++
 
 New "gold standard" answers for a given model may need to be generated for two
 reasons. First, you may be making a new model and need to generate the initial 
@@ -76,14 +79,15 @@ are due to changes you made which need to become part of the software (such as
 a bugfix or a feature enhancement), then the "gold standard" answers need to be
 updated. 
 
-To generate new answers, go to the root of the model code directory that you are
-working in, and run ``py.test``, with the ``--answer_store`` argument:
+To generate new answers for all of the models, go to the root of the 
+``acis_thermal_check`` directory that you are working in, and run ``py.test`` 
+with the ``--answer_store`` argument like so:
 
 .. code-block:: bash
 
-    [~]$ cd ~/Source/dpa_check
+    [~]$ cd ~/Source/acis_thermal_check
 
-    [~]$ py.test -s . --answer_store
+    [~]$ py.test -s acis_thermal_check --answer_store
 
 This will overwrite the old answers, but since they are also under git version 
 control you will be able to check any differences before committing the new
