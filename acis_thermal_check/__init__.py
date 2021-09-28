@@ -7,7 +7,7 @@ from acis_thermal_check.main import \
     DPABoardTempCheck
 from acis_thermal_check.utils import \
     calc_pitch_roll, get_options, \
-    get_acis_limits, mylog
+    mylog
 
 
 def test(*args, **kwargs):
