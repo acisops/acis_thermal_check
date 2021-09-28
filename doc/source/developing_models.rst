@@ -14,150 +14,21 @@ following steps should be followed. A new model needs the following:
 
 Developing a new thermal model to use with ``acis_thermal_check`` is fairly
 straightforward. What is typically only needed is to provide the model-specific 
-elements such as the limits for validation, the JSON file containing the model
-specification, and the code which actually runs the ``xija`` model. There will
-also need to be some mainly boilerplate driver code which collects command line 
-arguments and runs the model. Finally, one will need to set up testing. 
+elements such as the limits for validation, and the code which actually runs the
+``xija`` model. There will also need to be some mainly boilerplate driver code 
+which collects command line arguments and runs the model. Finally, one will need
+to set up testing. 
 
-In the following, we will use the Python package for ``dpa_check`` as a guide 
+In the following, we will use the application ``dpa_check`` as a guide 
 on how to create a model and run it with ``acis_thermal_check``. 
 
-The Overall Design of the Package
-=================================
+The Model Script
+================
 
-The structure of the ``dpa_check`` package is designed to be a typical Python
-package and looks like this:
-
-.. code-block:: bash
-
-    dpa_check/
-        dpa_check/
-            __init__.py
-            dpa_check.py
-            dpa_model_spec.json
-            tests/
-                __init__.py
-                dpa_test_spec.json
-                test_dpa_acis.py
-                test_dpa_sql.py
-                test_dpa_viols.py
-    conftest.py
-    setup.py
-    MANIFEST.in
-    .gitignore
-    .gitattributes
-    .git_archival.txt
-
-At the top level, we have ``setup.py``, ``MANIFEST.in``, and three git-related
-files. 
-
-``setup.py`` is the file that is used to determine how the package should be
-installed. It has a fairly boilerplate structure, but there are some items that
-should be noted. The ``setup.py`` for ``dpa_check`` looks like this:
-
-.. code-block:: python
-
-    #!/usr/bin/env python
-    from setuptools import setup
-    
-    try:
-        from testr.setup_helper import cmdclass
-    except ImportError:
-        cmdclass = {}
-    
-    entry_points = {'console_scripts': 'dpa_check = dpa_check.dpa_check:main'}
-    
-    setup(name='dpa_check',
-          packages=["dpa_check"],
-          use_scm_version=True,
-          setup_requires=['setuptools_scm', 'setuptools_scm_git_archive'],
-          description='ACIS Thermal Model for 1DPAMZT',
-          author='John ZuHone',
-          author_email='jzuhone@gmail.com',
-          url='http://github.com/acisops/dpa_check',
-          include_package_data=True,
-          entry_points=entry_points,
-          zip_safe=False,
-          tests_require=["pytest"],
-          cmdclass=cmdclass,
-          )
-
-Your ``setup.py`` script should look essentially the same as this one, except 
-that wherever there is a reference to ``dpa_check`` or 1DPAMZT you should change
-it to the appropriate name for your package. Note the ``entry_points`` 
-dictionary: what it does is tell the installer that we want to make an 
-executable wrapper for the ``dpa_check.py`` script that can be run from the 
-command line. It does this for you, you just need to make sure it points to the
-correct package name. 
-
-``MANIFEST.in`` contains a list of data files and file wildcards that need to be 
-installed along with the package. This includes the model specification file 
-``dpa_model_spec.json``, and whatever "gold standard" testing answers are 
-present in the package:
-
-.. code-block:: none
-
-    include dpa_check/dpa_model_spec.json
-    include dpa_check/dpa_check/tests/answers/*
-
-There are several git-related files which also need to be included. 
-``.gitignore`` is simply a list of files and file wildcards that one wants git 
-to ignore so they don't get accidentally committed to the repository. These 
-include things like byte-compiled files (``*.pyc``) and other directories and 
-files that are created when the package is installed. The ``.gitignore`` for 
-``dpa_check`` looks like this:
-
-.. code-block:: none
-    
-    build
-    dist
-    *.pyc
-    dpa_check.egg-info
-
-``.gitattributes`` only needs to contain the following:
-
-.. code-block:: none
-
-    .git_archival.txt  export-subst
-
-and ``.git_archival.txt`` only needs to contain this:
-
-.. code-block:: none
-
-    ref-names: $Format:%D$
-
-Package Initialization File
-===========================
-
-This file defines the public API for the model package and sets up some other 
-important information. It must use ``ska_helpers`` to obtain the version number
-of the package, import some basic objects for public use, and provide a hook
-for testing. The manner in which this is done for the 1DPAMZT model is shown
-here:
-
-.. code-block:: python
-
-    import ska_helpers
-    
-    __version__ = ska_helpers.get_version(__package__)
-    
-    from .dpa_check import \
-        DPACheck, main, \
-        model_path
-    
-    
-    def test(*args, **kwargs):
-        """
-        Run py.test unit tests.
-        """
-        import testr
-        return testr.test(*args, **kwargs)
-
-The Main Script
-===============
-
-The following describes how one designs the script that uses 
-``acis_thermal_check`` to
+The following describes how one designs the Python script that uses
+``acis_thermal_check`` to run a particular model. This script should be placed
+in the ``acis_thermal_check/acis_thermal_check/apps`` directory. We will be 
+using the ``dpa_check.py`` script as an example.
 
 Front Matter
 ++++++++++++
@@ -188,9 +59,6 @@ The beginning part of the script should contain the following:
     from acis_thermal_check import \
         ACISThermalCheck, \
         get_options
-    import os
-    
-    model_path = os.path.abspath(os.path.dirname(__file__))
 
 This includes the required imports and a beginning comment about what the
 script is for, the latter of which should be modified for your model case. 
@@ -293,7 +161,7 @@ can control whether or not the traceback is printed to screen via the
 .. code-block:: python
 
     def main():
-        args = get_options("dpa", model_path) # collect the arguments
+        args = get_options("dpa") # collect the arguments
         dpa_check = DPACheck() # create an instance of the subclass
         try:
             dpa_check.run(args) # run the model using the arguments
@@ -389,6 +257,14 @@ of the 1DPAMZT model is shown below:
     
     if __name__ == '__main__':
         main()
+
+Setting Up An Entry Point
++++++++++++++++++++++++++
+Note the ``entry_points`` 
+dictionary: what it does is tell the installer that we want to make an 
+executable wrapper for the ``dpa_check.py`` script that can be run from the 
+command line. It does this for you, you just need to make sure it points to the
+correct package name. 
 
 Testing Scripts and Data
 ========================
@@ -559,3 +435,13 @@ Note that the start and stop times of the violations and the values of the
 maximum temperatures themselves have been added to the JSON file. These are
 the values which will be tested, as well as whether or not the page flags a
 violation. 
+
+``MANIFEST.in`` contains a list of data files and file wildcards that need to be 
+installed along with the package. This includes the model specification file 
+``dpa_model_spec.json``, and whatever "gold standard" testing answers are 
+present in the package:
+
+.. code-block:: none
+
+    include dpa_check/dpa_model_spec.json
+    include dpa_check/dpa_check/tests/answers/*
