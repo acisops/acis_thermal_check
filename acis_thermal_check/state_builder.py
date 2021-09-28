@@ -16,7 +16,7 @@ STATE_KEYS = ['ccd_count', 'clocking', 'dec', 'dither',
               'vid_board']
 
 
-class StateBuilder(object):
+class StateBuilder:
     """
     This is the base class for all StateBuilder objects. It
     should not be used by itself, but subclassed.

@@ -133,18 +133,18 @@ class RegressionTester:
         self.name = self.atc_obj.name
         self.valid_limits = self.atc_obj.validation_limits
         self.hist_limit = self.atc_obj.hist_limit
-        self.curdir = os.getcwd()
+        self.curdir = Path.cwd()
         if test_root is None:
             rootdir = Path(tempfile.mkdtemp())
         else:
             rootdir = Path(test_root)
         if sub_dir is not None:
             rootdir = rootdir / sub_dir
-        self.outdir = os.path.abspath(rootdir)
+        self.outdir = rootdir.resolve()
         self.test_model_spec = tests_path / self.name / \
                                f"{self.name}_test_spec.json"
-        if not os.path.exists(self.outdir):
-            os.makedirs(self.outdir, exist_ok=True)
+        if not self.outdir.exists():
+            self.outdir.mkdir(exist_ok=True)
 
     def run_model(self, load_week, run_start=None, state_builder='acis',
                   interrupt=False, override_limits=None):
@@ -167,7 +167,7 @@ class RegressionTester:
             Override any margin by setting a new value to its name
             in this dictionary. SHOULD ONLY BE USED FOR TESTING.
         """
-        out_dir = os.path.join(self.outdir, load_week)
+        out_dir = self.outdir / load_week
         if load_week in nlets:
             nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
         else:
@@ -205,11 +205,9 @@ class RegressionTester:
                                state_builder=state_builder)
 
     def _set_answer_dir(self, load_week):
-        answer_dir = os.path.join(tests_path, 
-                                  f"{self.name}/answers",
-                                  load_week)
-        if not os.path.exists(answer_dir):
-            os.makedirs(answer_dir)
+        answer_dir = tests_path / f"{self.name}/answers" / load_week
+        if not answer_dir.exists():
+            answer_dir.mkdir()
         return answer_dir
 
     def run_test(self, test_name, load_week, answer_store=False):
@@ -228,7 +226,7 @@ class RegressionTester:
             If True, store the generated data as the new answers.
             If False, only test. Default: False
         """
-        out_dir = os.path.join(self.outdir, load_week)
+        out_dir = self.outdir / load_week
         if test_name == "prediction":
             filenames = ["temperatures.dat", "states.dat"]
             if self.name == "acisfp":
@@ -254,7 +252,7 @@ class RegressionTester:
         ----------
         load_week : string
             The load week to be tested, in a format like "MAY2016A".
-        out_dir : string
+        out_dir : Path
             The path to the output directory.
         filenames : list of strings
             The list of files which will be used in the comparison.
@@ -262,10 +260,10 @@ class RegressionTester:
         """
         # First load the answers from the pickle files, both gold standard
         # and current
-        new_answer_file = os.path.join(out_dir, filenames[0])
+        new_answer_file = out_dir / filenames[0]
         new_results = pickle.load(open(new_answer_file, "rb"))
-        old_answer_file = os.path.join(tests_path, f"{self.name}/answers", load_week,
-                                       filenames[0])
+        old_answer_file = tests_path / f"{self.name}/answers" / load_week \
+                          / filenames[0]
         old_results = pickle.load(open(old_answer_file, "rb"))
         # Compare predictions
         new_pred = new_results["pred"]
@@ -304,16 +302,15 @@ class RegressionTester:
         ----------
         load_week : string
             The load week to be tested, in a format like "MAY2016A".
-        out_dir : string
+        out_dir : Path
             The path to the output directory.
         filenames : list of strings
             The list of files which will be used in the comparison.
         """
         from astropy.io import ascii
         for fn in filenames:
-            new_fn = os.path.join(out_dir, fn)
-            old_fn = os.path.join(tests_path, 
-                                  f"{self.name}/answers", load_week, fn)
+            new_fn = out_dir / fn
+            old_fn = tests_path / f"{self.name}/answers" / load_week / fn
             new_data = ascii.read(new_fn).as_array()
             old_data = ascii.read(old_fn).as_array()
             # Compare test run data to gold standard. Since we're loading from
@@ -322,10 +319,10 @@ class RegressionTester:
             for k, dt in new_data.dtype.descr:
                 if 'f' in dt:
                     exception_catcher(assert_allclose, new_data[k], old_data[k],
-                                      "Prediction arrays for %s" % k, rtol=1.0e-5)
+                                      f"Prediction arrays for {k}", rtol=1.0e-5)
                 else:
                     exception_catcher(assert_array_equal, new_data[k], old_data[k],
-                                      "Prediction arrays for %s" % k)
+                                      f"Prediction arrays for {k}")
  
     def copy_new_files(self, out_dir, answer_dir, filenames):
         """
@@ -336,16 +333,16 @@ class RegressionTester:
 
         Parameters
         ----------
-        out_dir : string
+        out_dir : Path
             The path to the output directory.
-        answer_dir : string
+        answer_dir : Path
             The path to the directory to which to copy the files.
         filenames : list of strings
             The filenames to be copied.
         """
         for filename in filenames:
-            fromfile = os.path.join(out_dir, filename)
-            tofile = os.path.join(answer_dir, filename)
+            fromfile = out_dir / filename
+            tofile = answer_dir / filename
             shutil.copyfile(fromfile, tofile)
 
     def check_violation_reporting(self, load_week, viol_json, 
@@ -386,8 +383,8 @@ class RegressionTester:
         next_year = f"{int(load_year)+1}"
         self.run_model(load_week, run_start=viol_data['run_start'], 
                        override_limits=viol_data['limits'])
-        out_dir = os.path.join(self.outdir, load_week)
-        index_rst = os.path.join(out_dir, "index.rst")
+        out_dir = self.outdir / load_week
+        index_rst = out_dir / "index.rst"
         with open(index_rst, 'r') as myfile:
             i = 0
             for line in myfile.readlines():

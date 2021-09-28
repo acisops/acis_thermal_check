@@ -1,12 +1,13 @@
 import numpy as np
 import Ska.Sun
 import logging
-import os
 import matplotlib.pyplot as plt
 from Ska.Matplotlib import cxctime2plotdate
 import Ska.Numpy
+from pathlib import Path, PurePath
 
-TASK_DATA = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+TASK_DATA = Path(PurePath(__file__).parent / '..').resolve()
 
 mylog = logging.getLogger('acis_thermal_check')
 
@@ -64,7 +65,7 @@ def config_logging(outdir, verbose):
 
     Parameters
     ----------
-    outdir : string
+    outdir : Path
         The location of the directory which the model outputs
         are being written to.
     verbose : integer
@@ -95,7 +96,7 @@ def config_logging(outdir, verbose):
     console.setLevel(loglevel)
     logger.addHandler(console)
 
-    logfile = os.path.join(outdir, 'run.dat')
+    logfile = outdir / 'run.dat'
 
     filehandler = logging.FileHandler(filename=logfile, mode='w')
     filehandler.setFormatter(formatter)
@@ -338,8 +339,9 @@ def get_options(name, opts=None):
     from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.set_defaults()
-    parser.add_argument("--outdir", default="out", help="Output directory. If it does not "
-                                                        "exist it will be created. Default: 'out'")
+    parser.add_argument("--outdir", default="out",
+                        help="Output directory. If it does not "
+                             "exist it will be created. Default: 'out'")
     parser.add_argument("--backstop_file", help="Path to the backstop file. If a directory, "
                                                 "the backstop file will be searched for within "
                                                 "this directory. Default: None")
@@ -373,9 +375,11 @@ def get_options(name, opts=None):
 
     if opts is not None:
         for opt_name, opt in opts:
-            parser.add_argument("--%s" % opt_name, **opt)
+            parser.add_argument(f"--{opt_name}", **opt)
 
     args = parser.parse_args()
+
+    args.outdir = Path(args.outdir)
 
     if args.oflsdir is not None:
         args.backstop_file = args.oflsdir
@@ -428,7 +432,7 @@ def make_state_builder(name, args):
                                       verbose=args.verbose,
                                       logger=mylog)
     else:
-        raise RuntimeError("No such state builder with name %s!" % name)
+        raise RuntimeError(f"No such state builder with name {name}!")
 
     return state_builder
 

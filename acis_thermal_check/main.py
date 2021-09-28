@@ -3,7 +3,6 @@
 import matplotlib
 matplotlib.use('Agg')
 
-import os
 from pprint import pformat
 from collections import OrderedDict, defaultdict
 import re
@@ -29,6 +28,7 @@ from acis_thermal_check.utils import \
     paint_perigee
 from kadi import events
 from astropy.table import Table
+from pathlib import Path, PurePath
 
 
 op_map = {"greater": ">",
@@ -113,8 +113,7 @@ class ACISThermalCheck:
 
     def _handle_limits(self):
         from yaml import load, Loader
-        limits_file = os.path.join(TASK_DATA, 'acis_thermal_check', 
-                                   'data', 'limits.yml')
+        limits_file = TASK_DATA / 'acis_thermal_check/data/limits.yml'
         with open(limits_file, "r") as f:
             limits = load(f, Loader=Loader)[self.msid]
         for k, v in limits.items():
@@ -242,7 +241,7 @@ class ACISThermalCheck:
                                                 times)
         return ephem
 
-    def get_states(self, tlm, T_init, run_start_val):
+    def get_states(self, tlm, T_init):
         """
         Call the state builder to get the commanded states and
         determine the initial temperature.
@@ -298,13 +297,13 @@ class ACISThermalCheck:
             initial value will be constructed from telemetry.
         model_spec : string
             The path to the thermal model specification.
-        outdir : string
+        outdir : Path
             The directory to write outputs to.
         """
         mylog.info('Calculating %s thermal model' % self.name.upper())
 
         # Get commanded states and set initial temperature
-        states, state0 = self.get_states(tlm, T_init, run_start_val)
+        states, state0 = self.get_states(tlm, T_init)
 
         # calc_model actually does the model calculation by running
         # model-specific code.
@@ -376,8 +375,7 @@ class ACISThermalCheck:
 
         if self.name in ["psmc", "acisfp"] and state0 is not None:
             # Detector housing heater contribution to heating
-            htrbfn = os.path.join(TASK_DATA, 'acis_thermal_check', 'data',
-                                  'dahtbon_history.rdb')
+            htrbfn = TASK_DATA / "acis_thermal_check/data/dahtbon_history.rdb"
             mylog.info('Reading file of dahtrb commands from file %s' % htrbfn)
             htrb = ascii.read(htrbfn, format='rdb')
             dh_heater_times = CxoTime(htrb['time']).secs
@@ -555,12 +553,12 @@ class ACISThermalCheck:
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             The directory the file will be written to.
         states : NumPy record array
             The commanded states to be written to the file.
         """
-        outfile = os.path.join(outdir, 'states.dat')
+        outfile = outdir / 'states.dat'
         mylog.info('Writing states to %s' % outfile)
         states_table = Table(states, copy=False)
         states_table['pitch'].format = '%.2f'
@@ -575,14 +573,14 @@ class ACISThermalCheck:
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             The directory the file will be written to.
         times : NumPy array
             Times in seconds from the start of the mission
         temps : NumPy array
             Temperatures in Celsius
         """
-        outfile = os.path.join(outdir, 'temperatures.dat')
+        outfile = outdir / 'temperatures.dat'
         mylog.info('Writing temperatures to %s' % outfile)
         T = temps[self.name]
         temp_table = Table([times, CxoTime(times).date, T],
@@ -786,7 +784,7 @@ class ACISThermalCheck:
         # customizations have been made
         for key in plots:
             if key != self.msid:
-                outfile = os.path.join(outdir, plots[key]['filename'])
+                outfile = outdir / plots[key]['filename']
                 mylog.info('Writing plot file %s' % outfile)
                 plots[key]['fig'].savefig(outfile)
 
@@ -844,7 +842,7 @@ class ACISThermalCheck:
             NumPy record array of telemetry
         model_spec : string
             The path to the thermal model specification.
-        outdir : string
+        outdir : Path
             The directory to write outputs to.
         """
         import pickle
@@ -1087,30 +1085,27 @@ class ACISThermalCheck:
         for plot in plots:
             for key in plot:
                 if key in ['lines', 'hist']:
-                    outfile = os.path.join(outdir,
-                                           plot[key]['filename'])
+                    outfile = outdir / plot[key]['filename']
                     mylog.info('Writing plot file %s' % outfile)
                     plot[key]['fig'].savefig(outfile)
 
         # Write quantile tables to a CSV file
-        filename = os.path.join(outdir, 'validation_quant.csv')
+        filename = outdir / 'validation_quant.csv'
         mylog.info('Writing quantile table %s' % filename)
-        f = open(filename, 'w')
-        f.write(quant_table)
-        f.close()
+        with open(filename, 'w') as f:
+            f.write(quant_table)
 
-        # self.write_pickle is set to the value of True or False based upon the 
+        # self.write_pickle is set to the value of True or False based upon the
         # value of the command line argument: --run-start. --run-start can be
-        # either a DOY date string or None (if the argument 
-        # was not specified). If a DOY date, this model run is likely for regression 
-        # testing or other debugging.  In that case write out the full 
+        # either a DOY date string or None (if the argument
+        # was not specified). If a DOY date, this model run is likely for regression
+        # testing or other debugging. In that case write out the full
         # predicted and telemetered dataset as a pickle.
         if self.write_pickle:
-            filename = os.path.join(outdir, 'validation_data.pkl')
+            filename = outdir / 'validation_data.pkl'
             mylog.info('Writing validation data %s' % filename)
-            f = open(filename, 'wb')
-            pickle.dump({'pred': pred, 'tlm': tlm}, f, protocol=2)
-            f.close()
+            with open(filename, 'wb') as f:
+                pickle.dump({'pred': pred, 'tlm': tlm}, f, protocol=2)
 
         return plots
 
@@ -1132,24 +1127,25 @@ class ACISThermalCheck:
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             The path to the directory to which the outputs will be
             written to.
         """
         # First copy CSS files to outdir
         import docutils.writers.html4css1
         from docutils.core import publish_file
-        dirname = os.path.dirname(docutils.writers.html4css1.__file__)
-        shutil.copy2(os.path.join(dirname, 'html4css1.css'), outdir)
+        dirname = PurePath(docutils.writers.html4css1.__file__).parent
+        shutil.copy2(dirname / 'html4css1.css', outdir)
 
-        shutil.copy2(os.path.join(TASK_DATA, 'acis_thermal_check', 'templates',
-                                  'acis_thermal_check.css'), outdir)
+        shutil.copy2(
+            TASK_DATA / "acis_thermal_check/templates/acis_thermal_check.css",
+            outdir)
 
-        stylesheet_path = os.path.join(outdir, 'acis_thermal_check.css')
-        infile = os.path.join(outdir, 'index.rst')
-        outfile = os.path.join(outdir, 'index.html')
-        publish_file(source_path=infile, destination_path=outfile, 
-                     writer_name="html", 
+        stylesheet_path = str(outdir / 'acis_thermal_check.css')
+        infile = str(outdir / 'index.rst')
+        outfile = str(outdir / 'index.html')
+        publish_file(source_path=infile, destination_path=outfile,
+                     writer_name="html",
                      settings_overrides={"stylesheet_path": stylesheet_path})
 
         # Remove the stupid <colgroup> field that docbook inserts.  This
@@ -1165,15 +1161,15 @@ class ACISThermalCheck:
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             Path to the location where the outputs will be written.
         context : dict
             Dictionary of items which will be written to the ReST file.
         """
         import jinja2
-        template_path = os.path.join(TASK_DATA, 'acis_thermal_check',
-                                     'templates', 'index_template.rst')
-        outfile = os.path.join(outdir, 'index.rst')
+        template_path = TASK_DATA / \
+                        "acis_thermal_check/templates/index_template.rst"
+        outfile = outdir / 'index.rst'
         mylog.info('Writing report file %s' % outfile)
         # Open up the reST template and send the context to it using jinja2
         with open(template_path) as fin:
@@ -1196,10 +1192,9 @@ class ACISThermalCheck:
             attached to it as attributes
         """
         import hashlib
-        import json
 
-        if not os.path.exists(args.outdir):
-            os.mkdir(args.outdir)
+        if not args.outdir.exists():
+            args.outdir.mkdir()
 
         # Configure the logger so that it knows which model
         # we are using and how verbose it is supposed to be
@@ -1230,10 +1225,11 @@ class ACISThermalCheck:
         if args.backstop_file is None:
             self.bsdir = None
         else:
-            if os.path.isdir(args.backstop_file):
-                self.bsdir = args.backstop_file
+            bf = Path(args.backstop_file)
+            if bf.is_dir():
+                self.bsdir = bf
             else:
-                self.bsdir = os.path.dirname(args.backstop_file)
+                self.bsdir = PurePath(bf).parent
         return proc
 
     def _determine_times(self, run_start, is_weekly_load):
