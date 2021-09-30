@@ -428,7 +428,7 @@ def make_state_builder(name, args):
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
                                       nlet_file=args.nlet_file,
-                                      verbose = args.verbose,
+                                      verbose=args.verbose,
                                       logger=mylog)
     else:
         raise RuntimeError("No such state builder with name %s!" % name)

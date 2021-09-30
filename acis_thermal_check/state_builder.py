@@ -200,7 +200,7 @@ class SQLStateBuilder(StateBuilder):
 class ACISStateBuilder(StateBuilder):
 
     def __init__(self, interrupt=False, backstop_file=None, nlet_file=None,
-                 verbose = 2, logger=None):
+                 verbose=2, logger=None):
         """
         Give the ACISStateBuilder arguments that were passed in
         from the command line and get the backstop commands from the load
@@ -250,16 +250,16 @@ class ACISStateBuilder(StateBuilder):
 
     def get_prediction_states(self, tbegin):
         """
-        Get the statess used for the prediction.  This includes both the
-        commandss from the review load backstop file and all the
-        commandss between the latest telemetry data and the beginning
+        Get the states used for the prediction.  This includes both the
+        commands from the review load backstop file and all the
+        commands between the latest telemetry data and the beginning
         of that review load backstop file.
 
         The Review Backstop commands already obtained.
         Telemtry from 21 days back to the latest in Ska obtained.
 
         So now the task is to backchain through the loads and assemble
-        any commandss missing between the end of telemetry through the start
+        any commands missing between the end of telemetry through the start
         of the review load.
 
         Parameters
