@@ -423,10 +423,12 @@ def make_state_builder(name, args):
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
     elif name == "acis":
         # Create a state builder using the ACIS Ops backstop history
-        # modules
+        # modules and send in some of the switches from the model invocation
+        # argument list
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
                                       nlet_file=args.nlet_file,
+                                      verbose = args.verbose,
                                       logger=mylog)
     else:
         raise RuntimeError("No such state builder with name %s!" % name)
