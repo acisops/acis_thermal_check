@@ -46,7 +46,7 @@ class StateBuilder(object):
         ----------
         datestart : string
             The start date to grab states afterward.
-        datestop : stringutils.py
+        datestop : string
             The end date to grab states before.
         """
         start = CxoTime(datestart)
@@ -172,7 +172,7 @@ class SQLStateBuilder(StateBuilder):
         self.logger.info(f'sched_stop = {sched_stop.date}')
 
         # Get currently running (or approved) commands from tbegin up to and
-        # including commands at RLTTMAY2620B_NonLoadTrackedEvents.txt
+        # including commands at RLTT
         cmds = kadi.commands.get_cmds(tbegin, rltt, inclusive_stop=True)
 
         # Add in the backstop commands
