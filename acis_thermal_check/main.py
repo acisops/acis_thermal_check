@@ -30,12 +30,10 @@ from kadi import events
 from astropy.table import Table
 import ska_helpers
 
-
 op_map = {"greater": ">",
           "greater_equal": ">=",
           "less": "<",
           "less_equal": "<="}
-
 
 class ACISThermalCheck(object):
     r"""
@@ -184,12 +182,11 @@ class ACISThermalCheck(object):
         # make predictions on a backstop file if defined
         if args.backstop_file is not None:
             pred = self.make_week_predict(tstart, tstop, tlm, args.T_init,
-                                          args.model_spec, args.outdir)
+                                          args.model_spec, args.outdir, args.run_start)
         else:
             pred = defaultdict(lambda: None)
 
         # Validation
-
         if not args.pred_only:
 
             # Make the validation plots
@@ -202,9 +199,7 @@ class ACISThermalCheck(object):
             valid_viols = self.make_validation_viols(plots_validation)
             if len(valid_viols) > 0:
                 mylog.info('validation warning(s) in output at %s' % args.outdir)
-
         else:
-
             valid_viols = defaultdict(lambda: None)
             plots_validation = defaultdict(lambda: None)
 
@@ -240,7 +235,7 @@ class ACISThermalCheck(object):
                                                 times)
         return ephem
 
-    def get_states(self, tlm, T_init):
+    def get_states(self, tlm, T_init, run_start_val):
         """
         Call the state builder to get the commanded states and
         determine the initial temperature.
@@ -252,10 +247,14 @@ class ACISThermalCheck(object):
         T_init : float
             The initial temperature of the model prediction. If None, an
             initial value will be constructed from telemetry.
+
+        Calculated values: tbegin DOY string used throughout the model to
+                           indicate when to stop backchaining as well
         """
-        # The -5 here has us back off from the last telemetry
-        # reading just a bit
+
+        # --run_start not specified. Back off -5 from the last telemetry
         tbegin = CxoTime(tlm['date'][-5]).date
+
         # Call the overloaded state_builder method to assemble states
         # and define a state0
         states, state0 = self.state_builder.get_prediction_states(tbegin)
@@ -275,7 +274,7 @@ class ACISThermalCheck(object):
         return states, state0
 
     def make_week_predict(self, tstart, tstop, tlm, T_init, model_spec,
-                          outdir):
+                          outdir, run_start_val):
         """
         Parameters
         ----------
@@ -298,7 +297,7 @@ class ACISThermalCheck(object):
         mylog.info('Calculating %s thermal model' % self.name.upper())
 
         # Get commanded states and set initial temperature
-        states, state0 = self.get_states(tlm, T_init)
+        states, state0 = self.get_states(tlm, T_init, run_start_val)
 
         # calc_model actually does the model calculation by running
         # model-specific code.
@@ -322,8 +321,10 @@ class ACISThermalCheck(object):
 
         # make_prediction_viols determines the violations and prints them out
         viols = self.make_prediction_viols(temps, tstart)
+
         # write_states writes the commanded states to states.dat
         self.write_states(outdir, states)
+
         # write_temps writes the temperatures to temperatures.dat
         self.write_temps(outdir, model.times, temps)
 

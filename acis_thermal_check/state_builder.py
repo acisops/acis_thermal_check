@@ -45,7 +45,7 @@ class StateBuilder(object):
         Parameters
         ----------
         datestart : string
-            The start date to grab states afterward.
+            The start date to grab states afterward.builder_class
         datestop : string
             The end date to grab states before.
         """
@@ -228,7 +228,9 @@ class ACISStateBuilder(StateBuilder):
         self.nlet_file = nlet_file
 
         # Create an instance of the Backstop command History Class
-        self.BSC = BackstopHistory.Backstop_History_Class('ACIS-Continuity.txt', self.nlet_file, verbose)
+        self.BSC = BackstopHistory.Backstop_History_Class('ACIS-Continuity.txt', 
+                                                           self.nlet_file, 
+                                                           verbose)
         super(ACISStateBuilder, self).__init__()
 
        # Save some arguments to class attributes
@@ -290,8 +292,10 @@ class ACISStateBuilder(StateBuilder):
 
         self.bs_cmds = bs_cmds
 
+        # Clip the assembled command list to tbegin
+        bs_cmds = bs_cmds[bs_cmds['date'] > tbegin]
+
         # This is a kadi.commands.CommandTable (subclass of astropy Table)
-        bs_cmds = self.bs_cmds
         bs_dates = bs_cmds['date']
 
         # Scheduled stop time is the end of propagation, either the explicit
