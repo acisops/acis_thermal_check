@@ -1072,9 +1072,11 @@ class ACISThermalCheck(object):
         f.write(quant_table)
         f.close()
 
-        # If self.write_pickle is specified this is likely for regression testing
-        # or other debugging.  In this case write out the full predicted and
-        # telemetered dataset as a pickle.
+        # self.write_pickle is set to the value of the --run-start command 
+        # line argument; either a DOY date string or None (if the argument 
+        # was not specified). If a DOY date, this model run is likely for regression 
+        # testing or other debugging.  In that case write out the full 
+        # predicted and telemetered dataset as a pickle.
         if self.write_pickle:
             filename = os.path.join(outdir, 'validation_data.pkl')
             mylog.info('Writing validation data %s' % filename)

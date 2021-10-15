@@ -45,7 +45,7 @@ class StateBuilder(object):
         Parameters
         ----------
         datestart : string
-            The start date to grab states afterward.builder_class
+            The start date to grab states afterward.
         datestop : string
             The end date to grab states before.
         """
@@ -258,7 +258,7 @@ class ACISStateBuilder(StateBuilder):
         of that review load backstop file.
 
         The Review Backstop commands already obtained.
-        Telemtry from 21 days back to the latest in Ska obtained.
+        Telemetry from 21 days back to the latest in Ska obtained.
 
         So now the task is to backchain through the loads and assemble
         any commands missing between the end of telemetry through the start
@@ -282,7 +282,7 @@ class ACISStateBuilder(StateBuilder):
 
         import copy
 
-        # Ask Backstop History to assemble the history for this loa
+        # Ask Backstop History to assemble the history for this load
         self.BSC.Assemble_History(self.backstop_file, tbegin, self.interrupt)
 
         # Read in the assembled history file as kadi commands
