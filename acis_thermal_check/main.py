@@ -1072,8 +1072,9 @@ class ACISThermalCheck(object):
         f.write(quant_table)
         f.close()
 
-        # self.write_pickle is set to the value of the --run-start command 
-        # line argument; either a DOY date string or None (if the argument 
+        # self.write_pickle is set to the value of True or False based upon the 
+        # value of the command line argument: --run-start. --run-start can be
+        # either a DOY date string or None (if the argument 
         # was not specified). If a DOY date, this model run is likely for regression 
         # testing or other debugging.  In that case write out the full 
         # predicted and telemetered dataset as a pickle.
