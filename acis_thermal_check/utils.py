@@ -13,7 +13,6 @@ mylog = logging.getLogger('acis_thermal_check')
 thermal_blue = 'blue'
 thermal_red = 'red'
 
-
 def calc_pitch_roll(times, ephem, states):
     """Calculate the normalized sun vector in body coordinates.
     Shamelessly copied from Ska.engarchive.derived.pcad but 
@@ -359,7 +358,7 @@ def get_options(name, model_path, opts=None):
                         help="Days of validation data. Default: 21")
     parser.add_argument("--run-start", help="Reference time to replace run start time "
                                             "for regression testing. The default is to "
-                                            "use the current time.")
+                                            "use the current time. Default: None")
     parser.add_argument("--interrupt", help="Set this flag if this is an interrupt load.",
                         action='store_true')
     parser.add_argument("--traceback", action='store_false', help='Enable tracebacks. Default: True')
@@ -420,13 +419,16 @@ def make_state_builder(name, args):
                                       backstop_file=args.backstop_file,
                                       logger=mylog)
 
+
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
     elif name == "acis":
         # Create a state builder using the ACIS Ops backstop history
-        # modules
+        # modules and send in some of the switches from the model invocation
+        # argument list.  Also send the value of --run-start
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
                                       nlet_file=args.nlet_file,
+                                      verbose=args.verbose,
                                       logger=mylog)
     else:
         raise RuntimeError("No such state builder with name %s!" % name)

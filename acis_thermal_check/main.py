@@ -30,12 +30,10 @@ from kadi import events
 from astropy.table import Table
 import ska_helpers
 
-
 op_map = {"greater": ">",
           "greater_equal": ">=",
           "less": "<",
           "less_equal": "<="}
-
 
 class ACISThermalCheck(object):
     r"""
@@ -109,6 +107,7 @@ class ACISThermalCheck(object):
             hist_ops = ["greater_equal"]*len(hist_limit)
         self.hist_ops = hist_ops
         self.perigee_passages = []
+        self.write_pickle = False
 
     def _handle_limits(self):
         from yaml import load, Loader
@@ -147,6 +146,10 @@ class ACISThermalCheck(object):
 
         proc = self._setup_proc_and_logger(args)
 
+        # If args.run_start is not none, write validation and prediction
+        # data to a pickle later
+        self.write_pickle = args.run_start is not None
+
         # This allows one to override the planning and yellow limits
         # for a particular model run. THIS SHOULD ONLY BE USED FOR
         # TESTING PURPOSES.
@@ -161,8 +164,8 @@ class ACISThermalCheck(object):
         # stored in state_builder or punt by using NOW and None for
         # tstart and tstop.
         is_weekly_load = args.backstop_file is not None
-        tstart, tstop, tnow = self._determine_times(args.run_start,
-                                                    is_weekly_load)
+        tstart, tstop, t_run_start = self._determine_times(args.run_start,
+                                                           is_weekly_load)
 
         # Store off the start date, and, if you have it, the
         # stop date in proc
@@ -171,24 +174,24 @@ class ACISThermalCheck(object):
             proc["datestop"] = CxoTime(tstop).date
 
         # Get the telemetry values which will be used
-        # for prediction and validation. Args default value is 21 days.
-        tlm = self.get_telem_values(min(tstart, tnow), days=args.days)
+        # for prediction and validation. Validation runs
+        # begin "args.days" before the start of the prediction
+        # run. "args.days" default value is 21 days.
+        tlm = self.get_telem_values(min(tstart, t_run_start), days=args.days)
 
         # make predictions on a backstop file if defined
         if args.backstop_file is not None:
             pred = self.make_week_predict(tstart, tstop, tlm, args.T_init,
-                                          args.model_spec, args.outdir)
+                                          args.model_spec, args.outdir, args.run_start)
         else:
             pred = defaultdict(lambda: None)
 
         # Validation
-
         if not args.pred_only:
 
             # Make the validation plots
             plots_validation = self.make_validation_plots(tlm, args.model_spec,
-                                                          args.outdir,
-                                                          args.run_start)
+                                                          args.outdir)
 
             proc["op"] = [op_map[op] for op in self.hist_ops]
 
@@ -196,9 +199,7 @@ class ACISThermalCheck(object):
             valid_viols = self.make_validation_viols(plots_validation)
             if len(valid_viols) > 0:
                 mylog.info('validation warning(s) in output at %s' % args.outdir)
-
         else:
-
             valid_viols = defaultdict(lambda: None)
             plots_validation = defaultdict(lambda: None)
 
@@ -234,7 +235,7 @@ class ACISThermalCheck(object):
                                                 times)
         return ephem
 
-    def get_states(self, tlm, T_init):
+    def get_states(self, tlm, T_init, run_start_val):
         """
         Call the state builder to get the commanded states and
         determine the initial temperature.
@@ -246,10 +247,14 @@ class ACISThermalCheck(object):
         T_init : float
             The initial temperature of the model prediction. If None, an
             initial value will be constructed from telemetry.
+
+        Calculated values: tbegin DOY string used throughout the model to
+                           indicate when to stop backchaining as well
         """
-        # The -5 here has us back off from the last telemetry
-        # reading just a bit
+
+        # --run_start not specified. Back off -5 from the last telemetry
         tbegin = CxoTime(tlm['date'][-5]).date
+
         # Call the overloaded state_builder method to assemble states
         # and define a state0
         states, state0 = self.state_builder.get_prediction_states(tbegin)
@@ -269,7 +274,7 @@ class ACISThermalCheck(object):
         return states, state0
 
     def make_week_predict(self, tstart, tstop, tlm, T_init, model_spec,
-                          outdir):
+                          outdir, run_start_val):
         """
         Parameters
         ----------
@@ -292,7 +297,7 @@ class ACISThermalCheck(object):
         mylog.info('Calculating %s thermal model' % self.name.upper())
 
         # Get commanded states and set initial temperature
-        states, state0 = self.get_states(tlm, T_init)
+        states, state0 = self.get_states(tlm, T_init, run_start_val)
 
         # calc_model actually does the model calculation by running
         # model-specific code.
@@ -316,8 +321,10 @@ class ACISThermalCheck(object):
 
         # make_prediction_viols determines the violations and prints them out
         viols = self.make_prediction_viols(temps, tstart)
+
         # write_states writes the commanded states to states.dat
         self.write_states(outdir, states)
+
         # write_temps writes the temperatures to temperatures.dat
         self.write_temps(outdir, model.times, temps)
 
@@ -578,14 +585,14 @@ class ACISThermalCheck(object):
         temp_table[self.msid].format = '%.2f'
         temp_table.write(outfile, format='ascii', delimiter='\t', overwrite=True)
 
-    def _gather_perigee(self, run_start, load_start):
+    def _gather_perigee(self, plot_start, load_start):
         import glob
         # The first step is to build a list of all the perigee passages.
 
         # Gather the perigee passages that occur from the
         # beginning of the model run up to the start of the load
         # from kadi
-        rzs = events.rad_zones.filter(run_start, load_start)
+        rzs = events.rad_zones.filter(plot_start, load_start)
         for rz in rzs:
             self.perigee_passages.append([rz.start, rz.perigee])
         for rz in rzs:
@@ -798,7 +805,7 @@ class ACISThermalCheck(object):
             masks.append(mask)
         return masks
 
-    def make_validation_plots(self, tlm, model_spec, outdir, run_start):
+    def make_validation_plots(self, tlm, model_spec, outdir):
         """
         Make validation output plots by running the thermal model from a
         time in the past forward to the present and compare it to real
@@ -812,8 +819,6 @@ class ACISThermalCheck(object):
             The path to the thermal model specification.
         outdir : string
             The directory to write outputs to.
-        run_start : string
-            The starting date/time of the run.
         """
         import pickle
 
@@ -1067,10 +1072,13 @@ class ACISThermalCheck(object):
         f.write(quant_table)
         f.close()
 
-        # If run_start is specified this is likely for regression testing
-        # or other debugging.  In this case write out the full predicted and
-        # telemetered dataset as a pickle.
-        if run_start:
+        # self.write_pickle is set to the value of True or False based upon the 
+        # value of the command line argument: --run-start. --run-start can be
+        # either a DOY date string or None (if the argument 
+        # was not specified). If a DOY date, this model run is likely for regression 
+        # testing or other debugging.  In that case write out the full 
+        # predicted and telemetered dataset as a pickle.
+        if self.write_pickle:
             filename = os.path.join(outdir, 'validation_data.pkl')
             mylog.info('Writing validation data %s' % filename)
             f = open(filename, 'wb')
@@ -1207,7 +1215,8 @@ class ACISThermalCheck(object):
 
     def _determine_times(self, run_start, is_weekly_load):
         """
-        Determine the start and stop times
+        Determine the start and stop times, as well as the
+        "CXC time" corresponding to the run_start argument.
 
         Parameters
         ----------
@@ -1216,7 +1225,9 @@ class ACISThermalCheck(object):
         is_weekly_load : boolean
             Whether or not this is a weekly load.
         """
-        tnow = CxoTime(run_start).secs
+        # Note: if run_start is None, then it defaults to
+        # whatever the time is RIGHT NOW
+        t_run_start = CxoTime(run_start).secs
         # Get tstart, tstop, commands from state builder
         if is_weekly_load:
             # If we are running a model for a particular load,
@@ -1225,12 +1236,13 @@ class ACISThermalCheck(object):
             tstart = self.state_builder.tstart
             tstop = self.state_builder.tstop
         else:
-            # Otherwise, the start time for the run is whatever is in
+            # Otherwise, we are just doing a validation run, and
+            # the start time for the run is whatever is in
             # args.run_start
-            tstart = tnow
+            tstart = t_run_start
             tstop = None
 
-        return tstart, tstop, tnow
+        return tstart, tstop, t_run_start
 
     def get_telem_values(self, tstart, days=14):
         """
