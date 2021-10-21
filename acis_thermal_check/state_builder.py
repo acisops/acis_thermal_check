@@ -202,7 +202,7 @@ class ACISStateBuilder(StateBuilder):
     def __init__(self, interrupt=False, 
                        backstop_file=None,
                        nlet_file=None,
-                       outdir = None,
+                       outdir=None,
                        verbose=2, logger=None):
         """
         Give the ACISStateBuilder arguments that were passed in
