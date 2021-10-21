@@ -199,8 +199,11 @@ class SQLStateBuilder(StateBuilder):
 #-------------------------------------------------------------------------------
 class ACISStateBuilder(StateBuilder):
 
-    def __init__(self, interrupt=False, backstop_file=None, nlet_file=None,
-                 verbose=2, logger=None):
+    def __init__(self, interrupt=False, 
+                       backstop_file=None,
+                       nlet_file=None,
+                       outdir = None,
+                       verbose=2, logger=None):
         """
         Give the ACISStateBuilder arguments that were passed in
         from the command line and get the backstop commands from the load
@@ -221,6 +224,7 @@ class ACISStateBuilder(StateBuilder):
         logger : Logger object, optional
             The Python Logger object to be used when logging.
         """
+
         # Import the BackstopHistory class
         from backstop_history import BackstopHistory
 
@@ -230,6 +234,7 @@ class ACISStateBuilder(StateBuilder):
         # Create an instance of the Backstop command History Class
         self.BSC = BackstopHistory.Backstop_History_Class('ACIS-Continuity.txt', 
                                                            self.nlet_file, 
+                                                           outdir,
                                                            verbose)
         super(ACISStateBuilder, self).__init__()
 

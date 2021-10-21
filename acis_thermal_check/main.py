@@ -141,10 +141,11 @@ class ACISThermalCheck(object):
             print(f"acis_thermal_check version {version}")
             return
 
-        # First, record the selected state builder in the class attributes
-        self.state_builder = make_state_builder(args.state_builder, args)
-
+        # First, do some initial setup and log important information.
         proc = self._setup_proc_and_logger(args)
+
+        # Record the selected state builder in the class attributes
+        self.state_builder = make_state_builder(args.state_builder, args)
 
         # If args.run_start is not none, write validation and prediction
         # data to a pickle later
