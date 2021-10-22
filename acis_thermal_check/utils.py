@@ -428,6 +428,7 @@ def make_state_builder(name, args):
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
                                       nlet_file=args.nlet_file,
+                                      outdir=args.outdir,
                                       verbose=args.verbose,
                                       logger=mylog)
     else:
