@@ -54,8 +54,9 @@ class StateBuilder(object):
         self.logger.info('Getting commanded states between %s - %s' %
                          (start.date, stop.date))
 
-        states = kadi_states.get_states(start, stop, state_keys=STATE_KEYS,
-                                        merge_identical=True)
+        with kadi_states.disable_grating_move_duration():
+            states = kadi_states.get_states(start, stop, state_keys=STATE_KEYS,
+                                            merge_identical=True)
 
         # Set start and end state date/times to match telemetry span.  Extend the
         # state durations by a small amount because of a precision issue converting
@@ -181,9 +182,10 @@ class SQLStateBuilder(StateBuilder):
         # Get the states for available commands, boxed by tbegin / sched_stop.
         # The merge_identical=False is for compatibility with legacy Chandra.cmd_states,
         # but this could probably be set to True.
-        states = kadi_states.get_states(cmds=cmds, start=tbegin, stop=sched_stop,
-                                        state_keys=STATE_KEYS,
-                                        merge_identical=False)
+        with kadi_states.disable_grating_move_duration():
+            states = kadi_states.get_states(cmds=cmds, start=tbegin, stop=sched_stop,
+                                            state_keys=STATE_KEYS,
+                                            merge_identical=False)
 
         # Make the column order match legacy Chandra.cmd_states.
         states = states[sorted(states.colnames)]
@@ -315,8 +317,10 @@ class ACISStateBuilder(StateBuilder):
         # from the end of telemetry along with the in-review load backstop
         # commands.
 
-        states = kadi_states.get_states(cmds=bs_cmds, start=tbegin, stop=sched_stop,
-                                        state_keys=STATE_KEYS)
+        with kadi_states.disable_grating_move_duration():
+            states = kadi_states.get_states(cmds=bs_cmds, start=tbegin, 
+                                            stop=sched_stop,
+                                            state_keys=STATE_KEYS)
 
         # Make the column order match legacy Chandra.cmd_states.
         states = states[sorted(states.colnames)]
