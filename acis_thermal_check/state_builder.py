@@ -236,9 +236,9 @@ class ACISStateBuilder(StateBuilder):
                                                            self.nlet_file, 
                                                            outdir,
                                                            verbose)
-        super(ACISStateBuilder, self).__init__()
+        super().__init__()
 
-       # Save some arguments to class attributes
+        # Save some arguments to class attributes
         self.interrupt = interrupt
         self.backstop_file = backstop_file
 
@@ -253,7 +253,6 @@ class ACISStateBuilder(StateBuilder):
             # Capture the times of the first and last commands in the Review load
             self.tstart = self.BSC.get_review_tstart()
             self.tstop = self.BSC.get_review_tstop()
-
 
     def get_prediction_states(self, tbegin):
         """
@@ -285,13 +284,11 @@ class ACISStateBuilder(StateBuilder):
         # Make a copy of the Review Load Commands. This will have
         # Continuity commands concatenated to it and will be the final product
 
-        import copy
-
         # Ask Backstop History to assemble the history for this load
         self.BSC.Assemble_History(self.backstop_file, tbegin, self.interrupt)
 
         # Read in the assembled history file as kadi commands
-        bs_cmds =  kadi.commands.get_cmds_from_backstop( self.BSC.assembled_hist_file_path)
+        bs_cmds = kadi.commands.get_cmds_from_backstop(self.BSC.assembled_hist_file_path)
 
         bs_cmds['time'] = CxoTime(bs_cmds['date']).secs
 
@@ -299,9 +296,6 @@ class ACISStateBuilder(StateBuilder):
 
         # Clip the assembled command list to tbegin
         bs_cmds = bs_cmds[bs_cmds['date'] > tbegin]
-
-        # This is a kadi.commands.CommandTable (subclass of astropy Table)
-        bs_dates = bs_cmds['date']
 
         # Scheduled stop time is the end of propagation, either the explicit
         # time as a pseudo-command in the loads or the last backstop command time.
@@ -316,7 +310,7 @@ class ACISStateBuilder(StateBuilder):
         # commands.
 
         with kadi_states.disable_grating_move_duration():
-            states = kadi_states.get_states(cmds=bs_cmds, start=tbegin, 
+            states = kadi_states.get_states(cmds=bs_cmds, start=tbegin,
                                             stop=sched_stop,
                                             state_keys=STATE_KEYS)
 
