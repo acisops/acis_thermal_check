@@ -63,7 +63,7 @@ class TestArgs:
     interrupt : boolean, optional
         Whether or not this is an interrupt load. Default: False
     state_builder : string, optional
-        The mode used to create the list of commanded states. "sql" or
+        The mode used to create the list of commanded states. "kadi" or
         "acis", default "acis".
     verbose : integer, optional
         The verbosity of the output. Default: 0
@@ -159,7 +159,7 @@ class RegressionTester:
             The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
             specified, one will be created 3 days prior to the model run.
         state_builder : string, optional
-            The mode used to create the list of commanded states. "sql" or
+            The mode used to create the list of commanded states. "kadi" or
             "acis", default "acis".
         interrupt : boolean, optional
             Whether or not this is an interrupt load. Default: False
@@ -192,7 +192,7 @@ class RegressionTester:
             The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
             specified, one will be created 3 days prior to the model run.
         state_builder : string, optional
-            The mode used to create the list of commanded states. "sql" or
+            The mode used to create the list of commanded states. "kadi" or
             "acis", default "acis".
         """
         if normal:

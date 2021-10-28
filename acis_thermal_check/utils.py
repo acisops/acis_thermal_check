@@ -14,6 +14,7 @@ mylog = logging.getLogger('acis_thermal_check')
 thermal_blue = 'blue'
 thermal_red = 'red'
 
+
 def calc_pitch_roll(times, ephem, states):
     """Calculate the normalized sun vector in body coordinates.
     Shamelessly copied from Ska.engarchive.derived.pcad but 
@@ -366,7 +367,7 @@ def get_options(name, opts=None):
     parser.add_argument("--T-init", type=float,
                         help="Starting temperature (degC). Default is to compute it from telemetry.")
     parser.add_argument("--state-builder", default="acis",
-                        help="StateBuilder to use (sql|acis). Default: acis")
+                        help="StateBuilder to use (kadi|acis). Default: acis")
     parser.add_argument("--nlet_file",
                         default='/data/acis/LoadReviews/NonLoadTrackedEvents.txt',
                         help="Full path to the Non-Load Event Tracking file that should be "
@@ -411,10 +412,10 @@ def make_state_builder(name, args):
 
     # Build the appropriate state_builder depending upon the
     # value of the passed in parameter "name" which was
-    # originally the --state-builder="sql"|"acis" input argument
+    # originally the --state-builder="kadi"|"acis" input argument
     #
-    # Instantiate the SQL History Builder: SQLStateBuilder
-    if name == "sql":
+    # Instantiate the Kadi History Builder: KadiStateBuilder
+    if name == "kadi":
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
                                       logger=mylog)

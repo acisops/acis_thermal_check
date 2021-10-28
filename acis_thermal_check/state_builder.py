@@ -72,19 +72,17 @@ class StateBuilder:
         return states
 
 
-class SQLStateBuilder(StateBuilder):
+class KadiStateBuilder(StateBuilder):
     """
-    The SQLStateBuilder contains the original code used to
+    The KadiStateBuilder contains kadi-only code used to
     obtain commanded states for prediction and validation of
     a thermal model for a particular command load. It can also
     be used for validation only.
-
-    SQL is no longer relevant as the commands and states come from kadi.
     """
     def __init__(self, interrupt=False, backstop_file=None,
                  logger=None):
         """
-        Give the SQLStateBuilder arguments that were passed in
+        Give the KadiStateBuilder arguments that were passed in
         from the command line, and set up the connection to the
         commanded states database.
 
@@ -98,7 +96,7 @@ class SQLStateBuilder(StateBuilder):
         logger : Logger object, optional
             The Python Logger object to be used when logging.
         """
-        super(SQLStateBuilder, self).__init__(logger=logger)
+        super().__init__(logger=logger)
 
         # Note: `interrupt` is ignored in this class. This concept is not needed
         # since backstop 6.9, which provides the RUNNING_LOAD_TERMINATION_TIME
@@ -334,5 +332,5 @@ class ACISStateBuilder(StateBuilder):
         return states, state0
 
 
-state_builders = {"sql": SQLStateBuilder,
+state_builders = {"kadi": KadiStateBuilder,
                   "acis": ACISStateBuilder}
