@@ -6,9 +6,9 @@ import pytest
 
 @pytest.fixture(autouse=True, scope='module')
 def dea_rt(test_root):
-    # SQL state builder tests
-    rt = RegressionTester(DEACheck, test_root=test_root, sub_dir='sql')
-    rt.run_models(state_builder='sql')
+    # kadi state builder tests
+    rt = RegressionTester(DEACheck, test_root=test_root, sub_dir='kadi')
+    rt.run_models(state_builder='kadi')
     return rt
 
 # Prediction tests
