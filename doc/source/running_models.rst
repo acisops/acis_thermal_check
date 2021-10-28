@@ -8,7 +8,7 @@ command line. This section provides a brief description on how to run the
 models, including what the various options are. 
 
 Base Command-Line Arguments
-+++++++++++++++++++++++++++
+===========================
 
 The following is a brief description of the base collection of command-line 
 arguments accepted by a model using ``acis_thermal_check``. Additional arguments
@@ -50,13 +50,13 @@ may be added by individual models in the call to, as further detailed in
   --version             Print version
 
 Running Thermal Models: Examples
-++++++++++++++++++++++++++++++++
+================================
 
 The most common application for any model based on ``acis_thermal_check`` is to
 run the model for a load. In this case, the minimum command-line arguments are
 the path to the backstop file and the output directory for the files:
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ dpa_check --backstop_file=/data/acis/LoadReviews/2017/OCT1617/ofls --outdir=dpa_oct1617 
 
@@ -66,7 +66,7 @@ to science from a shutdown, or a replan due to a TOO, or any other interrupt,
 the thermal model should be run with the ``--interrupt`` flag to ensure 
 commanded states are properly determined:
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ psmc_check --backstop_file=/data/acis/LoadReviews/2017/AUG3017/ofls --interrupt --outdir=psmc_aug3017
 
@@ -75,14 +75,14 @@ of telemetry in a few minutes around the run start time. However, the model can
 be started with a specific temperature value using the ``--T-init`` argument, 
 which is assumed to be in degrees C:
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ acisfp_check --backstop_file=/data/acis/LoadReviews/2017/OCT1617/ofls --outdir=acisfp_oct1617 --T-init=22.0
 
 If necessary, thermal model runs can be run for a particular load for predictions only,
 using the ``--pred-only`` flag:
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ dea_check --backstop_file=/data/acis/LoadReviews/2017/AUG3017/ofls --outdir=dea_aug3017 --pred-only
 
@@ -91,6 +91,6 @@ simply omit the ``backstop_file`` argument. It may make sense here to supply a
 ``run_start`` argument, if one wants a different time than the current time to 
 validate:
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ dpa_check --run-start=2019:300:12:50:00 --outdir=validate_dec2019

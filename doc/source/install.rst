@@ -9,10 +9,10 @@ Installation and Development
     flight Ska, you can safely ignore this section. 
 
 This assumes that you have a cloned copy of ``acis_thermal_check`` from
-http://github.com/acisops/acis_thermal_check. To install the package simply 
+https://github.com/acisops/acis_thermal_check. To install the package simply 
 run:
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ python setup.py install
 
@@ -25,7 +25,7 @@ code on the fly and re-run without having to reinstall the code every time, you
 can use the ``develop`` option of ``setup.py``, which lets you run the code from
 the source directory itself:
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ python setup.py develop
 
@@ -34,13 +34,13 @@ you are using. If you do not (e.g., it is flight Ska), then you can still
 install and/or develop a custom version of the package. You can do that by using 
 the ``--user`` flag in addition to either of the above options:
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ python setup.py install --user
 
 or 
 
-.. code-block:: bash
+.. code-block:: text
 
     [~]$ python setup.py develop --user
 
