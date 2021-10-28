@@ -420,7 +420,6 @@ def make_state_builder(name, args):
                                       backstop_file=args.backstop_file,
                                       logger=mylog)
 
-
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
     elif name == "acis":
         # Create a state builder using the ACIS Ops backstop history

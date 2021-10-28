@@ -17,37 +17,26 @@ may be added by individual models in the call to, as further detailed in
 
 .. code-block:: text
 
-  --outdir OUTDIR       Output directory. If it does not exist it will be
-                        created. Default: 'out' 
-  --backstop_file BACKSTOP_FILE
-                        Path to the backstop file. If a directory, the
-                        backstop file will be searched for within this
-                        directory. Default: None
-  --oflsdir OFLSDIR     Path to the directory containing the backstop file
-                        (legacy argument). If specified, it will override
-                        the value of the backstop_file argument. Default: None
-  --model-spec MODEL_SPEC
-                        Model specification file. Defaults to the one included
-                        with the model package.
-  --days DAYS           Days of validation data. Default: 21
-  --run-start RUN_START
-                        Reference time to replace run start time for
-                        regression testing. The default is to use the current
-                        time.
-  --interrupt           Set this flag if this is an interrupt load.
-  --traceback TRACEBACK
-                        Enable tracebacks. Default: True
-  --pred-only           Only make predictions. Default: False
-  --verbose VERBOSE     Verbosity (0=quiet, 1=normal, 2=debug)
-  --T-init T_INIT       Starting temperature (degC). Default is to compute it 
-                        from telemetry.
-  --state-builder STATE_BUILDER
-                        StateBuilder to use (legacy|acis). Default:
-                        legacy
-  --nlet_file NLET_FILE
-                        Full path to the Non-Load Event Tracking that should
-                        be used for this model run
-  --version             Print version
+    --outdir OUTDIR       Output directory. If it does not exist it will be created. Default: 'out'
+    --backstop_file BACKSTOP_FILE
+                          Path to the backstop file. If a directory, the backstop file will be searched for within this directory. Default: None
+    --oflsdir OFLSDIR     Path to the directory containing the backstop file (legacy argument). If specified, it will override the value of the
+                          backstop_file argument. Default: None
+    --model-spec MODEL_SPEC
+                          Model specification file. Defaults to the one included with the model package.
+    --days DAYS           Days of validation data. Default: 21
+    --run-start RUN_START
+                          Reference time to replace run start time for regression testing. The default is to use the current time. Default: None
+    --interrupt           Set this flag if this is an interrupt load.
+    --traceback           Enable tracebacks. Default: True
+    --pred-only           Only make predictions. Default: False
+    --verbose VERBOSE     Verbosity (0=quiet, 1=normal, 2=debug)
+    --T-init T_INIT       Starting temperature (degC). Default is to compute it from telemetry.
+    --state-builder STATE_BUILDER
+                          StateBuilder to use (kadi|acis). Default: acis
+    --nlet_file NLET_FILE
+                          Full path to the Non-Load Event Tracking file that should be used for this model run.
+    --version             Print version
 
 Running Thermal Models: Examples
 ================================

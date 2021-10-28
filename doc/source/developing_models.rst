@@ -14,10 +14,10 @@ following steps should be followed. A new model needs the following:
 
 Developing a new thermal model to use with ``acis_thermal_check`` is fairly
 straightforward. What is typically only needed is to provide the model-specific 
-elements such as the limits for validation, and the code which actually runs the
-``xija`` model. There will also need to be some mainly boilerplate driver code 
-which collects command line arguments and runs the model. Finally, one will need
-to set up testing. 
+elements such as the limits for validation, and the code which is called to load
+model-specific data into the ``xija`` model. There will also need to be some mainly 
+boilerplate driver code which collects command line arguments and runs everything. 
+Finally, one will need to set up testing. 
 
 In the following, we will use the application ``dpa_check`` as a guide 
 on how to create a model and run it with ``acis_thermal_check``. 
