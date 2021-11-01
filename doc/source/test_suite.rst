@@ -3,7 +3,7 @@
 Using the ``acis_thermal_check`` Regression Testing Framework
 -------------------------------------------------------------
 
-``acis_thermal_check`` includes a regression test fremework which allows one to
+``acis_thermal_check`` includes a regression test framework which allows one to
 develop tests for a given thermal model against a set of "gold standard" model 
 outputs for a number of load weeks. This section describes the test suite, how 
 to run it, how to add new loads for testing, and how to update the gold standard
@@ -282,6 +282,6 @@ version of the file in its respective directory:
 
     [~]$ ls acis_thermal_check/tests/acisfp
     __init__.py  acisfp_test_spec.json  test_acisfp_acis.py  test_acisfp_viols.py
-    __pycache__  answers                test_acisfp_sql.py
+    __pycache__  answers                test_acisfp_kadi.py
 
 where in this case ``acisfp_test_spec.json`` is the file you want to replace. 
