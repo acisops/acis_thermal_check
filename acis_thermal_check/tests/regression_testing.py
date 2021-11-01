@@ -144,7 +144,7 @@ class RegressionTester:
         self.test_model_spec = tests_path / self.name / \
                                f"{self.name}_test_spec.json"
         if not self.outdir.exists():
-            self.outdir.mkdir(exist_ok=True)
+            self.outdir.mkdir(parents=True)
 
     def run_model(self, load_week, run_start=None, state_builder='acis',
                   interrupt=False, override_limits=None):
@@ -207,7 +207,7 @@ class RegressionTester:
     def _set_answer_dir(self, load_week):
         answer_dir = tests_path / f"{self.name}/answers" / load_week
         if not answer_dir.exists():
-            answer_dir.mkdir()
+            answer_dir.mkdir(parents=True)
         return answer_dir
 
     def run_test(self, test_name, load_week, answer_store=False):
