@@ -399,19 +399,19 @@ class ACISThermalCheck:
 
         Parameters
         ----------
-        plots_validation : list of dictionaries
-            List of dictionaries with information about the contents of the
+        plots_validation : dict of dictionaries
+            Dict of dictionaries with information about the contents of the
             plots which will be used to compute violations
         """
         mylog.info('Checking for validation violations')
 
         viols = []
 
-        for plot in plots_validation:
+        for key, plot in plots_validation.items():
             # 'plot' is actually a structure with plot info and stats about the
             # plotted data for a particular MSID. 'msid' can be a real MSID
             # (1DEAMZT) or pseudo like 'POWER'
-            msid = plot['msid']
+            msid = key.upper()
 
             # Make sure validation limits exist for this MSID
             if msid not in self.validation_limits:
@@ -899,7 +899,7 @@ class ACISThermalCheck:
         # find perigee passages
         rzs = events.rad_zones.filter(start, stop)
 
-        plots = []
+        plots = {}
         mylog.info('Making %s model validation plots and quantile table' % self.name.upper())
         quantiles = (1, 5, 16, 50, 84, 95, 99)
         # store lines of quantile table in a string and write out later
@@ -909,7 +909,7 @@ class ACISThermalCheck:
         xmin, xmax = cxctime2plotdate(model.times)[[0, -1]]
         fig_id = 0
         for msid in pred.keys():
-            plot = dict(msid=msid.upper())
+            plot = {}
             fig = plt.figure(10 + fig_id, figsize=(12, 6))
             fig.clf()
             scale = scales.get(msid, 1.0)
@@ -1005,7 +1005,7 @@ class ACISThermalCheck:
                             "ax": ax,
                             'filename': f'{msid}_valid_hist.png'}
             fig_id += 1
-            plots.append(plot)
+            plots[msid] = plot
 
         fig = plt.figure(10+fig_id, figsize=(12, 6))
         fig.clf()
@@ -1028,13 +1028,11 @@ class ACISThermalCheck:
                 ax.axvline(ptime, ls='--', color='C2',
                            linewidth=2, zorder=-10)
         ax.legend(fancybox=True, framealpha=0.5, loc=2)
-        plot = {"msid": "ccd_count",
-                "lines": {"fig": fig,
-                          "ax": ax,
-                          "filename": 'ccd_count_valid.png'}
-                }
-
-        plots.append(plot)
+        plots["ccd_count"] = {
+            "lines": {"fig": fig,
+                      "ax": ax,
+                      "filename": 'ccd_count_valid.png'}
+        }
 
         fig_id += 1
 
@@ -1058,13 +1056,11 @@ class ACISThermalCheck:
                     ax.axvline(ptime, ls='--', color='C2',
                                linewidth=2, zorder=-10)
 
-            plot = {"msid": 'earthheat__fptemp',
-                    "lines": {"fig": fig,
-                              "ax": ax,
-                              "filename": 'earth_solid_angle_valid.png'}
-                    }
-
-            plots.append(plot)
+            plots["earthheat__fptemp"] = {
+                "lines": {"fig": fig,
+                          "ax": ax,
+                          "filename": 'earth_solid_angle_valid.png'}
+            }
 
             fig_id += 1
 
@@ -1076,13 +1072,13 @@ class ACISThermalCheck:
             anchor = (0.295, 0.99)
         else:
             anchor = (0.4, 0.99)
-        plots[0]["lines"]["ax"].legend(bbox_to_anchor=anchor,
-                                       loc='lower left',
-                                       ncol=3, fontsize=14)
+        plots[self.msid]["lines"]["ax"].legend(bbox_to_anchor=anchor,
+                                               loc='lower left',
+                                               ncol=3, fontsize=14)
 
         # Now write all of the plots after possible
         # customizations have been made
-        for plot in plots:
+        for plot in plots.values():
             for key in plot:
                 if key in ['lines', 'hist']:
                     outfile = outdir / plot[key]['filename']
@@ -1115,7 +1111,7 @@ class ACISThermalCheck:
 
         Parameters
         ----------
-        plots : dict of dicts
+        plots : list of dicts
             Contains the hooks to the plot figures, axes, and filenames
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.

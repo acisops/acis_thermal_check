@@ -32,21 +32,6 @@ class DPACheck(ACISThermalCheck):
         super(DPACheck, self).__init__("1dpamzt", "dpa", valid_limits,
                                        hist_limit)
 
-    def custom_prediction_plots(self, plots):
-        """
-        Customization of prediction plots.
-
-        Parameters
-        ----------
-        plots : dict of dicts
-            Contains the hooks to the plot figures, axes, and filenames
-            and can be used to customize plots before they are written,
-            e.g. add limit lines, etc.
-        """
-        plots[self.name]['ax'].axhline(self.zero_feps_limit, linestyle='--',
-                                       color='dodgerblue', label="Zero FEPs",
-                                       linewidth=2.0)
-
     def custom_prediction_viols(self, times, temp, viols, load_start):
         """
         Custom handling of limit violations. This is for checking the
@@ -75,6 +60,21 @@ class DPACheck(ACISThermalCheck):
                               "type": "Min",
                               "values": zf_viols}
 
+    def custom_prediction_plots(self, plots):
+        """
+        Customization of prediction plots.
+
+        Parameters
+        ----------
+        plots : dict of dicts
+            Contains the hooks to the plot figures, axes, and filenames
+            and can be used to customize plots before they are written,
+            e.g. add limit lines, etc.
+        """
+        plots[self.name]['ax'].axhline(self.zero_feps_limit, linestyle='--',
+                                       color='dodgerblue', label="Zero FEPs",
+                                       linewidth=2.0)
+
     def custom_validation_plots(self, plots):
         """
         Customization of validation plots.
@@ -86,9 +86,9 @@ class DPACheck(ACISThermalCheck):
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
         """
-        plots[0]['lines']['ax'].axhline(self.zero_feps_limit, linestyle='--',
-                                        color='dodgerblue', zorder=-8,
-                                        linewidth=2, label="Zero FEPs")
+        plots["1dpamzt"]['lines']['ax'].axhline(
+            self.zero_feps_limit, linestyle='--', color='dodgerblue', zorder=-8,
+            linewidth=2, label="Zero FEPs")
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
