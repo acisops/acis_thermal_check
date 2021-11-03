@@ -57,15 +57,18 @@ and (in the case of the focal plane model) the obsids. The "gold standard" answe
 for these tests are stored in a JSON file.
 
 The Model Specification for Tests
-=================================
++++++++++++++++++++++++++++++++++
 
 A model specification file in JSON format is set aside for testing, and can be
 different from the one currently in use for thermal models. It should only be
 updated sparingly, usually if there are major changes to the structure of a 
 model. For directions on how to update, see :ref:`update_model_spec`.
 
+Running Tests
+=============
+
 Running the Entire ``acis_thermal_check`` Test Suite
-====================================================
+++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 There are two equivalent ways to run the entire ``acis_thermal_check`` test 
 suite. The first is to go to the root of the ``acis_thermal_check`` directory
@@ -101,7 +104,7 @@ Python session and run the ``test()`` method on it to run all of the tests:
     >>> acis_thermal_check.test()
 
 Running the Test Suite for a Particular Model
-=============================================
++++++++++++++++++++++++++++++++++++++++++++++
 
 If you only want to run the tests for a particular model, simply run the same
 command, but specify the ``tests`` subdirectory appropriate to the model you
@@ -119,7 +122,7 @@ want to test:
     [~]$ py.test -s acis_thermal_check/tests/psmc
 
 Running Specific Test Types
-===========================
++++++++++++++++++++++++++++
 
 If you only want to run certain types of tests for a particular model, you
 can call ``py.test`` on the file containing those tests:
@@ -142,7 +145,7 @@ can call ``py.test`` on the file containing those tests:
     [~]$ py.test -s acis_thermal_check/tests/dea/test_dea_viols.py
 
 What Happens if Some or All of the Tests Fail? 
-==============================================
+++++++++++++++++++++++++++++++++++++++++++++++
 
 Most warnings when running the tests are normal and benign. At this current time,
 they typically look like this:
