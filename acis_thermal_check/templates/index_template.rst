@@ -35,7 +35,7 @@ States                 `<states.dat>`_
 "Hot" ACIS Observations (-109 C limit)
 --------------------------------------
 {% for obsid in acis_hot_obs %}
-{{obsid}}  
+| {{ obsid }}  
 {% endfor %}
 {% endif %}
 
@@ -139,7 +139,7 @@ Earth Solid Angle
 
 {% else %}
 
-{{ msid }}
+{{ msid.upper() }}
 -----------------------
 
 {% if msid.upper() == proc.msid %}
