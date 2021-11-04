@@ -55,7 +55,7 @@ def fetch_ocat_data(obsid_list):
     A dict of NumPy arrays of the above properties.
     """
     import requests
-    from ska_helpers.retry import retry_call
+    from ska_helpers.retry import retry_call, RetryError
     from astropy.io import ascii
     warn = "Could not get the table from the Obscat to " \
            "determine which observations can go to -109 C. " \
@@ -72,7 +72,7 @@ def fetch_ocat_data(obsid_list):
     try:
         resp = retry_call(requests.get, [urlbase], {"params": params}, 
                           tries=4, delay=1)
-    except requests.ConnectionError:
+    except (requests.ConnectionError, RetryError):
         got_table = False
     else:
         if not resp.ok:
@@ -102,7 +102,7 @@ def fetch_ocat_data(obsid_list):
         try:
             resp = retry_call(requests.get, [urlbase], {"params": params},
                               tries=4, delay=1)
-        except requests.ConnectionError:
+        except(requests.ConnectionError, RetryError):
             got_seq_table = False
         else:
             if not resp.ok:
