@@ -196,7 +196,7 @@ class ACISThermalCheck:
         if not args.pred_only:
 
             # Make the validation plots
-            plots_validation = self.make_validation_plots(tlm, args.model_spec,
+            plots_validation = self.make_validation_plots(tlm, model_spec,
                                                           args.outdir)
 
             proc["op"] = [op_map[op] for op in self.hist_ops]
@@ -361,10 +361,12 @@ class ACISThermalCheck:
             necessary.
         """
         import xija
+        print(model_spec)
         model = xija.ThermalModel(self.name, start=tstart, stop=tstop,
                                   model_spec=model_spec)
         ephem = self.get_ephemeris(tstart, tstop, model.times)
         state_times = np.array([states['tstart'], states['tstop']])
+        print(model.comp)
         model.comp['sim_z'].set_data(states['simpos'], state_times)
         model.comp['eclipse'].set_data(False)
         for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking'):
@@ -1205,13 +1207,13 @@ class ACISThermalCheck:
                     hist_limit=self.hist_limit)
 
         # Figure out the MD5 sum of the model spec file
-        md5sum = hashlib.md5(open(model_spec, 'rb').read()).hexdigest()
+        #md5sum = hashlib.md5(open(model_spec, 'rb').read()).hexdigest()
         mylog.info('##############################'
                    '#######################################')
         mylog.info('# %s_check run at %s by %s'
                    % (self.name, proc['run_time'], proc['run_user']))
         mylog.info('# acis_thermal_check version = %s' % version)
-        mylog.info('# model_spec file MD5sum = %s' % md5sum)
+        #mylog.info('# model_spec file MD5sum = %s' % md5sum)
         mylog.info('###############################'
                    '######################################\n')
         mylog.info('Command line options:\n%s\n' % pformat(args.__dict__))
