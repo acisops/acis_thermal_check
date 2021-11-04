@@ -31,6 +31,14 @@ Earth Solid Angles     `<earth_solid_angles.dat>`_
 States                 `<states.dat>`_
 =====================  =============================================
 
+{% if proc.msid == "FPTEMP" %}
+"Hot" ACIS Observations (-109 C limit)
+--------------------------------------
+{% for obsid in acis_hot_obs %}
+{{obsid}}  
+{% endfor %}
+{% endif %}
+
 {% for key in viols.keys() %}
 
 {% if viols[key]["values"]|length > 0 %}

@@ -223,6 +223,8 @@ class ACISThermalCheck:
                    'proc': proc,
                    'pred_only': args.pred_only,
                    'plots_validation': plots_validation}
+        if self.msid == "fptemp":
+            context["acis_hot_obs"] = self.acis_hot_obs
 
         self.write_index_rst(args.outdir, context)
 
@@ -1190,6 +1192,7 @@ class ACISThermalCheck:
             attached to it as attributes
         """
         import hashlib
+        import json
 
         if not args.outdir.exists():
             args.outdir.mkdir()
@@ -1206,14 +1209,18 @@ class ACISThermalCheck:
                     name=self.name.upper(),
                     hist_limit=self.hist_limit)
 
+        if isinstance(model_spec, dict):
+            ms = json.dumps(model_spec, indent=4, sort_keys=True).encode()
+        else:
+            ms = open(model_spec, 'rb').read()
         # Figure out the MD5 sum of the model spec file
-        #md5sum = hashlib.md5(open(model_spec, 'rb').read()).hexdigest()
+        md5sum = hashlib.md5(ms).hexdigest()
         mylog.info('##############################'
                    '#######################################')
         mylog.info('# %s_check run at %s by %s'
                    % (self.name, proc['run_time'], proc['run_user']))
         mylog.info('# acis_thermal_check version = %s' % version)
-        #mylog.info('# model_spec file MD5sum = %s' % md5sum)
+        mylog.info('# model_spec file MD5sum = %s' % md5sum)
         mylog.info('###############################'
                    '######################################\n')
         mylog.info('Command line options:\n%s\n' % pformat(args.__dict__))

@@ -50,6 +50,7 @@ class ACISFPCheck(ACISThermalCheck):
         # Create an empty observation list which will hold the results. This
         # list contains all ACIS and all ECS observations.
         self.acis_and_ecs_obs = []
+        self.acis_hot_obs = []
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
@@ -321,6 +322,10 @@ class ACISFPCheck(ACISThermalCheck):
         viols["ecs"] = {"name": f"Science Orbit ECS ({self.cold_ecs_limit} C)",
                         "type": "Min",
                         "values": ecs_viols}
+
+        # Store all obsids which can go to -109 C
+        for obs in ACIS_hot_obs:
+            self.acis_hot_obs.append(obs["obsid"])
 
         return viols
 
