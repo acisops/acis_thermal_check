@@ -363,12 +363,10 @@ class ACISThermalCheck:
             necessary.
         """
         import xija
-        print(model_spec)
         model = xija.ThermalModel(self.name, start=tstart, stop=tstop,
                                   model_spec=model_spec)
         ephem = self.get_ephemeris(tstart, tstop, model.times)
         state_times = np.array([states['tstart'], states['tstop']])
-        print(model.comp)
         model.comp['sim_z'].set_data(states['simpos'], state_times)
         model.comp['eclipse'].set_data(False)
         for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking'):
