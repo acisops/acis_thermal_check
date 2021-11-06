@@ -1113,7 +1113,7 @@ class ACISThermalCheck:
 
         Parameters
         ----------
-        plots : list of dicts
+        plots : dict of dicts
             Contains the hooks to the plot figures, axes, and filenames
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
