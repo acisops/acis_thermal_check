@@ -628,7 +628,7 @@ like this:
                                          answer_store=answer_store)
 
 After the test is run with the ``--answer_store`` flag set 
-(see :ref:`test-suite`), the JSON file will look like this:
+(see :ref:`test_suite`), the JSON file will look like this:
 
 .. code-block:: json
 
