@@ -90,7 +90,7 @@ def config_logging(outdir, verbose):
                 1: logging.INFO,
                 2: logging.DEBUG}.get(verbose, logging.INFO)
 
-    formatter = logging.Formatter('%(message)s')
+    formatter = logging.Formatter('%(name)-3s: [%(levelname)-9s] %(message)s')
 
     console = logging.StreamHandler()
     console.setFormatter(formatter)
