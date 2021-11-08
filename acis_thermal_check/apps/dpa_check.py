@@ -111,7 +111,7 @@ class DPACheck(ACISThermalCheck):
 
 
 def main():
-    args = get_options("dpa")
+    args = get_options()
     dpa_check = DPACheck()
     try:
         dpa_check.run(args)

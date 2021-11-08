@@ -34,7 +34,7 @@ class FEP1ActelCheck(DPABoardTempCheck):
 
 
 def main():
-    args = get_options("fep1_actel")
+    args = get_options()
     fep1_actel_check = FEP1ActelCheck()
     try:
         fep1_actel_check.run(args)

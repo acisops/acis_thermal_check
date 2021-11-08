@@ -53,7 +53,7 @@ class DEACheck(ACISThermalCheck):
 
 
 def main():
-    args = get_options("dea")
+    args = get_options()
     dea_check = DEACheck()
     try:
         dea_check.run(args)

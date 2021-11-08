@@ -45,7 +45,7 @@ class PSMCCheck(ACISThermalCheck):
 
 
 def main():
-    args = get_options("psmc")
+    args = get_options()
     psmc_check = PSMCCheck()
     try:
         psmc_check.run(args)

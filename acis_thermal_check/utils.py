@@ -322,7 +322,7 @@ def plot_two(fig_id, x, y, x2, y2, yy=None, linewidth=2,
     return {'fig': fig, 'ax': ax, 'ax2': ax2}
 
 
-def get_options(name, opts=None):
+def get_options(opts=None):
     """
     Construct the argument parser for command-line options for running
     predictions and validations for a load. Sets up the parser and 
@@ -331,8 +331,6 @@ def get_options(name, opts=None):
 
     Parameters
     ----------
-    name : string
-        The name of the ACIS component whose temperature is being modeled.
     opts: dictionary
         A (key, value) dictionary of additional options for the parser. These
         may be defined by the thermal model checking tool if necessary.

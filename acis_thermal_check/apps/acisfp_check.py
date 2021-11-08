@@ -474,7 +474,7 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
 
 
 def main():
-    args = get_options("acisfp")
+    args = get_options()
     acisfp_check = ACISFPCheck()
     try:
         acisfp_check.run(args)

@@ -34,7 +34,7 @@ class FEP1MongCheck(DPABoardTempCheck):
 
 
 def main():
-    args = get_options("fep1_mong")
+    args = get_options()
     fep1_mong_check = FEP1MongCheck()
     try:
         fep1_mong_check.run(args)

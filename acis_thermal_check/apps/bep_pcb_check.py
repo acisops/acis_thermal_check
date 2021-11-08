@@ -33,7 +33,7 @@ class BEPPCBCheck(DPABoardTempCheck):
 
 
 def main():
-    args = get_options("bep_pcb")
+    args = get_options()
     bep_pcb_check = BEPPCBCheck()
     try:
         bep_pcb_check.run(args)
