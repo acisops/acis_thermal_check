@@ -204,7 +204,7 @@ class ACISThermalCheck:
             # Determine violations of temperature validation
             valid_viols = self.make_validation_viols(plots_validation)
             if len(valid_viols) > 0:
-                mylog.info('validation warning(s) in output at %s' % args.outdir)
+                mylog.warning('validation warning(s) in output at %s' % args.outdir)
         else:
             valid_viols = defaultdict(lambda: None)
             plots_validation = defaultdict(lambda: None)
@@ -433,8 +433,8 @@ class ACISThermalCheck:
                             'quant': quantile,
                             }
                     viols.append(viol)
-                    mylog.info('WARNING: %s %d%% quantile value of %s exceeds '
-                               'limit of %.2f' % (msid, quantile,
+                    mylog.warning('%s %d%% quantile value of %s exceeds '
+                                  'limit of %.2f' % (msid, quantile,
                                                   msid_quantile_value, limit))
 
         return viols
@@ -561,7 +561,7 @@ class ACISThermalCheck:
             The commanded states to be written to the file.
         """
         outfile = outdir / 'states.dat'
-        mylog.info('Writing states to %s' % outfile)
+        mylog.debug('Writing states to %s' % outfile)
         states_table = Table(states, copy=False)
         states_table['pitch'].format = '%.2f'
         states_table['tstart'].format = '%.2f'
@@ -583,7 +583,7 @@ class ACISThermalCheck:
             Temperatures in Celsius
         """
         outfile = outdir / 'temperatures.dat'
-        mylog.info('Writing temperatures to %s' % outfile)
+        mylog.debug('Writing temperatures to %s' % outfile)
         T = temps[self.name]
         temp_table = Table([times, CxoTime(times).date, T],
                            names=['time', 'date', self.msid],
@@ -787,7 +787,7 @@ class ACISThermalCheck:
         for key in plots:
             if key != self.msid:
                 outfile = outdir / plots[key]['filename']
-                mylog.info('Writing plot file %s' % outfile)
+                mylog.debug('Writing plot file %s' % outfile)
                 plots[key]['fig'].savefig(outfile)
 
         return plots
@@ -1084,7 +1084,7 @@ class ACISThermalCheck:
             for key in plot:
                 if key in ['lines', 'hist']:
                     outfile = outdir / plot[key]['filename']
-                    mylog.info('Writing plot file %s' % outfile)
+                    mylog.debug('Writing plot file %s' % outfile)
                     plot[key]['fig'].savefig(outfile)
 
         # Write quantile tables to a CSV file
@@ -1168,7 +1168,7 @@ class ACISThermalCheck:
         template_path = TASK_DATA / \
                         "acis_thermal_check/templates/index_template.rst"
         outfile = outdir / 'index.rst'
-        mylog.info('Writing report file %s' % outfile)
+        mylog.debug('Writing report file %s' % outfile)
         # Open up the reST template and send the context to it using jinja2
         with open(template_path) as fin:
             index_template = fin.read()
@@ -1213,14 +1213,10 @@ class ACISThermalCheck:
             ms = open(model_spec, 'rb').read()
         # Figure out the MD5 sum of the model spec file
         md5sum = hashlib.md5(ms).hexdigest()
-        mylog.info('##############################'
-                   '#######################################')
         mylog.info('# %s_check run at %s by %s'
                    % (self.name, proc['run_time'], proc['run_user']))
         mylog.info('# acis_thermal_check version = %s' % version)
         mylog.info('# model_spec file MD5sum = %s' % md5sum)
-        mylog.info('###############################'
-                   '######################################\n')
         mylog.info('Command line options:\n%s\n' % pformat(args.__dict__))
 
         mylog.info("ACISThermalCheck is using the '%s' state builder." % args.state_builder)
