@@ -368,7 +368,8 @@ class ACISThermalCheck:
         ephem = self.get_ephemeris(tstart, tstop, model.times)
         state_times = np.array([states['tstart'], states['tstop']])
         model.comp['sim_z'].set_data(states['simpos'], state_times)
-        model.comp['eclipse'].set_data(False)
+        model.comp['eclipse'].set_data(states['eclipse'] != 'DAY',
+                                       state_times)
         for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking'):
             model.comp[name].set_data(states[name], state_times)
         pitch, roll = calc_pitch_roll(model.times, ephem, states)
