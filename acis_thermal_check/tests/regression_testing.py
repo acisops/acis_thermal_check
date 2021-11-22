@@ -167,7 +167,7 @@ class RegressionTester:
             Override any margin by setting a new value to its name
             in this dictionary. SHOULD ONLY BE USED FOR TESTING.
         """
-        out_dir = self.outdir / load_week
+        out_dir = self.outdir / load_week / self.name
         if load_week in nlets:
             nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
         else:
@@ -226,7 +226,7 @@ class RegressionTester:
             If True, store the generated data as the new answers.
             If False, only test. Default: False
         """
-        out_dir = self.outdir / load_week
+        out_dir = self.outdir / load_week / self.name
         if test_name == "prediction":
             filenames = ["temperatures.dat", "states.dat"]
             if self.name == "acisfp":
@@ -383,7 +383,7 @@ class RegressionTester:
         next_year = f"{int(load_year)+1}"
         self.run_model(load_week, run_start=viol_data['run_start'], 
                        override_limits=viol_data['limits'])
-        out_dir = self.outdir / load_week
+        out_dir = self.outdir / load_week / self.name
         index_rst = out_dir / "index.rst"
         with open(index_rst, 'r') as myfile:
             i = 0

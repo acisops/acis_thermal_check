@@ -1194,7 +1194,7 @@ class ACISThermalCheck:
         import json
 
         if not args.outdir.exists():
-            args.outdir.mkdir()
+            args.outdir.mkdir(parents=True)
 
         # Configure the logger so that it knows which model
         # we are using and how verbose it is supposed to be
