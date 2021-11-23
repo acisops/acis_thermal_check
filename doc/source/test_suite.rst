@@ -50,11 +50,11 @@ Violations Tests
 ++++++++++++++++
 
 Violations tests set up a thermal model run which is guaranteed to violate thermal
-limits, often by setting those limits lower than their real values. It then checks
-that the violations which occur are the expected ones, including the start and stop
-times for the violations, the maximum or minimum temperatures for the violations,
-and (in the case of the focal plane model) the obsids. The "gold standard" answers
-for these tests are stored in a JSON file.
+limits, often by setting those limits in such a way as to force a violation. It then 
+checks that the violations which occur are the expected ones, including the start 
+and stop times for the violations, the maximum or minimum temperatures for the 
+violations, and (in the case of the focal plane model) the obsids. The "gold 
+standard" answers for these tests are stored in a JSON file.
 
 The Model Specification for Tests
 +++++++++++++++++++++++++++++++++
@@ -288,3 +288,39 @@ version of the file in its respective directory:
     __pycache__  answers                test_acisfp_kadi.py
 
 where in this case ``acisfp_test_spec.json`` is the file you want to replace. 
+
+.. _adding_new_test_loads:
+
+Adding New Loads for the Prediction and Validation Tests
+========================================================
+
+The tests of the prediction and validation outputs for the thermal models
+run on a series of past loads. These are stored in a ``test_loads`` dictionary
+in the ``regression_testing.py`` file in the ``acis_thermal_check/tests`` 
+directory:
+
+.. code-block:: python
+
+    # Loads for regression testing
+    test_loads = {"normal": ["MAR0617A", "MAR2017E", "JUL3117B", "SEP0417A"],
+                  "interrupt": ["MAR1517B", "JUL2717A", "AUG2517C", "AUG3017A",
+                                "MAR0817B", "MAR1117A", "APR0217B", "SEP0917C"]}
+    all_loads = test_loads["normal"]+test_loads["interrupt"]
+
+    nlets = {"MAR0617A", "MAR0817B", "SEP0417A"}
+
+Note that the dictionary is split up into two lists, one for ``"normal"`` loads
+and another for ``"interrupt"`` loads, the latter including loads which begin
+after an interrupt of any kind, including safing actions, radiation replans, ToOs,
+etc. If you want to add new loads to the list to be tested, simply add them to
+either the ``"normal"`` or ``"interrupt"`` list as appropriate. 
+
+Note also the ``nlets`` set below this dictionary. The standard NLET file in 
+use for creating histories may not always be the "correct" one for the test 
+load in question, since at the time the model was originally run for the load
+review the contents of the NLET file at that time may not have included events 
+which happened later. If you want to recreate the situation at the time the
+model was originally run as precisely as possible, specify the name of the load
+in the ``nlets`` set and add the NLET file to the 
+``acis_thermal_check/tests/data/nlets`` directory, with the naming convention
+``"TEST_NLET_{load_name}.txt"``, where ``"load_name"`` is of the form``"MAR0617A"``.
