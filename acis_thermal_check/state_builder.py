@@ -9,14 +9,13 @@ from Ska.File import get_globfiles
 
 # Define state keys for states, corresponding to the legacy states in
 # Chandra.cmd_states.
-STATE_KEYS = ['ccd_count', 'clocking', 'dec', 'dither',
+STATE_KEYS = ['ccd_count', 'clocking', 'dec', 'dither', 'eclipse',
               'fep_count', 'hetg', 'letg', 'obsid', 'pcad_mode', 'pitch',
               'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 'si_mode',
-              'simfa_pos', 'simpos',
-              'vid_board']
+              'simfa_pos', 'simpos', 'vid_board']
 
 
-class StateBuilder(object):
+class StateBuilder:
     """
     This is the base class for all StateBuilder objects. It
     should not be used by itself, but subclassed.
@@ -72,19 +71,17 @@ class StateBuilder(object):
         return states
 
 
-class SQLStateBuilder(StateBuilder):
+class KadiStateBuilder(StateBuilder):
     """
-    The SQLStateBuilder contains the original code used to
+    The KadiStateBuilder contains kadi-only code used to
     obtain commanded states for prediction and validation of
     a thermal model for a particular command load. It can also
     be used for validation only.
-
-    SQL is no longer relevant as the commands and states come from kadi.
     """
     def __init__(self, interrupt=False, backstop_file=None,
                  logger=None):
         """
-        Give the SQLStateBuilder arguments that were passed in
+        Give the KadiStateBuilder arguments that were passed in
         from the command line, and set up the connection to the
         commanded states database.
 
@@ -98,7 +95,7 @@ class SQLStateBuilder(StateBuilder):
         logger : Logger object, optional
             The Python Logger object to be used when logging.
         """
-        super(SQLStateBuilder, self).__init__(logger=logger)
+        super().__init__(logger=logger)
 
         # Note: `interrupt` is ignored in this class. This concept is not needed
         # since backstop 6.9, which provides the RUNNING_LOAD_TERMINATION_TIME
@@ -238,9 +235,9 @@ class ACISStateBuilder(StateBuilder):
                                                            self.nlet_file, 
                                                            outdir,
                                                            verbose)
-        super(ACISStateBuilder, self).__init__()
+        super().__init__()
 
-       # Save some arguments to class attributes
+        # Save some arguments to class attributes
         self.interrupt = interrupt
         self.backstop_file = backstop_file
 
@@ -255,7 +252,6 @@ class ACISStateBuilder(StateBuilder):
             # Capture the times of the first and last commands in the Review load
             self.tstart = self.BSC.get_review_tstart()
             self.tstop = self.BSC.get_review_tstop()
-
 
     def get_prediction_states(self, tbegin):
         """
@@ -287,13 +283,11 @@ class ACISStateBuilder(StateBuilder):
         # Make a copy of the Review Load Commands. This will have
         # Continuity commands concatenated to it and will be the final product
 
-        import copy
-
         # Ask Backstop History to assemble the history for this load
         self.BSC.Assemble_History(self.backstop_file, tbegin, self.interrupt)
 
         # Read in the assembled history file as kadi commands
-        bs_cmds =  kadi.commands.get_cmds_from_backstop( self.BSC.assembled_hist_file_path)
+        bs_cmds = kadi.commands.get_cmds_from_backstop(self.BSC.assembled_hist_file_path)
 
         bs_cmds['time'] = CxoTime(bs_cmds['date']).secs
 
@@ -301,9 +295,6 @@ class ACISStateBuilder(StateBuilder):
 
         # Clip the assembled command list to tbegin
         bs_cmds = bs_cmds[bs_cmds['date'] > tbegin]
-
-        # This is a kadi.commands.CommandTable (subclass of astropy Table)
-        bs_dates = bs_cmds['date']
 
         # Scheduled stop time is the end of propagation, either the explicit
         # time as a pseudo-command in the loads or the last backstop command time.
@@ -318,7 +309,7 @@ class ACISStateBuilder(StateBuilder):
         # commands.
 
         with kadi_states.disable_grating_move_duration():
-            states = kadi_states.get_states(cmds=bs_cmds, start=tbegin, 
+            states = kadi_states.get_states(cmds=bs_cmds, start=tbegin,
                                             stop=sched_stop,
                                             state_keys=STATE_KEYS)
 
@@ -334,5 +325,5 @@ class ACISStateBuilder(StateBuilder):
         return states, state0
 
 
-state_builders = {"sql": SQLStateBuilder,
+state_builders = {"kadi": KadiStateBuilder,
                   "acis": ACISStateBuilder}

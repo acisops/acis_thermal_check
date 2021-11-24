@@ -31,6 +31,14 @@ Earth Solid Angles     `<earth_solid_angles.dat>`_
 States                 `<states.dat>`_
 =====================  =============================================
 
+{% if proc.msid == "FPTEMP" %}
+"Hot" ACIS Observations (-109 C limit)
+--------------------------------------
+{% for obsid in acis_hot_obs %}
+| {{ obsid }}  
+{% endfor %}
+{% endif %}
+
 {% for key in viols.keys() %}
 
 {% if viols[key]["values"]|length > 0 %}
@@ -90,9 +98,9 @@ Note: Quantiles are calculated using only points where {{quan_text}}.
    :header: "MSID", "1%", "5%", "16%", "50%", "84%", "95%", "99%"
    :widths: 15, 10, 10, 10, 10, 10, 10, 10
 
-{% for plot in plots_validation %}
+{% for msid, plot in plots_validation.items() %}
 {% if plot.quant01 %}
-   {{plot.msid}},{{plot.quant01}},{{plot.quant05}},{{plot.quant16}},{{plot.quant50}},{{plot.quant84}},{{plot.quant95}},{{plot.quant99}}
+   {{msid}},{{plot.quant01}},{{plot.quant05}},{{plot.quant16}},{{plot.quant50}},{{plot.quant84}},{{plot.quant95}},{{plot.quant99}}
 {% endif %}
 {% endfor%}
 
@@ -113,16 +121,16 @@ No Validation Violations
 {% endif %}
 
 
-{% for plot in plots_validation %}
+{% for msid, plot in plots_validation.items() %}
 
-{% if plot.msid == "ccd_count" %}
+{% if msid == "ccd_count" %}
 
 CCD/FEP Count
 -------------
 
 .. image:: {{plot.lines.filename}}
 
-{% elif plot.msid == "earthheat__fptemp" %}
+{% elif msid == "earthheat__fptemp" %}
 
 Earth Solid Angle
 -----------------
@@ -131,10 +139,10 @@ Earth Solid Angle
 
 {% else %}
 
-{{ plot.msid }}
+{{ msid.upper() }}
 -----------------------
 
-{% if plot.msid == proc.msid %}
+{% if msid.upper() == proc.msid %}
 {% if proc.msid == "FPTEMP" %}
 {% set hist_string = proc.hist_limit.0|join(" C <= FPTEMP <= ") + " C" %}
 {% elif proc.hist_limit|length == 2 %}

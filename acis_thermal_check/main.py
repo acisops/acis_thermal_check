@@ -3,7 +3,6 @@
 import matplotlib
 matplotlib.use('Agg')
 
-import os
 from pprint import pformat
 from collections import OrderedDict, defaultdict
 import re
@@ -12,6 +11,7 @@ import getpass
 import numpy as np
 import Ska.DBI
 import Ska.Numpy
+from xija.get_model_spec import get_xija_model_spec
 from cxotime import CxoTime
 import matplotlib.pyplot as plt
 from Ska.Matplotlib import cxctime2plotdate, \
@@ -28,14 +28,16 @@ from acis_thermal_check.utils import \
     paint_perigee
 from kadi import events
 from astropy.table import Table
-import ska_helpers
+from pathlib import Path, PurePath
+
 
 op_map = {"greater": ">",
           "greater_equal": ">=",
           "less": "<",
           "less_equal": "<="}
 
-class ACISThermalCheck(object):
+
+class ACISThermalCheck:
     r"""
     ACISThermalCheck class for making thermal model predictions
     and validating past model data against telemetry
@@ -111,8 +113,7 @@ class ACISThermalCheck(object):
 
     def _handle_limits(self):
         from yaml import load, Loader
-        limits_file = os.path.join(TASK_DATA, 'acis_thermal_check', 
-                                   'data', 'limits.yml')
+        limits_file = TASK_DATA / 'acis_thermal_check/data/limits.yml'
         with open(limits_file, "r") as f:
             limits = load(f, Loader=Loader)[self.msid]
         for k, v in limits.items():
@@ -136,13 +137,17 @@ class ACISThermalCheck(object):
             to avoid it being used accidentally.
         """
         if args.version:
-            pkg_version = ska_helpers.get_version("{}_check".format(self.name))
-            print(f"{self.name}_check version {pkg_version}")
             print(f"acis_thermal_check version {version}")
             return
 
         # First, do some initial setup and log important information.
-        proc = self._setup_proc_and_logger(args)
+
+        if args.model_spec is None:
+            model_spec = get_xija_model_spec(self.name)[0]
+        else:
+            model_spec = args.model_spec
+
+        proc = self._setup_proc_and_logger(args, model_spec)
 
         # Record the selected state builder in the class attributes
         self.state_builder = make_state_builder(args.state_builder, args)
@@ -183,7 +188,7 @@ class ACISThermalCheck(object):
         # make predictions on a backstop file if defined
         if args.backstop_file is not None:
             pred = self.make_week_predict(tstart, tstop, tlm, args.T_init,
-                                          args.model_spec, args.outdir, args.run_start)
+                                          model_spec, args.outdir)
         else:
             pred = defaultdict(lambda: None)
 
@@ -191,7 +196,7 @@ class ACISThermalCheck(object):
         if not args.pred_only:
 
             # Make the validation plots
-            plots_validation = self.make_validation_plots(tlm, args.model_spec,
+            plots_validation = self.make_validation_plots(tlm, model_spec,
                                                           args.outdir)
 
             proc["op"] = [op_map[op] for op in self.hist_ops]
@@ -199,7 +204,7 @@ class ACISThermalCheck(object):
             # Determine violations of temperature validation
             valid_viols = self.make_validation_viols(plots_validation)
             if len(valid_viols) > 0:
-                mylog.info('validation warning(s) in output at %s' % args.outdir)
+                mylog.warning('validation warning(s) in output at %s' % args.outdir)
         else:
             valid_viols = defaultdict(lambda: None)
             plots_validation = defaultdict(lambda: None)
@@ -218,11 +223,13 @@ class ACISThermalCheck(object):
                    'proc': proc,
                    'pred_only': args.pred_only,
                    'plots_validation': plots_validation}
+        if self.msid == "fptemp":
+            context["acis_hot_obs"] = self.acis_hot_obs
 
         self.write_index_rst(args.outdir, context)
 
         # Second, convert reST to HTML
-        self.rst_to_html(args.outdir, proc)
+        self.rst_to_html(args.outdir)
 
         return
 
@@ -236,7 +243,7 @@ class ACISThermalCheck(object):
                                                 times)
         return ephem
 
-    def get_states(self, tlm, T_init, run_start_val):
+    def get_states(self, tlm, T_init):
         """
         Call the state builder to get the commanded states and
         determine the initial temperature.
@@ -275,7 +282,7 @@ class ACISThermalCheck(object):
         return states, state0
 
     def make_week_predict(self, tstart, tstop, tlm, T_init, model_spec,
-                          outdir, run_start_val):
+                          outdir):
         """
         Parameters
         ----------
@@ -292,13 +299,13 @@ class ACISThermalCheck(object):
             initial value will be constructed from telemetry.
         model_spec : string
             The path to the thermal model specification.
-        outdir : string
+        outdir : Path
             The directory to write outputs to.
         """
         mylog.info('Calculating %s thermal model' % self.name.upper())
 
         # Get commanded states and set initial temperature
-        states, state0 = self.get_states(tlm, T_init, run_start_val)
+        states, state0 = self.get_states(tlm, T_init)
 
         # calc_model actually does the model calculation by running
         # model-specific code.
@@ -361,7 +368,8 @@ class ACISThermalCheck(object):
         ephem = self.get_ephemeris(tstart, tstop, model.times)
         state_times = np.array([states['tstart'], states['tstop']])
         model.comp['sim_z'].set_data(states['simpos'], state_times)
-        model.comp['eclipse'].set_data(False)
+        model.comp['eclipse'].set_data(states['eclipse'] != 'DAY',
+                                       state_times)
         for name in ('ccd_count', 'fep_count', 'vid_board', 'clocking'):
             model.comp[name].set_data(states[name], state_times)
         pitch, roll = calc_pitch_roll(model.times, ephem, states)
@@ -370,8 +378,7 @@ class ACISThermalCheck(object):
 
         if self.name in ["psmc", "acisfp"] and state0 is not None:
             # Detector housing heater contribution to heating
-            htrbfn = os.path.join(TASK_DATA, 'acis_thermal_check', 'data',
-                                  'dahtbon_history.rdb')
+            htrbfn = TASK_DATA / "acis_thermal_check/data/dahtbon_history.rdb"
             mylog.info('Reading file of dahtrb commands from file %s' % htrbfn)
             htrb = ascii.read(htrbfn, format='rdb')
             dh_heater_times = CxoTime(htrb['time']).secs
@@ -395,19 +402,19 @@ class ACISThermalCheck(object):
 
         Parameters
         ----------
-        plots_validation : list of dictionaries
-            List of dictionaries with information about the contents of the
+        plots_validation : dict of dictionaries
+            Dict of dictionaries with information about the contents of the
             plots which will be used to compute violations
         """
         mylog.info('Checking for validation violations')
 
         viols = []
 
-        for plot in plots_validation:
+        for key, plot in plots_validation.items():
             # 'plot' is actually a structure with plot info and stats about the
             # plotted data for a particular MSID. 'msid' can be a real MSID
             # (1DEAMZT) or pseudo like 'POWER'
-            msid = plot['msid']
+            msid = key.upper()
 
             # Make sure validation limits exist for this MSID
             if msid not in self.validation_limits:
@@ -427,8 +434,8 @@ class ACISThermalCheck(object):
                             'quant': quantile,
                             }
                     viols.append(viol)
-                    mylog.info('WARNING: %s %d%% quantile value of %s exceeds '
-                               'limit of %.2f' % (msid, quantile,
+                    mylog.warning('%s %d%% quantile value of %s exceeds '
+                                  'limit of %.2f' % (msid, quantile,
                                                   msid_quantile_value, limit))
 
         return viols
@@ -549,13 +556,13 @@ class ACISThermalCheck(object):
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             The directory the file will be written to.
         states : NumPy record array
             The commanded states to be written to the file.
         """
-        outfile = os.path.join(outdir, 'states.dat')
-        mylog.info('Writing states to %s' % outfile)
+        outfile = outdir / 'states.dat'
+        mylog.debug('Writing states to %s' % outfile)
         states_table = Table(states, copy=False)
         states_table['pitch'].format = '%.2f'
         states_table['tstart'].format = '%.2f'
@@ -569,15 +576,15 @@ class ACISThermalCheck(object):
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             The directory the file will be written to.
         times : NumPy array
             Times in seconds from the start of the mission
         temps : NumPy array
             Temperatures in Celsius
         """
-        outfile = os.path.join(outdir, 'temperatures.dat')
-        mylog.info('Writing temperatures to %s' % outfile)
+        outfile = outdir / 'temperatures.dat'
+        mylog.debug('Writing temperatures to %s' % outfile)
         T = temps[self.name]
         temp_table = Table([times, CxoTime(times).date, T],
                            names=['time', 'date', self.msid],
@@ -607,7 +614,7 @@ class ACISThermalCheck(object):
         # lines denoting each perigee passage on the plots
         #
         # Open the file
-        crm_file_path = glob.glob(self.bsdir + "/*CRM*")[0]
+        crm_file_path = glob.glob(f"{self.bsdir}/*CRM*")[0]
         crm_file = open(crm_file_path, 'r')
 
         alines = crm_file.readlines()
@@ -664,18 +671,38 @@ class ACISThermalCheck(object):
         plots['pow_sim']['ax'].legend(fancybox=True, framealpha=0.5, loc=2)
         plots['pow_sim']['filename'] = 'pow_sim.png'
 
-        # Make a plot of off-nominal roll
-        plots['roll'] = plot_one(
-            fig_id=num_figs+2,
-            title='Off-Nominal Roll',
-            xlabel='Date',
-            x=self.predict_model.times,
-            y=self.predict_model.comp["roll"].mvals,
-            xmin=plot_start,
-            ylabel='Roll Angle (deg)',
-            ylim=(-20.0, 20.0),
-            figsize=figsize, width=w1, load_start=load_start)
-        plots['roll']['filename'] = 'roll.png'
+        if self.msid == "fptemp":
+            plt_name = "roll_taco"
+            # Make a plot of off-nominal roll and earth solid angle
+            plots['roll_taco'] = plot_two(
+                fig_id=num_figs + 2,
+                title='Off-Nominal Roll and Earth Solid Angle in Rad FOV',
+                xlabel='Date',
+                x=self.predict_model.times,
+                y=self.predict_model.comp["roll"].dvals,
+                xmin=plot_start,
+                ylabel='Roll Angle (deg)',
+                ylim=(-20.0, 20.0),
+                x2=self.predict_model.times,
+                y2=self.predict_model.comp['earthheat__fptemp'].dvals,
+                ylabel2='Earth Solid Angle (sr)',
+                ylim2=(1.0e-3, 1.0),
+                figsize=figsize, width=w1, load_start=load_start)
+            plots['roll_taco']['ax2'].set_yscale("log")
+        else:
+            plt_name = "roll"
+            # Make a plot of off-nominal roll
+            plots['roll'] = plot_one(
+                fig_id=num_figs+2,
+                title='Off-Nominal Roll',
+                xlabel='Date',
+                x=self.predict_model.times,
+                y=self.predict_model.comp["roll"].mvals,
+                xmin=plot_start,
+                ylabel='Roll Angle (deg)',
+                ylim=(-20.0, 20.0),
+                figsize=figsize, width=w1, load_start=load_start)
+        plots[plt_name]['filename'] = f'{plt_name}.png'
 
     def make_prediction_plots(self, outdir, states, temps, load_start):
         """
@@ -760,8 +787,8 @@ class ACISThermalCheck(object):
         # customizations have been made
         for key in plots:
             if key != self.msid:
-                outfile = os.path.join(outdir, plots[key]['filename'])
-                mylog.info('Writing plot file %s' % outfile)
+                outfile = outdir / plots[key]['filename']
+                mylog.debug('Writing plot file %s' % outfile)
                 plots[key]['fig'].savefig(outfile)
 
         return plots
@@ -818,7 +845,7 @@ class ACISThermalCheck(object):
             NumPy record array of telemetry
         model_spec : string
             The path to the thermal model specification.
-        outdir : string
+        outdir : Path
             The directory to write outputs to.
         """
         import pickle
@@ -875,7 +902,7 @@ class ACISThermalCheck(object):
         # find perigee passages
         rzs = events.rad_zones.filter(start, stop)
 
-        plots = []
+        plots = {}
         mylog.info('Making %s model validation plots and quantile table' % self.name.upper())
         quantiles = (1, 5, 16, 50, 84, 95, 99)
         # store lines of quantile table in a string and write out later
@@ -885,7 +912,7 @@ class ACISThermalCheck(object):
         xmin, xmax = cxctime2plotdate(model.times)[[0, -1]]
         fig_id = 0
         for msid in pred.keys():
-            plot = dict(msid=msid.upper())
+            plot = {}
             fig = plt.figure(10 + fig_id, figsize=(12, 6))
             fig.clf()
             scale = scales.get(msid, 1.0)
@@ -974,14 +1001,14 @@ class ACISThermalCheck(object):
                 if ok2.any():
                     ax.hist(diff2 / scale, bins=50, log=(histscale == 'log'),
                             color=thermal_red, histtype='step', linewidth=2)
-                ax.set_title(msid.upper() + ' residuals: data - model')
+                ax.set_title(f'{msid.upper()} residuals: data - model')
                 ax.set_xlabel(labels[msid])
             fig.subplots_adjust(bottom=0.18, left=0.15, wspace=0.6)
             plot['hist'] = {'fig': fig,
                             "ax": ax,
-                            'filename': '%s_valid_hist.png' % msid}
+                            'filename': f'{msid}_valid_hist.png'}
             fig_id += 1
-            plots.append(plot)
+            plots[msid] = plot
 
         fig = plt.figure(10+fig_id, figsize=(12, 6))
         fig.clf()
@@ -1004,13 +1031,11 @@ class ACISThermalCheck(object):
                 ax.axvline(ptime, ls='--', color='C2',
                            linewidth=2, zorder=-10)
         ax.legend(fancybox=True, framealpha=0.5, loc=2)
-        plot = {"msid": "ccd_count",
-                "lines": {"fig": fig,
-                          "ax": ax,
-                          "filename": 'ccd_count_valid.png'}
-                }
-
-        plots.append(plot)
+        plots["ccd_count"] = {
+            "lines": {"fig": fig,
+                      "ax": ax,
+                      "filename": 'ccd_count_valid.png'}
+        }
 
         fig_id += 1
 
@@ -1034,13 +1059,11 @@ class ACISThermalCheck(object):
                     ax.axvline(ptime, ls='--', color='C2',
                                linewidth=2, zorder=-10)
 
-            plot = {"msid": 'earthheat__fptemp',
-                    "lines": {"fig": fig,
-                              "ax": ax,
-                              "filename": 'earth_solid_angle_valid.png'}
-                    }
-
-            plots.append(plot)
+            plots["earthheat__fptemp"] = {
+                "lines": {"fig": fig,
+                          "ax": ax,
+                          "filename": 'earth_solid_angle_valid.png'}
+            }
 
             fig_id += 1
 
@@ -1052,39 +1075,36 @@ class ACISThermalCheck(object):
             anchor = (0.295, 0.99)
         else:
             anchor = (0.4, 0.99)
-        plots[0]["lines"]["ax"].legend(bbox_to_anchor=anchor,
-                                       loc='lower left',
-                                       ncol=3, fontsize=14)
+        plots[self.msid]["lines"]["ax"].legend(bbox_to_anchor=anchor,
+                                               loc='lower left',
+                                               ncol=3, fontsize=14)
 
         # Now write all of the plots after possible
         # customizations have been made
-        for plot in plots:
+        for plot in plots.values():
             for key in plot:
                 if key in ['lines', 'hist']:
-                    outfile = os.path.join(outdir,
-                                           plot[key]['filename'])
-                    mylog.info('Writing plot file %s' % outfile)
+                    outfile = outdir / plot[key]['filename']
+                    mylog.debug('Writing plot file %s' % outfile)
                     plot[key]['fig'].savefig(outfile)
 
         # Write quantile tables to a CSV file
-        filename = os.path.join(outdir, 'validation_quant.csv')
+        filename = outdir / 'validation_quant.csv'
         mylog.info('Writing quantile table %s' % filename)
-        f = open(filename, 'w')
-        f.write(quant_table)
-        f.close()
+        with open(filename, 'w') as f:
+            f.write(quant_table)
 
-        # self.write_pickle is set to the value of True or False based upon the 
+        # self.write_pickle is set to the value of True or False based upon the
         # value of the command line argument: --run-start. --run-start can be
-        # either a DOY date string or None (if the argument 
-        # was not specified). If a DOY date, this model run is likely for regression 
-        # testing or other debugging.  In that case write out the full 
+        # either a DOY date string or None (if the argument
+        # was not specified). If a DOY date, this model run is likely for regression
+        # testing or other debugging. In that case write out the full
         # predicted and telemetered dataset as a pickle.
         if self.write_pickle:
-            filename = os.path.join(outdir, 'validation_data.pkl')
+            filename = outdir / 'validation_data.pkl'
             mylog.info('Writing validation data %s' % filename)
-            f = open(filename, 'wb')
-            pickle.dump({'pred': pred, 'tlm': tlm}, f, protocol=2)
-            f.close()
+            with open(filename, 'wb') as f:
+                pickle.dump({'pred': pred, 'tlm': tlm}, f, protocol=2)
 
         return plots
 
@@ -1101,31 +1121,30 @@ class ACISThermalCheck(object):
         """
         pass
 
-    def rst_to_html(self, outdir, proc):
+    def rst_to_html(self, outdir):
         """Render index.rst as HTML
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             The path to the directory to which the outputs will be
             written to.
-        proc : dict
-            A dictionary of general information used in the output
         """
         # First copy CSS files to outdir
         import docutils.writers.html4css1
         from docutils.core import publish_file
-        dirname = os.path.dirname(docutils.writers.html4css1.__file__)
-        shutil.copy2(os.path.join(dirname, 'html4css1.css'), outdir)
+        dirname = PurePath(docutils.writers.html4css1.__file__).parent
+        shutil.copy2(dirname / 'html4css1.css', outdir)
 
-        shutil.copy2(os.path.join(TASK_DATA, 'acis_thermal_check', 'templates',
-                                  'acis_thermal_check.css'), outdir)
+        shutil.copy2(
+            TASK_DATA / "acis_thermal_check/templates/acis_thermal_check.css",
+            outdir)
 
-        stylesheet_path = os.path.join(outdir, 'acis_thermal_check.css')
-        infile = os.path.join(outdir, 'index.rst')
-        outfile = os.path.join(outdir, 'index.html')
-        publish_file(source_path=infile, destination_path=outfile, 
-                     writer_name="html", 
+        stylesheet_path = str(outdir / 'acis_thermal_check.css')
+        infile = str(outdir / 'index.rst')
+        outfile = str(outdir / 'index.html')
+        publish_file(source_path=infile, destination_path=outfile,
+                     writer_name="html",
                      settings_overrides={"stylesheet_path": stylesheet_path})
 
         # Remove the stupid <colgroup> field that docbook inserts.  This
@@ -1141,16 +1160,16 @@ class ACISThermalCheck(object):
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             Path to the location where the outputs will be written.
         context : dict
             Dictionary of items which will be written to the ReST file.
         """
         import jinja2
-        template_path = os.path.join(TASK_DATA, 'acis_thermal_check',
-                                     'templates', 'index_template.rst')
-        outfile = os.path.join(outdir, 'index.rst')
-        mylog.info('Writing report file %s' % outfile)
+        template_path = TASK_DATA / \
+                        "acis_thermal_check/templates/index_template.rst"
+        outfile = outdir / 'index.rst'
+        mylog.debug('Writing report file %s' % outfile)
         # Open up the reST template and send the context to it using jinja2
         with open(template_path) as fin:
             index_template = fin.read()
@@ -1160,7 +1179,7 @@ class ACISThermalCheck(object):
         with open(outfile, "w") as fout:
             fout.write(template.render(**context))
 
-    def _setup_proc_and_logger(self, args):
+    def _setup_proc_and_logger(self, args, model_spec):
         """
         This method does some initial setup and logs important
         information.
@@ -1174,8 +1193,8 @@ class ACISThermalCheck(object):
         import hashlib
         import json
 
-        if not os.path.exists(args.outdir):
-            os.mkdir(args.outdir)
+        if not args.outdir.exists():
+            args.outdir.mkdir(parents=True)
 
         # Configure the logger so that it knows which model
         # we are using and how verbose it is supposed to be
@@ -1189,18 +1208,16 @@ class ACISThermalCheck(object):
                     name=self.name.upper(),
                     hist_limit=self.hist_limit)
 
-        # Figure out the MD5 sum of model spec file
-        md5sum = hashlib.md5(open(args.model_spec, 'rb').read()).hexdigest()
-        pkg_version = ska_helpers.get_version("{}_check".format(self.name))
-        mylog.info('##############################'
-                   '#######################################')
-        mylog.info('# %s_check (version %s) run at %s by %s'
-                   % (self.name, pkg_version, proc['run_time'], proc['run_user']))
+        if isinstance(model_spec, dict):
+            ms = json.dumps(model_spec, indent=4, sort_keys=True).encode()
+        else:
+            ms = open(model_spec, 'rb').read()
+        # Figure out the MD5 sum of the model spec file
+        md5sum = hashlib.md5(ms).hexdigest()
+        mylog.info('# %s_check run at %s by %s'
+                   % (self.name, proc['run_time'], proc['run_user']))
         mylog.info('# acis_thermal_check version = %s' % version)
-        mylog.info('# model_spec file = %s' % os.path.abspath(args.model_spec))
         mylog.info('# model_spec file MD5sum = %s' % md5sum)
-        mylog.info('###############################'
-                   '######################################\n')
         mylog.info('Command line options:\n%s\n' % pformat(args.__dict__))
 
         mylog.info("ACISThermalCheck is using the '%s' state builder." % args.state_builder)
@@ -1208,10 +1225,11 @@ class ACISThermalCheck(object):
         if args.backstop_file is None:
             self.bsdir = None
         else:
-            if os.path.isdir(args.backstop_file):
-                self.bsdir = args.backstop_file
+            bf = Path(args.backstop_file)
+            if bf.is_dir():
+                self.bsdir = bf
             else:
-                self.bsdir = os.path.dirname(args.backstop_file)
+                self.bsdir = PurePath(bf).parent
         return proc
 
     def _determine_times(self, run_start, is_weekly_load):

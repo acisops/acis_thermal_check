@@ -1,17 +1,19 @@
 import numpy as np
 import Ska.Sun
 import logging
-import os
 import matplotlib.pyplot as plt
 from Ska.Matplotlib import cxctime2plotdate
 import Ska.Numpy
+from pathlib import Path, PurePath
 
-TASK_DATA = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+TASK_DATA = Path(PurePath(__file__).parent / '..').resolve()
 
 mylog = logging.getLogger('acis_thermal_check')
 
 thermal_blue = 'blue'
 thermal_red = 'red'
+
 
 def calc_pitch_roll(times, ephem, states):
     """Calculate the normalized sun vector in body coordinates.
@@ -64,7 +66,7 @@ def config_logging(outdir, verbose):
 
     Parameters
     ----------
-    outdir : string
+    outdir : Path
         The location of the directory which the model outputs
         are being written to.
     verbose : integer
@@ -88,14 +90,14 @@ def config_logging(outdir, verbose):
                 1: logging.INFO,
                 2: logging.DEBUG}.get(verbose, logging.INFO)
 
-    formatter = logging.Formatter('%(message)s')
+    formatter = logging.Formatter('%(name)-3s: [%(levelname)-9s] %(message)s')
 
     console = logging.StreamHandler()
     console.setFormatter(formatter)
     console.setLevel(loglevel)
     logger.addHandler(console)
 
-    logfile = os.path.join(outdir, 'run.dat')
+    logfile = outdir / 'run.dat'
 
     filehandler = logging.FileHandler(filename=logfile, mode='w')
     filehandler.setFormatter(formatter)
@@ -320,7 +322,7 @@ def plot_two(fig_id, x, y, x2, y2, yy=None, linewidth=2,
     return {'fig': fig, 'ax': ax, 'ax2': ax2}
 
 
-def get_options(name, model_path, opts=None):
+def get_options(opts=None):
     """
     Construct the argument parser for command-line options for running
     predictions and validations for a load. Sets up the parser and 
@@ -329,11 +331,6 @@ def get_options(name, model_path, opts=None):
 
     Parameters
     ----------
-    name : string
-        The name of the ACIS component whose temperature is being modeled.
-    model_path : string
-        The default directory path where the model JSON files are located.
-        This is internal to the ``acis_thermal_check`` package.
     opts: dictionary
         A (key, value) dictionary of additional options for the parser. These
         may be defined by the thermal model checking tool if necessary.
@@ -341,8 +338,9 @@ def get_options(name, model_path, opts=None):
     from argparse import ArgumentParser
     parser = ArgumentParser()
     parser.set_defaults()
-    parser.add_argument("--outdir", default="out", help="Output directory. If it does not "
-                                                        "exist it will be created. Default: 'out'")
+    parser.add_argument("--outdir", default="out",
+                        help="Output directory. If it does not "
+                             "exist it will be created. Default: 'out'")
     parser.add_argument("--backstop_file", help="Path to the backstop file. If a directory, "
                                                 "the backstop file will be searched for within "
                                                 "this directory. Default: None")
@@ -351,7 +349,6 @@ def get_options(name, model_path, opts=None):
                                           "override the value of the backstop_file "
                                           "argument. Default: None")
     parser.add_argument("--model-spec", 
-                        default=os.path.join(model_path, '%s_model_spec.json' % name),
                         help="Model specification file. Defaults to the one included with "
                              "the model package.")
     parser.add_argument("--days", type=float, default=21.0,
@@ -368,7 +365,7 @@ def get_options(name, model_path, opts=None):
     parser.add_argument("--T-init", type=float,
                         help="Starting temperature (degC). Default is to compute it from telemetry.")
     parser.add_argument("--state-builder", default="acis",
-                        help="StateBuilder to use (sql|acis). Default: acis")
+                        help="StateBuilder to use (kadi|acis). Default: acis")
     parser.add_argument("--nlet_file",
                         default='/data/acis/LoadReviews/NonLoadTrackedEvents.txt',
                         help="Full path to the Non-Load Event Tracking file that should be "
@@ -377,9 +374,11 @@ def get_options(name, model_path, opts=None):
 
     if opts is not None:
         for opt_name, opt in opts:
-            parser.add_argument("--%s" % opt_name, **opt)
+            parser.add_argument(f"--{opt_name}", **opt)
 
     args = parser.parse_args()
+
+    args.outdir = Path(args.outdir)
 
     if args.oflsdir is not None:
         args.backstop_file = args.oflsdir
@@ -411,14 +410,13 @@ def make_state_builder(name, args):
 
     # Build the appropriate state_builder depending upon the
     # value of the passed in parameter "name" which was
-    # originally the --state-builder="sql"|"acis" input argument
+    # originally the --state-builder="kadi"|"acis" input argument
     #
-    # Instantiate the SQL History Builder: SQLStateBuilder
-    if name == "sql":
+    # Instantiate the Kadi History Builder: KadiStateBuilder
+    if name == "kadi":
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
                                       logger=mylog)
-
 
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
     elif name == "acis":
@@ -432,76 +430,9 @@ def make_state_builder(name, args):
                                       verbose=args.verbose,
                                       logger=mylog)
     else:
-        raise RuntimeError("No such state builder with name %s!" % name)
+        raise RuntimeError(f"No such state builder with name {name}!")
 
     return state_builder
-
-
-def get_acis_limits(msid):
-    """
-    Get the current yellow hi limit and margin for a 
-    given ACIS-related MSID, or the various limits 
-    for the focal plane temperature.
-
-    Parameters
-    ----------
-    msid : string
-        The MSID to get the limits for, e.g. "1deamzt".
-    """
-    import requests
-
-    if msid == "fptemp":
-        cold_ecs = -119.5 # the limit for cold ECS measurements in the science orbit
-        acis_i = -112.0 # the limit for ACIS-I observations
-        acis_s = -111.0 # the limit for normal ACIS-S observations
-        acis_hot = -109.0 # the limit for ACIS-S observations which can go hotter
-        return cold_ecs, acis_i, acis_s, acis_hot
-
-    yellow_lo = None
-    yellow_hi = None
-
-    margins = {"1dpamzt": 2.0,
-               "1deamzt": 2.0,
-               "1pdeaat": 4.5,
-               "tmp_fep1_mong": 2.0,
-               "tmp_fep1_actel": 2.0,
-               "tmp_bep_pcb": 2.0}
-
-    margin = margins[msid]
-
-    pmon_file = "PMON/pmon_limits.txt"
-    eng_file = "Thermal/MSID_Limits.txt"
-    file_root = "/proj/web-cxc/htdocs/acis/"
-
-    if msid.startswith("tmp_"):
-        limits_file = pmon_file
-        cols = (4, 5)
-        msid = "ADC_"+msid.upper()
-    else:
-        limits_file = eng_file
-        cols = (2, 3)
-
-    if os.path.exists(file_root):
-        loc = "local"
-        f = open(os.path.join(file_root, limits_file), "r")
-        lines = f.readlines()
-        f.close()
-    else:
-        loc = "remote"
-        url = "http://cxc.cfa.harvard.edu/acis/{}".format(limits_file)
-        u = requests.get(url)
-        lines = u.text.split("\n")
-
-    mylog.info("Obtaining limits for %s from %s file." % (msid, loc))
-
-    for line in lines:
-        words = line.strip().split()
-        if len(words) > 1 and words[0] == msid.upper():
-            yellow_lo = float(words[cols[0]])
-            yellow_hi = float(words[cols[1]])
-            break
-
-    return yellow_lo, yellow_hi, margin
 
 
 def paint_perigee(perigee_passages, states, plots):

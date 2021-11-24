@@ -4,7 +4,7 @@ from numpy.testing import assert_array_equal, \
 import shutil
 import tempfile
 import pickle
-from pathlib import Path
+from pathlib import Path, PurePath
 
 months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
           "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
@@ -33,22 +33,21 @@ def get_lr_root():
         path = os.environ['SKA'] / data_acis_lr
         if not path.exists():
             raise FileNotFoundError('no available ACIS load review directory')
-    return str(path)
+    return path
 
 
-class TestArgs(object):
+tests_path = Path(PurePath(__file__).parent).resolve()
+
+
+class TestArgs:
     """
     A mock-up of a command-line parser object to be used with
     ACISThermalCheck testing.
 
     Parameters
     ----------
-    name : string
-        The "short name" of the temperature to be modeled.
     outdir : string
         The path to the output directory.
-    model_path : string
-        The path to the model code itself.
     run_start : string, optional
         The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
         specified, one will be created 3 days prior to the model run.
@@ -64,7 +63,7 @@ class TestArgs(object):
     interrupt : boolean, optional
         Whether or not this is an interrupt load. Default: False
     state_builder : string, optional
-        The mode used to create the list of commanded states. "sql" or
+        The mode used to create the list of commanded states. "kadi" or
         "acis", default "acis".
     verbose : integer, optional
         The verbosity of the output. Default: 0
@@ -73,10 +72,10 @@ class TestArgs(object):
         use the model specification file stored in the model package.
     nlet_file : string, optional
         The path to an alternative NLET file to be used. Default: None,
-        which is to use the default one. 
+        which is to use the default one.
     """
-    def __init__(self, name, outdir, model_path, run_start=None,
-                 load_week=None, days=21.0, T_init=None, interrupt=False,
+    def __init__(self, outdir, run_start=None, load_week=None, 
+                 days=21.0, T_init=None, interrupt=False,
                  state_builder='acis', verbose=0, model_spec=None,
                  nlet_file=None):
         from datetime import datetime
@@ -87,18 +86,19 @@ class TestArgs(object):
             day = int(load_week[3:5])
             run_start = datetime(year, month, day).strftime("%Y:%j:%H:%M:%S")
         self.run_start = run_start
-        self.outdir = outdir
+        self.outdir = Path(outdir)
         lr_root = get_lr_root()  # Directory containing ACIS load review data
         # load_week sets the bsdir
         if load_week is None:
             self.backstop_file = None
         else:
-            load_year = "20%s" % load_week[-3:-1]
+            load_year = f"20{load_week[-3:-1]}"
             load_letter = load_week[-1].lower()
-            self.backstop_file = "%s/%s/%s/ofls%s" % (lr_root, load_year, load_week[:-1], load_letter)
+            self.backstop_file = lr_root / load_year / load_week[:-1] \
+                                 / f"ofls{load_letter}"
         self.days = days
         if nlet_file is None:
-            nlet_file = f'{lr_root}/NonLoadTrackedEvents.txt'
+            nlet_file = lr_root / "NonLoadTrackedEvents.txt"
         self.nlet_file = nlet_file
         self.interrupt = interrupt
         self.state_builder = state_builder
@@ -106,12 +106,8 @@ class TestArgs(object):
         self.T_init = T_init
         self.traceback = True
         self.verbose = verbose
-        if model_spec is None:
-            model_spec = os.path.join(model_path, "%s_model_spec.json" % name)
         self.model_spec = model_spec
         self.version = None
-        if name == "acisfp":
-            self.fps_nopref = os.path.join(model_path, "FPS_NoPref.txt")
 
 
 def exception_catcher(test, old, new, data_type, **kwargs):
@@ -125,10 +121,9 @@ def exception_catcher(test, old, new, data_type, **kwargs):
         raise AssertionError("%s are not the same!" % data_type)
 
 
-class RegressionTester(object):
-    def __init__(self, atc_class, model_path, model_spec, atc_args=None,
-                 atc_kwargs=None, test_root=None, sub_dir=None):
-        self.model_path = model_path
+class RegressionTester:
+    def __init__(self, atc_class, atc_args=None, atc_kwargs=None, 
+                 test_root=None, sub_dir=None):
         if atc_args is None:
             atc_args = ()
         if atc_kwargs is None:
@@ -138,17 +133,18 @@ class RegressionTester(object):
         self.name = self.atc_obj.name
         self.valid_limits = self.atc_obj.validation_limits
         self.hist_limit = self.atc_obj.hist_limit
-        self.curdir = os.getcwd()
+        self.curdir = Path.cwd()
         if test_root is None:
-            rootdir = tempfile.mkdtemp()
+            rootdir = Path(tempfile.mkdtemp())
         else:
-            rootdir = test_root
+            rootdir = Path(test_root)
         if sub_dir is not None:
-            rootdir = os.path.join(rootdir, sub_dir)
-        self.outdir = os.path.abspath(rootdir)
-        self.test_model_spec = os.path.join(model_path, "tests", model_spec)
-        if not os.path.exists(self.outdir):
-            os.makedirs(self.outdir, exist_ok=True)
+            rootdir = rootdir / sub_dir
+        self.outdir = rootdir.resolve()
+        self.test_model_spec = tests_path / self.name / \
+                               f"{self.name}_test_spec.json"
+        if not self.outdir.exists():
+            self.outdir.mkdir(parents=True)
 
     def run_model(self, load_week, run_start=None, state_builder='acis',
                   interrupt=False, override_limits=None):
@@ -163,7 +159,7 @@ class RegressionTester(object):
             The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
             specified, one will be created 3 days prior to the model run.
         state_builder : string, optional
-            The mode used to create the list of commanded states. "sql" or
+            The mode used to create the list of commanded states. "kadi" or
             "acis", default "acis".
         interrupt : boolean, optional
             Whether or not this is an interrupt load. Default: False
@@ -171,14 +167,13 @@ class RegressionTester(object):
             Override any margin by setting a new value to its name
             in this dictionary. SHOULD ONLY BE USED FOR TESTING.
         """
-        out_dir = os.path.join(self.outdir, load_week)
+        out_dir = self.outdir / load_week / self.name
         if load_week in nlets:
-            nlet_file = os.path.join(os.path.dirname(__file__), 
-                                     f'data/nlets/TEST_NLET_{load_week}.txt')
+            nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
         else:
             nlet_file = None
-        args = TestArgs(self.name, out_dir, self.model_path, run_start=run_start,
-                        load_week=load_week, interrupt=interrupt, nlet_file=nlet_file,
+        args = TestArgs(out_dir, run_start=run_start, load_week=load_week,
+                        interrupt=interrupt, nlet_file=nlet_file,
                         state_builder=state_builder, model_spec=self.test_model_spec)
         self.atc_obj.run(args, override_limits=override_limits)
 
@@ -197,7 +192,7 @@ class RegressionTester(object):
             The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
             specified, one will be created 3 days prior to the model run.
         state_builder : string, optional
-            The mode used to create the list of commanded states. "sql" or
+            The mode used to create the list of commanded states. "kadi" or
             "acis", default "acis".
         """
         if normal:
@@ -210,10 +205,9 @@ class RegressionTester(object):
                                state_builder=state_builder)
 
     def _set_answer_dir(self, load_week):
-        answer_dir = os.path.join(self.model_path, "tests/answers",
-                                  load_week)
-        if not os.path.exists(answer_dir):
-            os.makedirs(answer_dir)
+        answer_dir = tests_path / f"{self.name}/answers" / load_week
+        if not answer_dir.exists():
+            answer_dir.mkdir(parents=True)
         return answer_dir
 
     def run_test(self, test_name, load_week, answer_store=False):
@@ -232,7 +226,7 @@ class RegressionTester(object):
             If True, store the generated data as the new answers.
             If False, only test. Default: False
         """
-        out_dir = os.path.join(self.outdir, load_week)
+        out_dir = self.outdir / load_week / self.name
         if test_name == "prediction":
             filenames = ["temperatures.dat", "states.dat"]
             if self.name == "acisfp":
@@ -258,7 +252,7 @@ class RegressionTester(object):
         ----------
         load_week : string
             The load week to be tested, in a format like "MAY2016A".
-        out_dir : string
+        out_dir : Path
             The path to the output directory.
         filenames : list of strings
             The list of files which will be used in the comparison.
@@ -266,10 +260,10 @@ class RegressionTester(object):
         """
         # First load the answers from the pickle files, both gold standard
         # and current
-        new_answer_file = os.path.join(out_dir, filenames[0])
+        new_answer_file = out_dir / filenames[0]
         new_results = pickle.load(open(new_answer_file, "rb"))
-        old_answer_file = os.path.join(self.model_path, "tests/answers", load_week,
-                                       filenames[0])
+        old_answer_file = tests_path / f"{self.name}/answers" / load_week \
+                          / filenames[0]
         old_results = pickle.load(open(old_answer_file, "rb"))
         # Compare predictions
         new_pred = new_results["pred"]
@@ -308,15 +302,15 @@ class RegressionTester(object):
         ----------
         load_week : string
             The load week to be tested, in a format like "MAY2016A".
-        out_dir : string
+        out_dir : Path
             The path to the output directory.
         filenames : list of strings
             The list of files which will be used in the comparison.
         """
         from astropy.io import ascii
         for fn in filenames:
-            new_fn = os.path.join(out_dir, fn)
-            old_fn = os.path.join(self.model_path, "tests/answers", load_week, fn)
+            new_fn = out_dir / fn
+            old_fn = tests_path / f"{self.name}/answers" / load_week / fn
             new_data = ascii.read(new_fn).as_array()
             old_data = ascii.read(old_fn).as_array()
             # Compare test run data to gold standard. Since we're loading from
@@ -325,10 +319,10 @@ class RegressionTester(object):
             for k, dt in new_data.dtype.descr:
                 if 'f' in dt:
                     exception_catcher(assert_allclose, new_data[k], old_data[k],
-                                      "Prediction arrays for %s" % k, rtol=1.0e-5)
+                                      f"Prediction arrays for {k}", rtol=1.0e-5)
                 else:
                     exception_catcher(assert_array_equal, new_data[k], old_data[k],
-                                      "Prediction arrays for %s" % k)
+                                      f"Prediction arrays for {k}")
  
     def copy_new_files(self, out_dir, answer_dir, filenames):
         """
@@ -339,16 +333,16 @@ class RegressionTester(object):
 
         Parameters
         ----------
-        out_dir : string
+        out_dir : Path
             The path to the output directory.
-        answer_dir : string
+        answer_dir : Path
             The path to the directory to which to copy the files.
         filenames : list of strings
             The filenames to be copied.
         """
         for filename in filenames:
-            fromfile = os.path.join(out_dir, filename)
-            tofile = os.path.join(answer_dir, filename)
+            fromfile = out_dir / filename
+            tofile = answer_dir / filename
             shutil.copyfile(fromfile, tofile)
 
     def check_violation_reporting(self, load_week, viol_json, 
@@ -389,8 +383,8 @@ class RegressionTester(object):
         next_year = f"{int(load_year)+1}"
         self.run_model(load_week, run_start=viol_data['run_start'], 
                        override_limits=viol_data['limits'])
-        out_dir = os.path.join(self.outdir, load_week)
-        index_rst = os.path.join(out_dir, "index.rst")
+        out_dir = self.outdir / load_week / self.name
+        index_rst = out_dir / "index.rst"
         with open(index_rst, 'r') as myfile:
             i = 0
             for line in myfile.readlines():

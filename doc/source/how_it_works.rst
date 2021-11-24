@@ -6,9 +6,9 @@ How ``acis_thermal_check`` Works
 The Model Check Tools
 =====================
 
-``acis_thermal_check`` is a library that is utilized by various software tools
-to run ACIS thermal models and produce web pages for prediction and validation. 
-The current tools which use ``acis_thermal_check`` for load review are:
+``acis_thermal_check`` is a library that is utilized by various tools to run 
+ACIS thermal models and produce web pages for prediction and validation. The 
+current tools which use ``acis_thermal_check`` for load review are:
 
 * ``dpa_check`` for the 1DPAMZT model
 * ``dea_check`` for the 1DEAMZT model
@@ -53,11 +53,11 @@ any errors in the initial condition, we need to begin the propagation before the
 load starts. In order to do that, we need the commanded states. 
 ``acis_thermal_check`` provides two different ways to construct a state history
 in the ``StateBuilder`` class: the "ACIS" ``StateBuilder`` (the default) and the
-"SQL" ``StateBuilder``. The first case constructs a history of states using a
+"kadi" ``StateBuilder``. The first case constructs a history of states using a
 series of backstop files from the previous loads, as well as any information
 from the Non-Load Event Tracker (NLET) file in case of an interrupted load. This
 ``StateBuilder`` requires the full ``/data/acis/LoadReviews`` structure, at 
-least for the last several loads. The "SQL" state builder uses the commanded 
+least for the last several loads. The "kadi" state builder uses the commanded 
 states database to construct a history of states. 
 
 In theory, both ``StateBuilder`` types should give the same results if the
