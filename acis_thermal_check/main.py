@@ -78,6 +78,13 @@ class ACISThermalCheck:
         A dictionary which maps names to MSIDs, e.g.:
         {'sim_z': 'tscpos', 'dp_pitch': 'pitch'}. Used to map
         names understood by Xija to MSIDs.
+    limits_map : dictionary, optional
+        A dictionary mapping of limit names in the model specification
+        file to more user-friendly ones for use in acis_thermal_check.
+        The standard planning/yellow limits are already implemented
+        internally, so this dict is for "extra" ones such as the 0-FEPs
+        +12 C limit for 1DPAMZT. Default: None, meaning no extra
+        limits are specified.
     flag_cold_viols : boolean, optional
         If set, violations for the lower planning limit will be
         checked for and flagged, and
@@ -92,15 +99,24 @@ class ACISThermalCheck:
         in *hist_limit*.
     """
     def __init__(self, msid, name, validation_limits, hist_limit,
-                 other_telem=None, other_map=None,
+                 other_telem=None, other_map=None, limits_map=None,
                  flag_cold_viols=False, hist_ops=None):
         self.msid = msid
         self.name = name
-        self._handle_limits()
         self.validation_limits = validation_limits
         self.hist_limit = hist_limit
         self.other_telem = other_telem
         self.other_map = other_map
+        self.limits_map = {
+            "odb.caution.high": "yellow_hi",
+            "odb.caution.low": "yellow_lo",
+            "safety.caution.high": "yellow_hi",
+            "safety.caution.low": "yellow_lo",
+            "planning.warning.high": "plan_hi",
+            "planning.warning.low": "plan_lo"
+        }
+        if limits_map is not None:
+            self.limits_map.update(limits_map)
         # Initially, the state_builder is set to None, as it will get
         # set up later
         self.state_builder = None
@@ -111,13 +127,12 @@ class ACISThermalCheck:
         self.perigee_passages = []
         self.write_pickle = False
 
-    def _handle_limits(self):
-        from yaml import load, Loader
-        limits_file = TASK_DATA / 'acis_thermal_check/data/limits.yml'
-        with open(limits_file, "r") as f:
-            limits = load(f, Loader=Loader)[self.msid]
+    def _handle_limits(self, model_spec):
+        limits = model_spec["limits"][self.msid]
         for k, v in limits.items():
-            setattr(self, f"{k}_limit", v)
+            if k == "unit":
+                continue
+            setattr(self, f"{self.limits_map[k]}_limit", v)
 
     def run(self, args, override_limits=None):
         """
@@ -156,9 +171,10 @@ class ACISThermalCheck:
         # data to a pickle later
         self.write_pickle = args.run_start is not None
 
-        # This allows one to override the planning and yellow limits
-        # for a particular model run. THIS SHOULD ONLY BE USED FOR
-        # TESTING PURPOSES.
+        self._handle_limits(model_spec)
+
+        # This allows one to override the limits for a particular model 
+        # run. THIS SHOULD ONLY BE USED FOR TESTING PURPOSES.
         if override_limits is not None:
             for k, v in override_limits.items():
                 if hasattr(self, k):
@@ -491,7 +507,7 @@ class ACISThermalCheck:
     def make_prediction_viols(self, temps, load_start):
         """
         Find limit violations where predicted temperature is above the
-        yellow limit minus margin.
+        specified limits.
 
         Parameters
         ----------

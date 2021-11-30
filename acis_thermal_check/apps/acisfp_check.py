@@ -42,11 +42,18 @@ class ACISFPCheck(ACISThermalCheck):
                         'TSCPOS': [(1, 2.5), (99, 2.5)]
                         }
         hist_limit = [(-120.0, -100.0)]
+        limits_map = {
+            "planning.data_quality.high.acisi": "acis_i",
+            "planning.data_quality.high.aciss": "acis_s",
+            "planning.data_quality.high.aciss_hot": "acis_hot",
+            "planning.data_quality.high.cold_ecs": "cold_ecs"
+        }
         super(ACISFPCheck, self).__init__("fptemp", "acisfp", valid_limits,
                                           hist_limit,
                                           other_telem=['1dahtbon'],
                                           other_map={'1dahtbon': 'dh_heater',
-                                                     "fptemp_11": "fptemp"})
+                                                     "fptemp_11": "fptemp"},
+                                          limits_map=limits_map)
         # Create an empty observation list which will hold the results. This
         # list contains all ACIS and all ECS observations.
         self.acis_and_ecs_obs = []

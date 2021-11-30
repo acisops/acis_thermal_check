@@ -29,8 +29,11 @@ class DPACheck(ACISThermalCheck):
                         'TSCPOS': [(1, 2.5), (99, 2.5)]
                         }
         hist_limit = [20.0]
+        limits_map = {
+            "planning.caution.low": "zero_feps"
+        }
         super(DPACheck, self).__init__("1dpamzt", "dpa", valid_limits,
-                                       hist_limit)
+                                       hist_limit, limits_map=limits_map)
 
     def custom_prediction_viols(self, times, temp, viols, load_start):
         """
