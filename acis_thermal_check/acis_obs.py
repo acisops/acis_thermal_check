@@ -273,7 +273,7 @@ def acis_filter(obsid_interval_list):
     """
     This method will filter between the different types of 
     ACIS observations: ACIS-I, ACIS-S, "hot" ACIS-S, and 
-    cold science-orbit ECS. 
+    cold science-orbit ECS.
     """
     acis_hot = []
     acis_s = []
