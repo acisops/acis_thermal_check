@@ -29,6 +29,7 @@ from acis_thermal_check.utils import \
 from kadi import events
 from astropy.table import Table
 from pathlib import Path, PurePath
+import json
 
 
 op_map = {"greater": ">",
@@ -130,7 +131,7 @@ class ACISThermalCheck:
     def _handle_limits(self, model_spec):
         limits = model_spec["limits"][self.msid]
         for k, v in limits.items():
-            if k == "unit":
+            if k == "unit" or k not in self.limits_map:
                 continue
             setattr(self, f"{self.limits_map[k]}_limit", v)
 
@@ -161,6 +162,9 @@ class ACISThermalCheck:
             model_spec = get_xija_model_spec(self.name)[0]
         else:
             model_spec = args.model_spec
+
+        if not isinstance(model_spec, dict):
+            model_spec = json.load(open(model_spec, 'r'))
 
         proc = self._setup_proc_and_logger(args, model_spec)
 
@@ -1207,7 +1211,6 @@ class ACISThermalCheck:
             attached to it as attributes
         """
         import hashlib
-        import json
 
         if not args.outdir.exists():
             args.outdir.mkdir(parents=True)
