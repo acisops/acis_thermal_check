@@ -172,21 +172,25 @@ class ACISFPCheck(ACISThermalCheck):
                                    figsize=(12, 7.142857142857142),
                                    width=w1, load_start=load_start)
             plots[name]['ax'].set_title(self.msid.upper(), loc='left', pad=10)
-            # Draw a horizontal line indicating the FP Sensitive Observation Cut off
-            plots[name]['ax'].axhline(self.cold_ecs_limit, linestyle='--',
-                                      color='dodgerblue', linewidth=2.0,
+            # Draw a horizontal line indicating cold ECS cutoff
+            plots[name]['ax'].axhline(self.limits["cold_ecs"]["value"],
+                                      linestyle='--', linewidth=2.0,
+                                      color=self.limits["cold_ecs"]["color"],
                                       label='Cold ECS')
-            # Draw a horizontal line showing the ACIS-I -114 deg. C cutoff
-            plots[name]['ax'].axhline(self.acis_i_limit, linestyle='--',
-                                      color='purple', linewidth=2.0,
+            # Draw a horizontal line showing the ACIS-I cutoff
+            plots[name]['ax'].axhline(self.limits["acis_i"]["value"],
+                                      linestyle='--', linewidth=2.0,
+                                      color=self.limits["acis_i"]["color"],
                                       label="ACIS-I")
-            # Draw a horizontal line showing the ACIS-S -112 deg. C cutoff
-            plots[name]['ax'].axhline(self.acis_s_limit, linestyle='--',
-                                      color='blue', linewidth=2.0,
-                                      label='ACIS-S')
-            # Draw a horizontal line showing the ACIS-S -109 deg. C cutoff
-            plots[name]['ax'].axhline(self.acis_hot_limit, linestyle='--',
-                                      color='red', linewidth=2.0,
+            # Draw a horizontal line showing the ACIS-S cutoff
+            plots[name]['ax'].axhline(self.limits["acis_s"]["value"],
+                                      linestyle='--', linewidth=2.0,
+                                      color=self.limits["acis_s"]["color"],
+                                      label="ACIS-S")
+            # Draw a horizontal line showing the hot ACIS-S cutoff
+            plots[name]['ax'].axhline(self.limits["acis_hot"]["value"],
+                                      linestyle='--', linewidth=2.0,
+                                      color=self.limits["acis_hot"]["color"],
                                       label="Hot ACIS-S")
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
@@ -282,13 +286,18 @@ class ACISFPCheck(ACISThermalCheck):
         # science run. These are load killers
         # ------------------------------------------------------------
         #
-        mylog.info(f'\n\nACIS-I Science ({self.acis_i_limit} C) violations')
+        acis_i_limit = self.limits["acis_i"]["value"]
+        acis_s_limit = self.limits["acis_s"]["value"]
+        acis_hot_limit = self.limits["acis_hot"]["value"]
+        cold_ecs_limit = self.limits["cold_ecs"]["value"]
+
+        mylog.info(f'\n\nACIS-I Science ({acis_i_limit} C) violations')
 
         # Create the violation data structure.
         acis_i_viols = self.search_obsids_for_viols("ACIS-I",
-            self.acis_i_limit, ACIS_I_obs, temp, times, load_start)
+            acis_i_limit, ACIS_I_obs, temp, times, load_start)
 
-        viols["ACIS_I"] = {"name": f"ACIS-I ({self.acis_i_limit} C)",
+        viols["ACIS_I"] = {"name": f"ACIS-I ({acis_i_limit} C)",
                            "type": "Max",
                            "values": acis_i_viols}
 
@@ -297,11 +306,11 @@ class ACISFPCheck(ACISThermalCheck):
         # science run. These are load killers
         # ------------------------------------------------------------
         #
-        mylog.info(f'\n\nACIS-S Science ({self.acis_s_limit} C) violations')
+        mylog.info(f'\n\nACIS-S Science ({acis_s_limit} C) violations')
 
         acis_s_viols = self.search_obsids_for_viols("ACIS-S",
-            self.acis_s_limit, ACIS_S_obs, temp, times, load_start)
-        viols["ACIS_S"] = {"name": f"ACIS-S ({self.acis_s_limit} C)",
+            acis_s_limit, ACIS_S_obs, temp, times, load_start)
+        viols["ACIS_S"] = {"name": f"ACIS-S ({acis_s_limit} C)",
                            "type": "Max",
                            "values": acis_s_viols}
 
@@ -310,23 +319,23 @@ class ACISFPCheck(ACISThermalCheck):
         # science run which can run hot. These are load killers
         # ------------------------------------------------------------
         #
-        mylog.info(f'\n\nACIS-S Science ({self.acis_hot_limit} C) violations')
+        mylog.info(f'\n\nACIS-S Science ({acis_hot_limit} C) violations')
 
         acis_hot_viols = self.search_obsids_for_viols("Hot ACIS-S",
-            self.acis_hot_limit, ACIS_hot_obs, temp, times, load_start)
-        viols["ACIS_S_hot"] = {"name": f"ACIS-S Hot ({self.acis_hot_limit} C)",
+            acis_hot_limit, ACIS_hot_obs, temp, times, load_start)
+        viols["ACIS_S_hot"] = {"name": f"ACIS-S Hot ({acis_hot_limit} C)",
                                "type": "Max",
                                "values": acis_hot_viols}
 
         # ------------------------------------------------------------
         # Science Orbit ECS -119.5 violations; -119.5 violation check
         # ------------------------------------------------------------
-        mylog.info(f'\n\nScience Orbit ECS ({self.cold_ecs_limit} C) violations')
+        mylog.info(f'\n\nScience Orbit ECS ({cold_ecs_limit} C) violations')
 
         ecs_viols = self.search_obsids_for_viols("Science Orbit ECS",
-                                                 self.cold_ecs_limit, sci_ecs_obs, temp, times, load_start)
+            cold_ecs_limit, sci_ecs_obs, temp, times, load_start)
 
-        viols["ecs"] = {"name": f"Science Orbit ECS ({self.cold_ecs_limit} C)",
+        viols["ecs"] = {"name": f"Science Orbit ECS ({cold_ecs_limit} C)",
                         "type": "Min",
                         "values": ecs_viols}
 

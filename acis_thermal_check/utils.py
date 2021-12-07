@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from Ska.Matplotlib import cxctime2plotdate
 import Ska.Numpy
 from pathlib import Path, PurePath
-
+from xija.limits import get_limit_color
 
 TASK_DATA = Path(PurePath(__file__).parent / '..').resolve()
 
@@ -475,3 +475,24 @@ def paint_perigee(perigee_passages, states, plots):
                     perigee_time = cxctime2plotdate([CxoTime(eachpassage[1]).secs])
                     plot['ax'].vlines(perigee_time, ymin, ymax, linestyle=':',
                                       color='black', linewidth=2.0)
+
+
+def get_acis_limits(msid, model_spec, limits_map=None):
+    import json
+    if msid == "fptemp_11":
+        msid = "fptemp"
+    if limits_map is None:
+        limits_map = {}
+    if not isinstance(model_spec, dict):
+        model_spec = json.load(open(model_spec, 'r'))
+    json_limits = model_spec["limits"][msid]
+    limits = {}
+    for k, v in json_limits.items():
+        if k == "unit":
+            continue
+        key = limits_map.get(k, k)
+        limits[key] = {
+            "value": v,
+            "color": get_limit_color(k)
+        }
+    return limits
