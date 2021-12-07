@@ -478,6 +478,29 @@ def paint_perigee(perigee_passages, states, plots):
 
 
 def get_acis_limits(msid, model_spec, limits_map=None):
+    """
+    Given a MSID and a model specification (JSON or dict),
+    return the values and line colors of the limits specified
+    in the file.
+
+    Parameters
+    ----------
+    msid : string 
+        The MSID to get the limits for.
+    model_spec : string or dict
+        The xija model specification. If a string, it is
+        assumed to be a JSON file to be read in
+    limits_map : dict, optional
+        If supplied, this will change the keys of the output
+        dict, which are normally the limit names in the model
+        specification, with other names, e.g. replaces
+        "odb.caution.high" with "yellow_hi". Default: None
+
+    Returns
+    -------
+    A dict of dicts, with each dict corresponding to the value of the
+    limit and the color of the line on plots.
+    """
     import json
     if msid == "fptemp_11":
         msid = "fptemp"
