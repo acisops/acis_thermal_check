@@ -485,7 +485,7 @@ def get_acis_limits(msid, model_spec, limits_map=None):
 
     Parameters
     ----------
-    msid : string 
+    msid : string
         The MSID to get the limits for.
     model_spec : string or dict
         The xija model specification. If a string, it is
