@@ -86,6 +86,30 @@ display the histogram for all temperatures, but only for those temperatures
 greater than a lower limit, which is contained in the ``hist_limit`` list. This
 should also be defined in ``__init__``. 
 
+If your model has special limits in the JSON model specification file which are 
+not included in this default set:
+
+.. code-block:: python
+
+    {
+        "odb.caution.high",
+        "odb.caution.low",
+        "safety.caution.high",
+        "safety.caution.low",
+        "planning.warning.high",
+        "planning.warning.low"
+    }
+
+You must include them in a special dictionary ``limits_map`` which will be passed
+to the ``ACISThermalCheck`` subclass. This dictionary maps the name of the limit
+in the JSON file to something shorter (and perhaps more descriptive). All limits 
+can then be accessed using the ``self.limits`` dictionary, which for each element 
+has a dictionary which specifies the numerical ``"value"`` of the limit and the
+``"color"`` which should be used on plots. Examples of how this is used are shown
+below. In this case, the 1DPAMZT model has a limit at +12 :math:$^\circ$C which
+is only applied when 0 FEPs are on. This is the ``"planning.caution.low"`` limit,
+which is renamed to ``"zero_feps"`` in this case. 
+
 The example of this class definition for the 1DPAMZT model is shown here. Both
 limit objects that were created are passed to the ``__init__`` of the superclass.
 
@@ -100,9 +124,13 @@ limit objects that were created are passed to the ``__init__`` of the superclass
                             }
             # Specify the validation histogram limits
             hist_limit = [20.0]
+            # Add the "zero_feps" limit
+            limits_map = {
+                "planning.caution.low": "zero_feps"
+            }
             # Call the superclass' __init__ with the arguments
             super(DPACheck, self).__init__("1dpamzt", "dpa", valid_limits,
-                                           hist_limit)
+                                           hist_limit, limits_map=limits_map)
 
 Custom Violations Checking and Plotting
 +++++++++++++++++++++++++++++++++++++++
@@ -120,7 +148,7 @@ where we reference the example below for adding the "zero FEPs" limit
 to the 1DPAMZT model:
 
 * The limit value itself, in this case +12 :math:$^\circ$C, stored
-  in ``self.zero_feps_limit`` as shown below. 
+  in ``self.limits["zero_feps"]["value"]`` as shown below. 
 * The name of the limit, which in this case is ``"zero-feps"``.
 * Which type of temperature limit this is, (in this case) ``"min"`` or 
   ``"max"``. 
@@ -154,13 +182,14 @@ we are done.
         """
         # Only check this violation when all FEPs are off
         mask = self.predict_model.comp['fep_count'].dvals == 0
-        zf_viols = self._make_prediction_viols(times, temp, load_start,
-                                               self.zero_feps_limit,
-                                               "zero-feps", "min",
-                                               mask=mask)
-        viols["zero_feps"] = {"name": f"Zero FEPs ({self.zero_feps_limit} C)",
-                              "type": "Min",
-                              "values": zf_viols}
+        zf_viols = self._make_prediction_viols(
+            times, temp, load_start, self.limits["zero_feps"]["value"],
+            "zero-feps", "min", mask=mask)
+        viols["zero_feps"] = {
+            "name": f"Zero FEPs ({self.limits['zero_feps']['value']} C)",
+            "type": "Min",
+            "values": zf_viols
+        }
 
 We also want to show this limit on the plot for the 1DPAMZT model. For this,
 we use the ``custom_prediction_plots`` method of the ``ACISThermalCheck``
@@ -205,9 +234,9 @@ shown here:
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
         """
-        plots[self.name]['ax'].axhline(self.zero_feps_limit, linestyle='--',
-                                       color='dodgerblue', label="Zero FEPs",
-                                       linewidth=2.0)
+        plots[self.name]['ax'].axhline(self.limits["zero_feps"]["value"],
+            linestyle='--', label="Zero FEPs", linewidth=2.0,
+            color=self.limits["zero_feps"]["color"], zorder=-8)
 
 Something similar can be done for the validation plots in 
 ``custom_validation_plots``, except here the input ``plots`` structure is 
@@ -230,8 +259,9 @@ only need to worry about the first, as shown below.
             e.g. add limit lines, etc.
         """
         plots["1dpamzt"]['lines']['ax'].axhline(
-            self.zero_feps_limit, linestyle='--', color='dodgerblue', zorder=-8,
-            linewidth=2, label="Zero FEPs")
+            self.limits["zero_feps"]["value"], linestyle='--', zorder=-8,
+            color=self.limits["zero_feps"]["color"], linewidth=2, 
+            label="Zero FEPs")
 
 The ``_calc_model_supp`` Method
 +++++++++++++++++++++++++++++++
