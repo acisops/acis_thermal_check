@@ -177,9 +177,9 @@ class ACISThermalCheck:
         if override_limits is not None:
             for k, v in override_limits.items():
                 if k in self.limits:
-                    limit = self.limits[k]["value"]
+                    limit = self.limits[k].value
                     mylog.warning("Replacing %s %.2f with %.2f" % (k, limit, v))
-                    self.limits[k]["value"] = v
+                    self.limits[k].value = v
 
         # Determine the start and stop times either from whatever was
         # stored in state_builder or punt by using NOW and None for
@@ -523,20 +523,20 @@ class ACISThermalCheck:
         times = self.predict_model.times
 
         hi_viols = self._make_prediction_viols(
-            times, temp, load_start, self.limits["planning_hi"]["value"],
+            times, temp, load_start, self.limits["planning_hi"].value,
             "planning", "max")
         viols = {"hi":
-                     {"name": f"Hot ({self.limits['planning_hi']['value']} C)",
+                     {"name": f"Hot ({self.limits['planning_hi'].value} C)",
                       "type": "Max",
                       "values": hi_viols}
                  }
 
         if self.flag_cold_viols:
             lo_viols = self._make_prediction_viols(
-                times, temp, load_start, self.limits["planning_lo"]["value"],
+                times, temp, load_start, self.limits["planning_lo"].value,
                 "planning", "min")
             viols["lo"] = {
-                "name": f"Cold ({self.limits['planning_hi']['value']} C)",
+                "name": f"Cold ({self.limits['planning_hi'].value} C)",
                 "type": "Min",
                 "values": lo_viols
             }
@@ -761,25 +761,25 @@ class ACISThermalCheck:
                                     width=w1, load_start=load_start)
         # Add horizontal lines for the planning and caution limits
         ymin, ymax = plots[self.name]['ax'].get_ylim()
-        ymax = max(self.limits["yellow_hi"]["value"]+1, ymax)
+        ymax = max(self.limits["yellow_hi"].value+1, ymax)
         plots[self.name]['ax'].set_title(self.msid.upper(), loc='left', pad=10)
-        plots[self.name]['ax'].axhline(self.limits["yellow_hi"]["value"],
+        plots[self.name]['ax'].axhline(self.limits["yellow_hi"].value,
                                        linestyle='-', linewidth=2.0,
-                                       color=self.limits["yellow_hi"]["color"],
+                                       color=self.limits["yellow_hi"].color,
                                        label='Yellow')
-        plots[self.name]['ax'].axhline(self.limits["planning_hi"]["value"],
+        plots[self.name]['ax'].axhline(self.limits["planning_hi"].value,
                                        linestyle='-', linewidth=2.0,
-                                       color=self.limits["planning_hi"]["color"],
+                                       color=self.limits["planning_hi"].color,
                                        label='Planning')
         if self.flag_cold_viols:
-            ymin = min(self.limits["yellow_lo"]["value"]-1, ymin)
-            plots[self.name]['ax'].axhline(self.limits["yellow_hi"]["value"],
+            ymin = min(self.limits["yellow_lo"].value-1, ymin)
+            plots[self.name]['ax'].axhline(self.limits["yellow_hi"].value,
                                            linestyle='-', linewidth=2.0,
-                                           color=self.limits["yellow_hi"]["color"],
+                                           color=self.limits["yellow_hi"].color,
                                            label='Yellow', zorder=-8)
-            plots[self.name]['ax'].axhline(self.limits["planning_hi"]["value"],
+            plots[self.name]['ax'].axhline(self.limits["planning_hi"].value,
                                            linestyle='-', linewidth=2.0,
-                                           color=self.limits["planning_hi"]["color"],
+                                           color=self.limits["planning_hi"].color,
                                            label='Planning', zorder=-8)
         plots[self.name]['ax'].set_ylim(ymin, ymax)
         plots[self.name]['filename'] = self.msid.lower()+'.png'
@@ -969,39 +969,39 @@ class ACISThermalCheck:
             if self.msid == msid:
                 ymin, ymax = ax.get_ylim()
                 if msid == "fptemp":
-                    ax.axhline(self.limits["cold_ecs"]["value"],
+                    ax.axhline(self.limits["cold_ecs"].value,
                                linestyle='--', label='Cold ECS',
-                               color=self.limits["cold_ecs"]["color"],
+                               color=self.limits["cold_ecs"].color,
                                zorder=-8, linewidth=2)
-                    ax.axhline(self.limits["acis_i"]["value"],
+                    ax.axhline(self.limits["acis_i"].value,
                                linestyle='--', label='ACIS-I',
-                               color=self.limits["acis_i"]["color"],
+                               color=self.limits["acis_i"].color,
                                zorder=-8, linewidth=2)
-                    ax.axhline(self.limits["acis_s"]["value"],
+                    ax.axhline(self.limits["acis_s"].value,
                                linestyle='--', label='ACIS-S',
-                               color=self.limits["acis_s"]["color"],
+                               color=self.limits["acis_s"].color,
                                zorder=-8, linewidth=2)
-                    ax.axhline(self.limits["acis_hot"]["value"],
+                    ax.axhline(self.limits["acis_hot"].value,
                                linestyle='--', label='Hot ACIS',
-                               color=self.limits["acis_hot"]["color"],
+                               color=self.limits["acis_hot"].color,
                                zorder=-8, linewidth=2)
-                    ymax = max(self.limits["acis_hot"]["value"]+1, ymax)
+                    ymax = max(self.limits["acis_hot"].value+1, ymax)
                 else:
-                    ax.axhline(self.limits["yellow_hi"]["value"],
+                    ax.axhline(self.limits["yellow_hi"].value,
                                linestyle='-', linewidth=2, zorder=-8,
-                               color=self.limits["yellow_hi"]["color"])
-                    ax.axhline(self.limits["planning_hi"]["value"],
+                               color=self.limits["yellow_hi"].color)
+                    ax.axhline(self.limits["planning_hi"].value,
                                linestyle='-', linewidth=2, zorder=-8,
-                               color=self.limits["planning_hi"]["color"])
-                    ymax = max(self.limits["yellow_hi"]["value"]+1, ymax)
+                               color=self.limits["planning_hi"].color)
+                    ymax = max(self.limits["yellow_hi"].value+1, ymax)
                     if self.flag_cold_viols:
-                        ax.axhline(self.limits["yellow_lo"]["value"],
+                        ax.axhline(self.limits["yellow_lo"].value,
                                    linestyle='-', linewidth=2, zorder=-8,
-                                   color=self.limits["yellow_lo"]["color"])
-                        ax.axhline(self.limits["planning_lo"]["value"],
+                                   color=self.limits["yellow_lo"].color)
+                        ax.axhline(self.limits["planning_lo"].value,
                                    linestyle='-', linewidth=2, zorder=-8,
-                                   color=self.limits["planning_lo"]["color"])
-                        ymin = min(self.limits["yellow_lo"]["value"]-1, ymin)
+                                   color=self.limits["planning_lo"].color)
+                        ymin = min(self.limits["yellow_lo"].value-1, ymin)
                 ax.set_ylim(ymin, ymax)
             ax.set_xlim(xmin, xmax)
 

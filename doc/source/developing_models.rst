@@ -104,8 +104,8 @@ You must include them in a special dictionary ``limits_map`` which will be passe
 to the ``ACISThermalCheck`` subclass. This dictionary maps the name of the limit
 in the JSON file to something shorter (and perhaps more descriptive). All limits 
 can then be accessed using the ``self.limits`` dictionary, which for each element 
-has a dictionary which specifies the numerical ``"value"`` of the limit and the
-``"color"`` which should be used on plots. Examples of how this is used are shown
+has a dictionary which specifies the numerical ``value`` of the limit and the
+``color`` which should be used on plots. Examples of how this is used are shown
 below. In this case, the 1DPAMZT model has a limit at +12 :math:$^\circ$C which
 is only applied when 0 FEPs are on. This is the ``"planning.caution.low"`` limit,
 which is renamed to ``"zero_feps"`` in this case. 
@@ -148,7 +148,7 @@ where we reference the example below for adding the "zero FEPs" limit
 to the 1DPAMZT model:
 
 * The limit value itself, in this case +12 :math:$^\circ$C, stored
-  in ``self.limits["zero_feps"]["value"]`` as shown below. 
+  in ``self.limits["zero_feps"].value`` as shown below. 
 * The name of the limit, which in this case is ``"zero-feps"``.
 * Which type of temperature limit this is, (in this case) ``"min"`` or 
   ``"max"``. 
@@ -183,10 +183,10 @@ we are done.
         # Only check this violation when all FEPs are off
         mask = self.predict_model.comp['fep_count'].dvals == 0
         zf_viols = self._make_prediction_viols(
-            times, temp, load_start, self.limits["zero_feps"]["value"],
+            times, temp, load_start, self.limits["zero_feps"].value,
             "zero-feps", "min", mask=mask)
         viols["zero_feps"] = {
-            "name": f"Zero FEPs ({self.limits['zero_feps']['value']} C)",
+            "name": f"Zero FEPs ({self.limits['zero_feps'].value} C)",
             "type": "Min",
             "values": zf_viols
         }
@@ -234,9 +234,9 @@ shown here:
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
         """
-        plots[self.name]['ax'].axhline(self.limits["zero_feps"]["value"],
+        plots[self.name]['ax'].axhline(self.limits["zero_feps"].value,
             linestyle='--', label="Zero FEPs", linewidth=2.0,
-            color=self.limits["zero_feps"]["color"], zorder=-8)
+            color=self.limits["zero_feps"].color, zorder=-8)
 
 Something similar can be done for the validation plots in 
 ``custom_validation_plots``, except here the input ``plots`` structure is 
@@ -259,8 +259,8 @@ only need to worry about the first, as shown below.
             e.g. add limit lines, etc.
         """
         plots["1dpamzt"]['lines']['ax'].axhline(
-            self.limits["zero_feps"]["value"], linestyle='--', zorder=-8,
-            color=self.limits["zero_feps"]["color"], linewidth=2, 
+            self.limits["zero_feps"].value, linestyle='--', zorder=-8,
+            color=self.limits["zero_feps"].color, linewidth=2, 
             label="Zero FEPs")
 
 The ``_calc_model_supp`` Method
@@ -361,7 +361,7 @@ of the 1DPAMZT model is shown below:
     from acis_thermal_check import \
         ACISThermalCheck, \
         get_options
-     
+    
     
     class DPACheck(ACISThermalCheck):
         def __init__(self):
@@ -370,9 +370,12 @@ of the 1DPAMZT model is shown below:
                             'TSCPOS': [(1, 2.5), (99, 2.5)]
                             }
             hist_limit = [20.0]
+            limits_map = {
+                "planning.caution.low": "zero_feps"
+            }
             super(DPACheck, self).__init__("1dpamzt", "dpa", valid_limits,
-                                           hist_limit)
-        
+                                           hist_limit, limits_map=limits_map)
+    
         def custom_prediction_viols(self, times, temp, viols, load_start):
             """
             Custom handling of limit violations. This is for checking the
@@ -393,13 +396,14 @@ of the 1DPAMZT model is shown below:
             """
             # Only check this violation when all FEPs are off
             mask = self.predict_model.comp['fep_count'].dvals == 0
-            zf_viols = self._make_prediction_viols(times, temp, load_start,
-                                                   self.zero_feps_limit,
-                                                   "zero-feps", "min",
-                                                   mask=mask)
-            viols["zero_feps"] = {"name": f"Zero FEPs ({self.zero_feps_limit} C)",
-                                  "type": "Min",
-                                  "values": zf_viols}
+            zf_viols = self._make_prediction_viols(
+                times, temp, load_start, self.limits["zero_feps"].value,
+                "zero-feps", "min", mask=mask)
+            viols["zero_feps"] = {
+                "name": f"Zero FEPs ({self.limits['zero_feps'].value} C)",
+                "type": "Min",
+                "values": zf_viols
+            }
     
         def custom_prediction_plots(self, plots):
             """
@@ -412,10 +416,10 @@ of the 1DPAMZT model is shown below:
                 and can be used to customize plots before they are written,
                 e.g. add limit lines, etc.
             """
-            plots[self.name]['ax'].axhline(self.zero_feps_limit, linestyle='--',
-                                           color='dodgerblue', label="Zero FEPs",
-                                           linewidth=2.0)
-
+            plots[self.name]['ax'].axhline(self.limits["zero_feps"].value,
+                linestyle='--', label="Zero FEPs", linewidth=2.0,
+                color=self.limits["zero_feps"].color, zorder=-8)
+    
         def custom_validation_plots(self, plots):
             """
             Customization of validation plots.
@@ -428,8 +432,9 @@ of the 1DPAMZT model is shown below:
                 e.g. add limit lines, etc.
             """
             plots["1dpamzt"]['lines']['ax'].axhline(
-                self.zero_feps_limit, linestyle='--', color='dodgerblue', zorder=-8,
-                linewidth=2, label="Zero FEPs")
+                self.limits["zero_feps"].value, linestyle='--', zorder=-8,
+                color=self.limits["zero_feps"].color, linewidth=2, 
+                label="Zero FEPs")
     
         def _calc_model_supp(self, model, state_times, states, ephem, state0):
             """
@@ -452,7 +457,7 @@ of the 1DPAMZT model is shown below:
     
     
     def main():
-        args = get_options("dpa")
+        args = get_options()
         dpa_check = DPACheck()
         try:
             dpa_check.run(args)
@@ -466,7 +471,6 @@ of the 1DPAMZT model is shown below:
     
     if __name__ == '__main__':
         main()
-
 
 Setting Up An Entry Point
 =========================

@@ -477,6 +477,12 @@ def paint_perigee(perigee_passages, states, plots):
                                       color='black', linewidth=2.0)
 
 
+class ACISLimit:
+    def __init__(self, value, color):
+        self.value = value
+        self.color = color
+
+
 def get_acis_limits(msid, model_spec, limits_map=None):
     """
     Given a MSID and a model specification (JSON or dict),
@@ -514,8 +520,5 @@ def get_acis_limits(msid, model_spec, limits_map=None):
         if k == "unit":
             continue
         key = limits_map.get(k, k)
-        limits[key] = {
-            "value": v,
-            "color": get_limit_color(k)
-        }
+        limits[key] = ACISLimit(v, get_limit_color(k))
     return limits
