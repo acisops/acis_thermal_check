@@ -176,10 +176,10 @@ class ACISThermalCheck:
         # run. THIS SHOULD ONLY BE USED FOR TESTING PURPOSES.
         if override_limits is not None:
             for k, v in override_limits.items():
-                if hasattr(self, k):
-                    limit = getattr(self, k)
+                if k in self.limits:
+                    limit = self.limits[k]["value"]
                     mylog.warning("Replacing %s %.2f with %.2f" % (k, limit, v))
-                    setattr(self, k, v)
+                    self.limits[k]["value"] = v
 
         # Determine the start and stop times either from whatever was
         # stored in state_builder or punt by using NOW and None for
