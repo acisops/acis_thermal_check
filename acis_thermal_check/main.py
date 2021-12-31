@@ -22,8 +22,8 @@ import acis_thermal_check
 from astropy.io import ascii
 version = acis_thermal_check.__version__
 from acis_thermal_check.utils import \
-    config_logging, TASK_DATA, plot_two, \
-    mylog, plot_one, make_state_builder, \
+    config_logging, TASK_DATA, PredictPlot, \
+    mylog, make_state_builder, \
     calc_pitch_roll, thermal_blue, thermal_red, \
     paint_perigee, get_acis_limits
 from kadi import events
@@ -339,7 +339,8 @@ class ACISThermalCheck:
         plt.rc("grid", linewidth=1.5)
 
         temps = {self.name: model.comp[self.msid].mvals}
-        # make_prediction_plots runs the validation of the model against previous telemetry
+        # make_prediction_plots runs the validation of the model 
+        # against previous telemetry
         plots = self.make_prediction_plots(outdir, states, temps, tstart)
 
         # make_prediction_viols determines the violations and prints them out
@@ -584,8 +585,8 @@ class ACISThermalCheck:
         states_table['pitch'].format = '%.2f'
         states_table['tstart'].format = '%.2f'
         states_table['tstop'].format = '%.2f'
-        states_table.write(outfile, format='ascii', delimiter='\t', overwrite=True,
-                           fast_writer=False)
+        states_table.write(outfile, format='ascii', delimiter='\t', 
+                           overwrite=True, fast_writer=False)
 
     def write_temps(self, outdir, times, temps):
         """
@@ -666,9 +667,9 @@ class ACISThermalCheck:
         crm_file.close()
 
     def _make_state_plots(self, plots, num_figs, w1, plot_start,
-                          states, load_start, figsize=(12, 6)):
+                          states, load_start):
         # Make a plot of ACIS CCDs and SIM-Z position
-        plots['pow_sim'] = plot_two(
+        plots['pow_sim'] = PredictPlot(
             fig_id=num_figs+1,
             title='ACIS CCDs/FEPs and SIM-Z position',
             xlabel='Date',
@@ -682,16 +683,16 @@ class ACISThermalCheck:
             y2=pointpair(states['simpos']),
             ylabel2='SIM-Z (steps)',
             ylim2=(-105000, 105000),
-            figsize=figsize, width=w1, load_start=load_start)
-        plots['pow_sim']['ax'].lines[0].set_label('CCDs')
-        plots['pow_sim']['ax'].lines[1].set_label('FEPs')
-        plots['pow_sim']['ax'].legend(fancybox=True, framealpha=0.5, loc=2)
-        plots['pow_sim']['filename'] = 'pow_sim.png'
+            width=w1, load_start=load_start)
+        plots['pow_sim'].ax.lines[0].set_label('CCDs')
+        plots['pow_sim'].ax.lines[1].set_label('FEPs')
+        plots['pow_sim'].ax.legend(fancybox=True, framealpha=0.5, loc=2)
+        plots['pow_sim'].filename = 'pow_sim.png'
 
         if self.msid == "fptemp":
             plt_name = "roll_taco"
             # Make a plot of off-nominal roll and earth solid angle
-            plots['roll_taco'] = plot_two(
+            plots['roll_taco'] = PredictPlot(
                 fig_id=num_figs + 2,
                 title='Off-Nominal Roll and Earth Solid Angle in Rad FOV',
                 xlabel='Date',
@@ -704,12 +705,12 @@ class ACISThermalCheck:
                 y2=self.predict_model.comp['earthheat__fptemp'].dvals,
                 ylabel2='Earth Solid Angle (sr)',
                 ylim2=(1.0e-3, 1.0),
-                figsize=figsize, width=w1, load_start=load_start)
-            plots['roll_taco']['ax2'].set_yscale("log")
+                width=w1, load_start=load_start)
+            plots['roll_taco'].ax2.set_yscale("log")
         else:
             plt_name = "roll"
             # Make a plot of off-nominal roll
-            plots['roll'] = plot_one(
+            plots['roll'] = PredictPlot(
                 fig_id=num_figs+2,
                 title='Off-Nominal Roll',
                 xlabel='Date',
@@ -718,8 +719,8 @@ class ACISThermalCheck:
                 xmin=plot_start,
                 ylabel='Roll Angle (deg)',
                 ylim=(-20.0, 20.0),
-                figsize=figsize, width=w1, load_start=load_start)
-        plots[plt_name]['filename'] = f'{plt_name}.png'
+                width=w1, load_start=load_start)
+        plots[plt_name].filename = f'{plt_name}.png'
 
     def make_prediction_plots(self, outdir, states, temps, load_start):
         """
@@ -752,41 +753,39 @@ class ACISThermalCheck:
 
         w1 = None
         mylog.info('Making temperature prediction plots')
-        plots[self.name] = plot_two(fig_id=1, x=times, y=temps[self.name],
-                                    x2=times,
-                                    y2=self.predict_model.comp["pitch"].mvals,
-                                    xmin=plot_start, xlabel='Date',
-                                    ylabel='Temperature ($^\circ$C)',
-                                    ylabel2='Pitch (deg)', ylim2=(40, 180),
-                                    width=w1, load_start=load_start)
+        plots[self.name] = PredictPlot(fig_id=1, x=times, y=temps[self.name],
+            x2=times, y2=self.predict_model.comp["pitch"].mvals,
+            xmin=plot_start, xlabel='Date', ylabel='Temperature ($^\circ$C)',
+            ylabel2='Pitch (deg)', ylim2=(40, 180), width=w1, 
+            load_start=load_start)
         # Add horizontal lines for the planning and caution limits
-        ymin, ymax = plots[self.name]['ax'].get_ylim()
+        ymin, ymax = plots[self.name].ax.get_ylim()
         ymax = max(self.limits["yellow_hi"].value+1, ymax)
-        plots[self.name]['ax'].set_title(self.msid.upper(), loc='left', pad=10)
-        plots[self.name]['ax'].axhline(self.limits["yellow_hi"].value,
-                                       linestyle='-', linewidth=2.0,
-                                       color=self.limits["yellow_hi"].color,
-                                       label='Yellow')
-        plots[self.name]['ax'].axhline(self.limits["planning_hi"].value,
-                                       linestyle='-', linewidth=2.0,
-                                       color=self.limits["planning_hi"].color,
-                                       label='Planning')
+        plots[self.name].ax.set_title(self.msid.upper(), loc='left', pad=10)
+        plots[self.name].ax.axhline(self.limits["yellow_hi"].value,
+                                    linestyle='-', linewidth=2.0,
+                                    color=self.limits["yellow_hi"].color,
+                                    label='Yellow')
+        plots[self.name].ax.axhline(self.limits["planning_hi"].value,
+                                    linestyle='-', linewidth=2.0,
+                                    color=self.limits["planning_hi"].color,
+                                    label='Planning')
         if self.flag_cold_viols:
             ymin = min(self.limits["yellow_lo"].value-1, ymin)
-            plots[self.name]['ax'].axhline(self.limits["yellow_hi"].value,
+            plots[self.name].ax.axhline(self.limits["yellow_hi"].value,
                                            linestyle='-', linewidth=2.0,
                                            color=self.limits["yellow_hi"].color,
                                            label='Yellow', zorder=-8)
-            plots[self.name]['ax'].axhline(self.limits["planning_hi"].value,
+            plots[self.name].ax.axhline(self.limits["planning_hi"].value,
                                            linestyle='-', linewidth=2.0,
                                            color=self.limits["planning_hi"].color,
                                            label='Planning', zorder=-8)
-        plots[self.name]['ax'].set_ylim(ymin, ymax)
-        plots[self.name]['filename'] = self.msid.lower()+'.png'
+        plots[self.name].ax.set_ylim(ymin, ymax)
+        plots[self.name].filename = self.msid.lower()+'.png'
 
         # The next line is to ensure that the width of the axes
         # of all the weekly prediction plots are the same.
-        w1, _ = plots[self.name]['fig'].get_size_inches()
+        w1, _ = plots[self.name].fig.get_size_inches()
 
         self._make_state_plots(plots, 1, w1, plot_start,
                                states, load_start)
@@ -800,9 +799,9 @@ class ACISThermalCheck:
         # Make the legend on the temperature plot
         # only now after we've allowed for
         # customizations
-        plots['default']['ax'].legend(bbox_to_anchor=(0.25, 0.99),
-                                      loc='lower left',
-                                      ncol=4, fontsize=14)
+        plots['default'].ax.legend(bbox_to_anchor=(0.25, 0.99),
+                                   loc='lower left', ncol=4,
+                                   fontsize=14)
 
         # Now plot any perigee passages that occur between xmin and xmax
         # for eachpassage in perigee_passages:
@@ -812,9 +811,9 @@ class ACISThermalCheck:
         # customizations have been made
         for key in plots:
             if key != self.msid:
-                outfile = outdir / plots[key]['filename']
+                outfile = outdir / plots[key].filename
                 mylog.debug('Writing plot file %s' % outfile)
-                plots[key]['fig'].savefig(outfile)
+                plots[key].fig.savefig(outfile)
 
         return plots
 
@@ -1123,7 +1122,7 @@ class ACISThermalCheck:
         for plot in plots.values():
             for key in plot:
                 if key in ['lines', 'hist']:
-                    outfile = outdir / plot[key]['filename']
+                    outfile = outdir / plot[key]["filename"]
                     mylog.debug('Writing plot file %s' % outfile)
                     plot[key]['fig'].savefig(outfile)
 

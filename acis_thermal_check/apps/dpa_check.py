@@ -75,7 +75,7 @@ class DPACheck(ACISThermalCheck):
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
         """
-        plots[self.name]['ax'].axhline(self.limits["zero_feps"].value,
+        plots[self.name].ax.axhline(self.limits["zero_feps"].value,
             linestyle='--', label="Zero FEPs", linewidth=2.0,
             color=self.limits["zero_feps"].color, zorder=-8)
 

@@ -23,7 +23,7 @@ from acis_thermal_check import \
     get_options, \
     mylog
 from acis_thermal_check.utils import \
-    plot_two, paint_perigee
+    paint_perigee, PredictPlot
 import os
 import sys
 from astropy.table import Table
@@ -145,7 +145,7 @@ class ACISFPCheck(ACISThermalCheck):
         self.acis_and_ecs_obs = hrc_science_obs_filter(observation_intervals)
 
         # create an empty dictionary called plots to contain the returned
-        # figures, axes 1  and axes 2 of the plot_two call
+        # figures, axes 1 and axes 2 of the PredictPlot class
         plots = {}
 
         # Start time of loads being reviewed expressed in units for plotdate()
@@ -163,39 +163,39 @@ class ACISFPCheck(ACISThermalCheck):
         fontsize = [12, 9, 9]
         for i in range(3):
             name = f"{self.name}_{i+1}"
-            plots[name] = plot_two(fig_id=i+1, x=times, y=temps[self.name],
-                                   x2=self.predict_model.times,
-                                   y2=self.predict_model.comp["pitch"].mvals,
-                                   xlabel='Date', ylabel='Temperature ($^\circ$C)',
-                                   ylabel2='Pitch (deg)', xmin=plot_start,
-                                   ylim=ylim[i], ylim2=(40, 180),
-                                   figsize=(12, 7.142857142857142),
-                                   width=w1, load_start=load_start)
-            plots[name]['ax'].set_title(self.msid.upper(), loc='left', pad=10)
+            plots[name] = PredictPlot(fig_id=i+1, x=times, y=temps[self.name],
+                x2=self.predict_model.times,
+                y2=self.predict_model.comp["pitch"].mvals,
+                xlabel='Date', ylabel='Temperature ($^\circ$C)',
+                ylabel2='Pitch (deg)', xmin=plot_start,
+                ylim=ylim[i], ylim2=(40, 180),
+                figsize=(12, 7.142857142857142),
+                width=w1, load_start=load_start)
+            plots[name].ax.set_title(self.msid.upper(), loc='left', pad=10)
             # Draw a horizontal line indicating cold ECS cutoff
-            plots[name]['ax'].axhline(self.limits["cold_ecs"].value,
-                                      linestyle='--', linewidth=2.0,
-                                      color=self.limits["cold_ecs"].color,
-                                      label='Cold ECS')
+            plots[name].ax.axhline(self.limits["cold_ecs"].value,
+                                   linestyle='--', linewidth=2.0,
+                                   color=self.limits["cold_ecs"].color,
+                                   label='Cold ECS')
             # Draw a horizontal line showing the ACIS-I cutoff
-            plots[name]['ax'].axhline(self.limits["acis_i"].value,
-                                      linestyle='--', linewidth=2.0,
-                                      color=self.limits["acis_i"].color,
-                                      label="ACIS-I")
+            plots[name].ax.axhline(self.limits["acis_i"].value,
+                                   linestyle='--', linewidth=2.0,
+                                   color=self.limits["acis_i"].color,
+                                   label="ACIS-I")
             # Draw a horizontal line showing the ACIS-S cutoff
-            plots[name]['ax'].axhline(self.limits["acis_s"].value,
-                                      linestyle='--', linewidth=2.0,
-                                      color=self.limits["acis_s"].color,
-                                      label="ACIS-S")
+            plots[name].ax.axhline(self.limits["acis_s"].value,
+                                   linestyle='--', linewidth=2.0,
+                                   color=self.limits["acis_s"].color,
+                                   label="ACIS-S")
             # Draw a horizontal line showing the hot ACIS-S cutoff
-            plots[name]['ax'].axhline(self.limits["acis_hot"].value,
-                                      linestyle='--', linewidth=2.0,
-                                      color=self.limits["acis_hot"].color,
-                                      label="Hot ACIS-S")
+            plots[name].ax.axhline(self.limits["acis_hot"].value,
+                                   linestyle='--', linewidth=2.0,
+                                   color=self.limits["acis_hot"].color,
+                                   label="Hot ACIS-S")
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
             if i == 0:
-                w1, _ = plots[name]['fig'].get_size_inches()
+                w1, _ = plots[name].fig.get_size_inches()
 
             # Now draw horizontal lines on the plot running from start to stop
             # and label them with the Obsid
@@ -204,28 +204,27 @@ class ACISFPCheck(ACISThermalCheck):
                         textypos[i], fontsize[i], plot_start)
 
             # These next lines are dummies so we can get the obsids in the legend
-            plots[name]['ax'].errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
-                                       lw=2, xlolims=True, color='red',
-                                       capsize=4, capthick=2, label='ACIS-I')
-            plots[name]['ax'].errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
-                                       lw=2, xlolims=True, color='green',
-                                       capsize=4, capthick=2, label='ACIS-S')
-            plots[name]['ax'].errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
-                                       lw=2, xlolims=True, color='blue',
-                                       capsize=4, capthick=2, label='ECS')
+            plots[name].ax.errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
+                                    lw=2, xlolims=True, color='red',
+                                    capsize=4, capthick=2, label='ACIS-I')
+            plots[name].ax.errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
+                                    lw=2, xlolims=True, color='green',
+                                    capsize=4, capthick=2, label='ACIS-S')
+            plots[name].ax.errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
+                                    lw=2, xlolims=True, color='blue',
+                                    capsize=4, capthick=2, label='ECS')
 
             # Make the legend on the temperature plot
-            plots[name]['ax'].legend(bbox_to_anchor=(0.15, 0.99),
-                                     loc='lower left',
-                                     ncol=4, fontsize=14)
+            plots[name].ax.legend(bbox_to_anchor=(0.15, 0.99),
+                                  loc='lower left', ncol=4, fontsize=14)
+
             # Build the file name
             filename = f'{self.msid.lower()}' \
                        f'M{-int(ylim[i][0])}toM{-int(ylim[i][1])}.png'
-            plots[name]['filename'] = filename
+            plots[name].filename = filename
 
         self._make_state_plots(plots, 3, w1, plot_start,
-                               states, load_start,
-                               figsize=(12, 6))
+                               states, load_start)
 
         # Now plot any perigee passages that occur between xmin and xmax
         # for eachpassage in perigee_passages:
@@ -237,9 +236,9 @@ class ACISFPCheck(ACISThermalCheck):
         # customizations have been made
         for key in plots:
             if key != self.msid:
-                outfile = os.path.join(outdir, plots[key]['filename'])
+                outfile = os.path.join(outdir, plots[key].filename)
                 mylog.info('Writing plot file %s' % outfile)
-                plots[key]['fig'].savefig(outfile)
+                plots[key].fig.savefig(outfile)
 
         return plots
 
@@ -454,24 +453,24 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
         if in_fp.startswith("ACIS-") or obsid > 60000:
             # For each ACIS Obsid, draw a horizontal line to show
             # its start and stop
-            plots[msid]['ax'].hlines(ypos,
-                                     obs_start,
-                                     obs_stop,
-                                     linestyle='-',
-                                     color=color,
-                                     linewidth=2.0)
+            plots[msid].ax.hlines(ypos,
+                                  obs_start,
+                                  obs_stop,
+                                  linestyle='-',
+                                  color=color,
+                                  linewidth=2.0)
 
             # Plot vertical end caps for each obsid to visually show start/stop
-            plots[msid]['ax'].vlines(obs_start,
-                                     endcapstart,
-                                     endcapstop,
-                                     color=color,
-                                     linewidth=2.0)
-            plots[msid]['ax'].vlines(obs_stop,
-                                     endcapstart,
-                                     endcapstop,
-                                     color=color,
-                                     linewidth=2.0)
+            plots[msid].ax.vlines(obs_start,
+                                  endcapstart,
+                                  endcapstop,
+                                  color=color,
+                                  linewidth=2.0)
+            plots[msid].ax.vlines(obs_stop,
+                                  endcapstart,
+                                  endcapstop,
+                                  color=color,
+                                  linewidth=2.0)
 
             # Now print the obsid in the middle of the time span,
             # above the line, and rotate 90 degrees.
@@ -479,14 +478,14 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
             obs_time = obs_start + (obs_stop - obs_start)/2
             if obs_time > plot_start:
                 # Now plot the obsid.
-                plots[msid]['ax'].text(obs_time,
-                                       textypos,
-                                       obsid_txt,
-                                       color=color,
-                                       va='bottom',
-                                       ma='left',
-                                       rotation=90,
-                                       fontsize=fontsize)
+                plots[msid].ax.text(obs_time,
+                                    textypos,
+                                    obsid_txt,
+                                    color=color,
+                                    va='bottom',
+                                    ma='left',
+                                    rotation=90,
+                                    fontsize=fontsize)
 
 
 def main():
