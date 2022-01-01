@@ -762,24 +762,12 @@ class ACISThermalCheck:
         ymin, ymax = plots[self.name].ax.get_ylim()
         ymax = max(self.limits["yellow_hi"].value+1, ymax)
         plots[self.name].ax.set_title(self.msid.upper(), loc='left', pad=10)
-        plots[self.name].ax.axhline(self.limits["yellow_hi"].value,
-                                    linestyle='-', linewidth=2.0,
-                                    color=self.limits["yellow_hi"].color,
-                                    label='Yellow')
-        plots[self.name].ax.axhline(self.limits["planning_hi"].value,
-                                    linestyle='-', linewidth=2.0,
-                                    color=self.limits["planning_hi"].color,
-                                    label='Planning')
+        plots[self.name].add_limit_line(self.limits["yellow_hi"], "Yellow")
+        plots[self.name].add_limit_line(self.limits["planning_hi"], "Planning")
         if self.flag_cold_viols:
             ymin = min(self.limits["yellow_lo"].value-1, ymin)
-            plots[self.name].ax.axhline(self.limits["yellow_hi"].value,
-                                           linestyle='-', linewidth=2.0,
-                                           color=self.limits["yellow_hi"].color,
-                                           label='Yellow', zorder=-8)
-            plots[self.name].ax.axhline(self.limits["planning_hi"].value,
-                                           linestyle='-', linewidth=2.0,
-                                           color=self.limits["planning_hi"].color,
-                                           label='Planning', zorder=-8)
+            plots[self.name].add_limit_line(self.limits["yellow_lo"], "Yellow")
+            plots[self.name].add_limit_line(self.limits["planning_lo"], "Planning")
         plots[self.name].ax.set_ylim(ymin, ymax)
         plots[self.name].filename = self.msid.lower()+'.png'
 

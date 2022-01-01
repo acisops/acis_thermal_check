@@ -225,6 +225,23 @@ class PlotDate:
         self.ax2 = ax2
         self.filename = None
 
+    def add_limit_line(self, limit, label, ls='-'):
+        """
+        Add a horizontal line for a given limit to the plot.
+
+        Parameters
+        ----------
+        limit : ACISLimit object
+            Contains information about the value of the limit
+            and the color it should be plotted with.
+        label : string
+            The label to give the line.
+        ls : string, optional
+            The line style for the limit line. Default: "-"
+        """
+        self.ax.axhline(limit.value, linestyle=ls, linewidth=2.0,
+                        color=limit.color, label=label, zorder=-8)
+
 
 class PredictPlot(PlotDate):
     _color = thermal_blue

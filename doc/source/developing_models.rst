@@ -197,29 +197,12 @@ class. This gives us access to all of the prediction plots which will appear
 on the thermal model webpage. 
 
 The ``plots`` dict that is the sole argument to ``custom_prediction_plots``
-contains the plots for the temperature being modeled, the has a structure 
-like this:
-
-.. code-block:: python
-
-    {
-        "dpa": {
-            "ax": <AxesSubplot>
-            "fig": <Figure>
-            "filename": "1dpamzt.png"
-        },
-        "pow_sim": {
-            "ax": <AxesSubplot>,
-            "fig": <Figure>,
-            "filename": "pow_sim.png"
-        },
-        ...
-    }
-
-showing that each sub-dict contains the Matplotlib ``Figure`` and ``AxesSubplot``
-instances that you can access to add lines, etc., as well as the plot filename. 
-An example for this is done to add the zero-FEPs line for the 1DPAMZT model is 
-shown here:
+contains ``PredictPlot`` objects for the temperature being modeled as well
+as other quantities. Each of these ``PredictPlot`` objects has Matplotlib 
+``Figure`` and ``AxesSubplot`` instances attached for further annotating or
+adjusting plots, as well as the plot filename. To add a limit line, call the
+``add_limit_line`` method of the ``PredictPlot`` object. An example for this 
+is done to add the zero-FEPs line for the 1DPAMZT model is shown here:
 
 .. code-block:: python
 
@@ -234,16 +217,15 @@ shown here:
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
         """
-        plots[self.name]['ax'].axhline(self.limits["zero_feps"].value,
-            linestyle='--', label="Zero FEPs", linewidth=2.0,
-            color=self.limits["zero_feps"].color, zorder=-8)
+        plots[self.name].add_limit_line(self.limits["zero_feps"], 
+                                        "Zero FEPs", ls='--')
 
 Something similar can be done for the validation plots in 
 ``custom_validation_plots``, except here the input ``plots`` structure is 
-a bit different. The dict for some plots has two sub-dicts, ``"lines"`` 
-and ``"hist"``, the former for the actual model vs. data comparison and 
-the latter for the histogram of model-data error. In practice, you will 
-only need to worry about the first, as shown below. 
+a bit different. Each item of ``plots`` is a dict has two sub-dicts, 
+``"lines"`` and ``"hist"``, the former for the actual model vs. data
+comparison and the latter for the histogram of model-data error. In practice, 
+you will only need to worry about the first, as shown below. 
 
 .. code-block:: python
 
@@ -416,9 +398,8 @@ of the 1DPAMZT model is shown below:
                 and can be used to customize plots before they are written,
                 e.g. add limit lines, etc.
             """
-            plots[self.name]['ax'].axhline(self.limits["zero_feps"].value,
-                linestyle='--', label="Zero FEPs", linewidth=2.0,
-                color=self.limits["zero_feps"].color, zorder=-8)
+            plots[self.name].add_limit_line(self.limits["zero_feps"], 
+                                            "Zero FEPs", ls='--')
     
         def custom_validation_plots(self, plots):
             """

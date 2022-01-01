@@ -173,25 +173,13 @@ class ACISFPCheck(ACISThermalCheck):
                 width=w1, load_start=load_start)
             plots[name].ax.set_title(self.msid.upper(), loc='left', pad=10)
             # Draw a horizontal line indicating cold ECS cutoff
-            plots[name].ax.axhline(self.limits["cold_ecs"].value,
-                                   linestyle='--', linewidth=2.0,
-                                   color=self.limits["cold_ecs"].color,
-                                   label='Cold ECS')
+            plots[self.name].add_limit_line(self.limits["cold_ecs"], "Cold ECS", ls='--')
             # Draw a horizontal line showing the ACIS-I cutoff
-            plots[name].ax.axhline(self.limits["acis_i"].value,
-                                   linestyle='--', linewidth=2.0,
-                                   color=self.limits["acis_i"].color,
-                                   label="ACIS-I")
+            plots[self.name].add_limit_line(self.limits["acis_i"], "ACIS-I", ls='--')
             # Draw a horizontal line showing the ACIS-S cutoff
-            plots[name].ax.axhline(self.limits["acis_s"].value,
-                                   linestyle='--', linewidth=2.0,
-                                   color=self.limits["acis_s"].color,
-                                   label="ACIS-S")
+            plots[self.name].add_limit_line(self.limits["acis_s"], "ACIS-S", ls='--')
             # Draw a horizontal line showing the hot ACIS-S cutoff
-            plots[name].ax.axhline(self.limits["acis_hot"].value,
-                                   linestyle='--', linewidth=2.0,
-                                   color=self.limits["acis_hot"].color,
-                                   label="Hot ACIS-S")
+            plots[self.name].add_limit_line(self.limits["acis_hot"], "Hot ACIS-S", ls='--')
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
             if i == 0:
