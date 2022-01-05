@@ -133,7 +133,7 @@ def fetch_ocat_data(obsid_list):
     return table_dict
 
 
-def find_obsid_intervals(cmd_states):
+def find_obsid_intervals(cmd_states, load_start):
     """
     User reads the SKA commanded states archive, via
     a call to the SKA kadi.commands.states.get_states, 
@@ -189,6 +189,11 @@ def find_obsid_intervals(cmd_states):
 
         # Make sure we skip maneuver obsids explicitly
         if 60000 > eachstate['obsid'] >= 38001:
+            continue
+
+        # Only check states which are at least partially 
+        # within the load being reviewed
+        if eachstate["tstop"] < load_start:
             continue
 
         pow_cmd = eachstate['power_cmd']

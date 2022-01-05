@@ -139,7 +139,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         # extract the OBSID's from the commanded states. NOTE: this contains all
         # observations including ECS runs and HRC observations
-        observation_intervals = find_obsid_intervals(states)
+        observation_intervals = find_obsid_intervals(states, load_start)
 
         # Filter out any HRC science observations BUT keep ACIS ECS observations
         self.acis_and_ecs_obs = hrc_science_obs_filter(observation_intervals)
