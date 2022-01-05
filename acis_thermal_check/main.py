@@ -537,7 +537,7 @@ class ACISThermalCheck:
                 times, temp, load_start, self.limits["planning_lo"].value,
                 "planning", "min")
             viols["lo"] = {
-                "name": f"Cold ({self.limits['planning_hi'].value} C)",
+                "name": f"Cold ({self.limits['planning_lo'].value} C)",
                 "type": "Min",
                 "values": lo_viols
             }
@@ -766,8 +766,8 @@ class ACISThermalCheck:
         plots[self.name].add_limit_line(self.limits["planning_hi"], "Planning")
         if self.flag_cold_viols:
             ymin = min(self.limits["yellow_lo"].value-1, ymin)
-            plots[self.name].add_limit_line(self.limits["yellow_lo"], "Yellow")
-            plots[self.name].add_limit_line(self.limits["planning_lo"], "Planning")
+            plots[self.name].add_limit_line(self.limits["yellow_lo"], None)
+            plots[self.name].add_limit_line(self.limits["planning_lo"], None)
         plots[self.name].ax.set_ylim(ymin, ymax)
         plots[self.name].filename = self.msid.lower()+'.png'
 
