@@ -161,10 +161,10 @@ def plot_one(fig_id, x, y, yy=None, linestyle='-',
     fig.clf()
     ax = fig.add_subplot(1, 1, 1)
     # Plot left y-axis
-    ax.plot_date(xt, y, fmt='-', linestyle=linestyle, linewidth=linewidth, 
+    ax.plot_date(xt, y, linestyle=linestyle, linewidth=linewidth, 
                  color=color)
     if yy is not None:
-        ax.plot_date(xt, yy, fmt='-', linestyle=ll, linewidth=linewidth, 
+        ax.plot_date(xt, yy, linestyle=ll, linewidth=linewidth, 
                      color=color)
     if xmin is None:
         xmin = min(xt)
@@ -266,10 +266,10 @@ def plot_two(fig_id, x, y, x2, y2, yy=None, linewidth=2,
     fig.clf()
     ax = fig.add_subplot(1, 1, 1)
     # Plot left y-axis
-    ax.plot_date(xt, y, fmt='-', linestyle=linestyle, linewidth=linewidth,
+    ax.plot_date(xt, y, linestyle=linestyle, linewidth=linewidth,
                  color=color)
     if yy is not None:
-        ax.plot_date(xt, yy, fmt='-', linestyle=ll, linewidth=linewidth,
+        ax.plot_date(xt, yy, linestyle=ll, linewidth=linewidth,
                      color=color)
     if xmin is None:
         xmin = min(xt)
@@ -287,7 +287,7 @@ def plot_two(fig_id, x, y, x2, y2, yy=None, linewidth=2,
 
     ax2 = ax.twinx()
     xt2 = cxctime2plotdate(x2)
-    ax2.plot_date(xt2, y2, fmt='-', linestyle=linestyle2, linewidth=linewidth,
+    ax2.plot_date(xt2, y2, linestyle=linestyle2, linewidth=linewidth,
                   color=color2)
     ax2.set_xlim(xmin, xmax)
     if ylim2:
