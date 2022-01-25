@@ -222,7 +222,7 @@ is done to add the zero-FEPs line for the 1DPAMZT model is shown here:
 
 Something similar can be done for the validation plots in 
 ``custom_validation_plots``, except here the input ``plots`` structure is 
-a bit different. Each item of ``plots`` is a dict has two sub-dicts, 
+a bit different. Each item of ``plots`` is a dict with two sub-dicts, 
 ``"lines"`` and ``"hist"``, the former for the actual model vs. data
 comparison and the latter for the histogram of model-data error. In practice, 
 you will only need to worry about the first, as shown below. 

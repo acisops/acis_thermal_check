@@ -191,7 +191,7 @@ def find_obsid_intervals(cmd_states, load_start):
         if 60000 > eachstate['obsid'] >= 38001:
             continue
 
-        # Only check states which are at least partially 
+        # Only check states which are at least partially
         # within the load being reviewed
         if eachstate["tstop"] < load_start:
             continue
