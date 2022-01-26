@@ -29,8 +29,11 @@ class DPACheck(ACISThermalCheck):
                         'TSCPOS': [(1, 2.5), (99, 2.5)]
                         }
         hist_limit = [20.0]
+        limits_map = {
+            "planning.caution.low": "zero_feps"
+        }
         super(DPACheck, self).__init__("1dpamzt", "dpa", valid_limits,
-                                       hist_limit)
+                                       hist_limit, limits_map=limits_map)
 
     def custom_prediction_viols(self, times, temp, viols, load_start):
         """
@@ -52,13 +55,14 @@ class DPACheck(ACISThermalCheck):
         """
         # Only check this violation when all FEPs are off
         mask = self.predict_model.comp['fep_count'].dvals == 0
-        zf_viols = self._make_prediction_viols(times, temp, load_start,
-                                               self.zero_feps_limit,
-                                               "zero-feps", "min",
-                                               mask=mask)
-        viols["zero_feps"] = {"name": f"Zero FEPs ({self.zero_feps_limit} C)",
-                              "type": "Min",
-                              "values": zf_viols}
+        zf_viols = self._make_prediction_viols(
+            times, temp, load_start, self.limits["zero_feps"].value,
+            "zero-feps", "min", mask=mask)
+        viols["zero_feps"] = {
+            "name": f"Zero FEPs ({self.limits['zero_feps'].value} C)",
+            "type": "Min",
+            "values": zf_viols
+        }
 
     def custom_prediction_plots(self, plots):
         """
@@ -71,9 +75,8 @@ class DPACheck(ACISThermalCheck):
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
         """
-        plots[self.name]['ax'].axhline(self.zero_feps_limit, linestyle='--',
-                                       color='dodgerblue', label="Zero FEPs",
-                                       linewidth=2.0)
+        plots[self.name].add_limit_line(self.limits["zero_feps"], 
+                                        "Zero FEPs", ls='--')
 
     def custom_validation_plots(self, plots):
         """
@@ -87,8 +90,9 @@ class DPACheck(ACISThermalCheck):
             e.g. add limit lines, etc.
         """
         plots["1dpamzt"]['lines']['ax'].axhline(
-            self.zero_feps_limit, linestyle='--', color='dodgerblue', zorder=-8,
-            linewidth=2, label="Zero FEPs")
+            self.limits["zero_feps"].value, linestyle='--', zorder=-8,
+            color=self.limits["zero_feps"].color, linewidth=2, 
+            label="Zero FEPs")
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """

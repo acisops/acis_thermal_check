@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from Ska.Matplotlib import cxctime2plotdate
 import Ska.Numpy
 from pathlib import Path, PurePath
-
+from xija.limits import get_limit_color
 
 TASK_DATA = Path(PurePath(__file__).parent / '..').resolve()
 
@@ -110,107 +110,12 @@ def config_logging(outdir, verbose):
     logger.addHandler(filehandler)
 
 
-def plot_one(fig_id, x, y, yy=None, linestyle='-',
-             ll='--', color=thermal_blue, 
-             linewidth=2, xmin=None, xmax=None, 
-             ylim=None, xlabel='', ylabel='', title='',
-             figsize=(12, 6), load_start=None,
-             width=None):
+class PlotDate:
+    _color = None
+    _color2 = None
     """
-    Plot one quantities with a date x-axis and a left
-    y-axis.
-
-    Parameters
-    ----------
-    fig_id : integer
-        The ID for this particular figure.
-    x : NumPy array
-        Times in seconds since the beginning of the mission for
-        the left y-axis quantity.
-    y : NumPy array
-        Quantity to plot against the times on the left x-axis.
-    yy : NumPy array, optional
-        A second quantity to plot against the times on the 
-        left x-axis. Default: None
-    linestyle : string, optional
-        The style of the line for the left y-axis.
-    ll : string, optional
-        The style of the second line for the left y-axis.
-    color : string, optional
-        The color of the line for the left y-axis.
-    linewidth : string, optional
-        The width of the lines. Default: 2
-    xmin : float, optional
-        The left-most value of the x-axis.
-    xmax : float, optional
-        The right-most value of the x-axis.
-    ylim : 2-tuple, optional
-        The limits for the left y-axis.
-    xlabel : string, optional
-        The label of the x-axis.
-    ylabel : string, optional
-        The label for the left y-axis.
-    title : string, optional
-        The title for the plot.
-    figsize : 2-tuple of floats
-        Size of plot in width and height in inches.
-    """
-    # Convert times to dates
-    xt = cxctime2plotdate(x)
-    fig = plt.figure(fig_id, figsize=figsize)
-    fig.clf()
-    ax = fig.add_subplot(1, 1, 1)
-    # Plot left y-axis
-    ax.plot_date(xt, y, fmt='-', linestyle=linestyle, linewidth=linewidth, 
-                 color=color)
-    if yy is not None:
-        ax.plot_date(xt, yy, fmt='-', linestyle=ll, linewidth=linewidth, 
-                     color=color)
-    if xmin is None:
-        xmin = min(xt)
-    if xmax is None:
-        xmax = max(xt)
-    ax.set_xlim(xmin, xmax)
-    if ylim:
-        ax.set_ylim(*ylim)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.grid()
-
-    if load_start is not None:
-        # Add a vertical line to mark the start time of the load
-        ax.axvline(load_start, linestyle='-', color='g', linewidth=2.0)
-
-    Ska.Matplotlib.set_time_ticks(ax)
-    for label in ax.xaxis.get_ticklabels():
-        label.set_rotation_mode("anchor")
-        label.set_rotation(30)
-        label.set_horizontalalignment('right')
-    ax.tick_params(which='major', axis='x', length=6)
-    ax.tick_params(which='minor', axis='x', length=3)
-
-    fig.subplots_adjust(bottom=0.22, right=0.87)
-    # The next several lines ensure that the width of the axes
-    # of all the weekly prediction plots are the same
-    if width is not None:
-        w2, _ = fig.get_size_inches()
-        lm = fig.subplotpars.left * width / w2
-        rm = fig.subplotpars.right * width / w2
-        fig.subplots_adjust(left=lm, right=rm)
-
-    return {'fig': fig, 'ax': ax}
-
-
-def plot_two(fig_id, x, y, x2, y2, yy=None, linewidth=2,
-             linestyle='-', linestyle2='-', ll='--', 
-             color=thermal_blue, color2='magenta',
-             xmin=None, xmax=None, ylim=None, ylim2=None,
-             xlabel='', ylabel='', ylabel2='', title='',
-             figsize=(12, 6), load_start=None, width=None):
-    """
-    Plot two quantities with a date x-axis, one on the left
-    y-axis and the other on the right y-axis.
+    Plot quantities with a date x-axis, on the left
+    y-axis and optionally another on the right y-axis.
 
     Parameters
     ----------
@@ -229,18 +134,6 @@ def plot_two(fig_id, x, y, x2, y2, yy=None, linewidth=2,
     yy : NumPy array, optional
         A second quantity to plot against the times on the 
         left x-axis. Default: None
-    linewidth : string, optional
-        The width of the lines. Default: 2
-    linestyle : string, optional
-        The style of the line for the left y-axis.
-    linestyle2 : string, optional
-        The style of the line for the right y-axis.
-    ll : string, optional
-        The style of the second line for the left y-axis.
-    color : string, optional
-        The color of the line for the left y-axis.
-    color2 : string, optional
-        The color of the line for the right y-axis.
     xmin : float, optional
         The left-most value of the x-axis.
     xmax : float, optional
@@ -260,66 +153,99 @@ def plot_two(fig_id, x, y, x2, y2, yy=None, linewidth=2,
     figsize : 2-tuple of floats
         Size of plot in width and height in inches.
     """
-    # Convert times to dates
-    xt = cxctime2plotdate(x)
-    fig = plt.figure(fig_id, figsize=figsize)
-    fig.clf()
-    ax = fig.add_subplot(1, 1, 1)
-    # Plot left y-axis
-    ax.plot_date(xt, y, fmt='-', linestyle=linestyle, linewidth=linewidth,
-                 color=color)
-    if yy is not None:
-        ax.plot_date(xt, yy, fmt='-', linestyle=ll, linewidth=linewidth,
-                     color=color)
-    if xmin is None:
-        xmin = min(xt)
-    if xmax is None:
-        xmax = max(xt)
-    ax.set_xlim(xmin, xmax)
-    if ylim:
-        ax.set_ylim(*ylim)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
-    ax.grid()
+    def __init__(self, fig_id, x, y, x2=None, y2=None, yy=None, 
+                 xmin=None, xmax=None, ylim=None, ylim2=None,
+                 xlabel='', ylabel='', ylabel2='', title='',
+                 figsize=(12, 6), load_start=None, width=None):
+        # Convert times to dates
+        xt = cxctime2plotdate(x)
+        fig = plt.figure(fig_id, figsize=figsize)
+        fig.clf()
+        ax = fig.add_subplot(1, 1, 1)
+        # Plot left y-axis
+        ax.plot_date(xt, y, fmt='-', linestyle='-', linewidth=2,
+                     color=self._color)
+        if yy is not None:
+            ax.plot_date(xt, yy, fmt='-', linestyle='--', linewidth=2,
+                         color=self._color2)
+        if xmin is None:
+            xmin = min(xt)
+        if xmax is None:
+            xmax = max(xt)
+        ax.set_xlim(xmin, xmax)
+        if ylim:
+            ax.set_ylim(*ylim)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title(title)
+        ax.grid()
 
-    # Plot right y-axis
+        # Plot right y-axis
 
-    ax2 = ax.twinx()
-    xt2 = cxctime2plotdate(x2)
-    ax2.plot_date(xt2, y2, fmt='-', linestyle=linestyle2, linewidth=linewidth,
-                  color=color2)
-    ax2.set_xlim(xmin, xmax)
-    if ylim2:
-        ax2.set_ylim(*ylim2)
-    ax2.set_ylabel(ylabel2, color=color2)
-    ax2.xaxis.set_visible(False)
+        if x2 is not None and y2 is not None:
+            ax2 = ax.twinx()
+            xt2 = cxctime2plotdate(x2)
+            ax2.plot_date(xt2, y2, fmt='-', linestyle='-', 
+                          linewidth=2, color="magenta")
+            ax2.set_xlim(xmin, xmax)
+            if ylim2:
+                ax2.set_ylim(*ylim2)
+            ax2.set_ylabel(ylabel2, color="magenta")
+            ax2.xaxis.set_visible(False)
+        else:
+            ax2 = None
 
-    if load_start is not None:
-        # Add a vertical line to mark the start time of the load
-        ax.axvline(load_start, linestyle='-', color='g', linewidth=2.0)
+        if load_start is not None:
+            # Add a vertical line to mark the start time of the load
+            ax.axvline(load_start, linestyle='-', color='g', linewidth=2.0)
 
-    Ska.Matplotlib.set_time_ticks(ax)
-    for label in ax.xaxis.get_ticklabels():
-        label.set_rotation_mode("anchor")
-        label.set_rotation(30)
-        label.set_horizontalalignment('right')
-    [label.set_color(color2) for label in ax2.yaxis.get_ticklabels()]
-    ax.tick_params(which='major', axis='x', length=6)
-    ax.tick_params(which='minor', axis='x', length=3)
-    fig.subplots_adjust(bottom=0.22, right=0.87)
-    # The next several lines ensure that the width of the axes
-    # of all the weekly prediction plots are the same
-    if width is not None:
-        w2, _ = fig.get_size_inches()
-        lm = fig.subplotpars.left * width / w2
-        rm = fig.subplotpars.right * width / w2
-        fig.subplots_adjust(left=lm, right=rm)
+        Ska.Matplotlib.set_time_ticks(ax)
+        for label in ax.xaxis.get_ticklabels():
+            label.set_rotation_mode("anchor")
+            label.set_rotation(30)
+            label.set_horizontalalignment('right')
+        if ax2 is not None:
+            [label.set_color("magenta") for label in ax2.yaxis.get_ticklabels()]
+        ax.tick_params(which='major', axis='x', length=6)
+        ax.tick_params(which='minor', axis='x', length=3)
+        fig.subplots_adjust(bottom=0.22, right=0.87)
+        # The next several lines ensure that the width of the axes
+        # of all the weekly prediction plots are the same
+        if width is not None:
+            w2, _ = fig.get_size_inches()
+            lm = fig.subplotpars.left * width / w2
+            rm = fig.subplotpars.right * width / w2
+            fig.subplots_adjust(left=lm, right=rm)
 
-    ax.set_zorder(10)
-    ax.patch.set_visible(False)
+        ax.set_zorder(10)
+        ax.patch.set_visible(False)
 
-    return {'fig': fig, 'ax': ax, 'ax2': ax2}
+        self.fig = fig
+        self.ax = ax
+        self.ax2 = ax2
+        self.filename = None
+
+    def add_limit_line(self, limit, label, ls='-'):
+        """
+        Add a horizontal line for a given limit to the plot.
+
+        Parameters
+        ----------
+        limit : ACISLimit object
+            Contains information about the value of the limit
+            and the color it should be plotted with.
+        label : string
+            The label to give the line.
+        ls : string, optional
+            The line style for the limit line. Default: "-"
+        """
+        self.ax.axhline(limit.value, linestyle=ls, linewidth=2.0,
+                        color=limit.color, label=label, zorder=-8)
+
+
+class PredictPlot(PlotDate):
+    _color = thermal_blue
+    _color2 = thermal_blue
 
 
 def get_options(opts=None):
@@ -463,15 +389,62 @@ def paint_perigee(perigee_passages, states, plots):
                 # necessitated by SKA
                 xpos = cxctime2plotdate([CxoTime(eachpassage[0]).secs])
 
-                ymin, ymax = plot['ax'].get_ylim()
+                ymin, ymax = plot.ax.get_ylim()
 
                 # now plot the line.
-                plot['ax'].vlines(xpos, ymin, ymax, linestyle=':', color='red',
-                                  linewidth=2.0)
+                plot.ax.vlines(xpos, ymin, ymax, linestyle=':', color='red',
+                               linewidth=2.0)
 
                 # Plot the perigee passage time so long as it was specified in
                 # the CTI_report file
                 if eachpassage[1] != "Not-within-load":
                     perigee_time = cxctime2plotdate([CxoTime(eachpassage[1]).secs])
-                    plot['ax'].vlines(perigee_time, ymin, ymax, linestyle=':',
-                                      color='black', linewidth=2.0)
+                    plot.ax.vlines(perigee_time, ymin, ymax, linestyle=':',
+                                   color='black', linewidth=2.0)
+
+
+class ACISLimit:
+    def __init__(self, value, color):
+        self.value = value
+        self.color = color
+
+
+def get_acis_limits(msid, model_spec, limits_map=None):
+    """
+    Given a MSID and a model specification (JSON or dict),
+    return the values and line colors of the limits specified
+    in the file.
+
+    Parameters
+    ----------
+    msid : string
+        The MSID to get the limits for.
+    model_spec : string or dict
+        The xija model specification. If a string, it is
+        assumed to be a JSON file to be read in
+    limits_map : dict, optional
+        If supplied, this will change the keys of the output
+        dict, which are normally the limit names in the model
+        specification, with other names, e.g. replaces
+        "odb.caution.high" with "yellow_hi". Default: None
+
+    Returns
+    -------
+    A dict of dicts, with each dict corresponding to the value of the
+    limit and the color of the line on plots.
+    """
+    import json
+    if msid == "fptemp_11":
+        msid = "fptemp"
+    if limits_map is None:
+        limits_map = {}
+    if not isinstance(model_spec, dict):
+        model_spec = json.load(open(model_spec, 'r'))
+    json_limits = model_spec["limits"][msid]
+    limits = {}
+    for k, v in json_limits.items():
+        if k == "unit":
+            continue
+        key = limits_map.get(k, k)
+        limits[key] = ACISLimit(v, get_limit_color(k))
+    return limits

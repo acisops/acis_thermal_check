@@ -1,10 +1,10 @@
 {
     "run_start": "2019:203:10:57:34.816",
     "limits": {
-        "yellow_hi_limit": 33.0,
-        "plan_hi_limit": 31.0,
-        "yellow_lo_limit": 18.0,
-        "plan_lo_limit": 16.0
+        "yellow_hi": 33.0,
+        "planning_hi": 31.0,
+        "yellow_lo": 18.0,
+        "planning_lo": 16.0
     },
     "datestarts": [
         "2019:210:01:16:43.016",
