@@ -163,10 +163,10 @@ class PlotDate:
         fig.clf()
         ax = fig.add_subplot(1, 1, 1)
         # Plot left y-axis
-        ax.plot_date(xt, y, fmt='-', linestyle='-', linewidth=2,
+        ax.plot_date(xt, y, linestyle='-', linewidth=2,
                      color=self._color)
         if yy is not None:
-            ax.plot_date(xt, yy, fmt='-', linestyle='--', linewidth=2,
+            ax.plot_date(xt, yy, linestyle='--', linewidth=2,
                          color=self._color2)
         if xmin is None:
             xmin = min(xt)
@@ -185,7 +185,7 @@ class PlotDate:
         if x2 is not None and y2 is not None:
             ax2 = ax.twinx()
             xt2 = cxctime2plotdate(x2)
-            ax2.plot_date(xt2, y2, fmt='-', linestyle='-', 
+            ax2.plot_date(xt2, y2, linestyle='-', 
                           linewidth=2, color="magenta")
             ax2.set_xlim(xmin, xmax)
             if ylim2:
