@@ -7,8 +7,8 @@ import kadi.commands.states as kadi_states
 import logging
 from Ska.File import get_globfiles
 
-# Define state keys for states, corresponding to the legacy states in
-# Chandra.cmd_states.
+
+# Define state keys for states
 STATE_KEYS = ['ccd_count', 'clocking', 'dec', 'dither', 'eclipse',
               'fep_count', 'hetg', 'letg', 'obsid', 'pcad_mode', 'pitch',
               'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 'si_mode',

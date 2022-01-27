@@ -1,8 +1,8 @@
 {
     "run_start": "2019:338:14:25:26.816",
     "limits": {
-        "acis_i_limit": -115.0,
-        "acis_s_limit": -113.0
+        "acis_i": -115.0,
+        "acis_s": -113.0
     },
     "datestarts": [
         "2019:345:04:41:02.816",

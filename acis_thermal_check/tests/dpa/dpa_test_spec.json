@@ -241,10 +241,7 @@
     "dt": 328.0,
     "gui_config": {
         "filename": "/home/gregg/THERMAL-MODELS/DPA-FITS/FALL_2019_RECAL/NOV_5/DEC_9_STEP_1.json",
-        "limits": {
-            "caution_hi": 39.5,
-            "planning_hi": 37.5
-        },
+
         "msid": "1dpamzt",
         "plot_names": [
             "1dpamzt data__time",
@@ -257,6 +254,15 @@
             1556,
             1028
         ]
+    },
+    "limits": {
+        "1dpamzt": {
+            "odb.caution.high": 39.5,
+            "odb.warning.high": 41.5,
+            "planning.warning.high": 37.5,
+            "planning.caution.low": 12.0,
+            "unit": "degC"
+        }
     },
     "mval_names": [],
     "name": "dpa_state",
