@@ -61,22 +61,28 @@ def fetch_ocat_data(obsid_list):
            "determine which observations can go to -109 C. " \
            "Any violations of eligible observations should " \
            "be hand-checked."
-    # The following uses a request call to the obscat which explicitly
-    # asks for text formatting so that the output can be ingested into
-    # an AstroPy table.
-    urlbase = "https://cda.harvard.edu/srservices/ocatDetails.do?format=text"
-    obsid_list = ",".join([str(obsid) for obsid in obsid_list])
-    params = {"obsid": obsid_list}
-    # First fetch the information from the obsid itself
-    got_table = True
-    try:
-        resp = retry_call(requests.get, [urlbase], {"params": params}, 
-                          tries=4, delay=1)
-    except (requests.ConnectionError, RetryError):
-        got_table = False
-    else:
-        if not resp.ok:
+    # Only bother with this check if obsids are found
+    if len(obsid_list) > 0:
+        # The following uses a request call to the obscat which explicitly
+        # asks for text formatting so that the output can be ingested into
+        # an AstroPy table.
+        urlbase = "https://cda.harvard.edu/srservices/ocatDetails.do?format=text"
+        obsid_list = ",".join([str(obsid) for obsid in obsid_list])
+        params = {"obsid": obsid_list}
+        # First fetch the information from the obsid itself
+        got_table = True
+        try:
+            resp = retry_call(requests.get, [urlbase], {"params": params}, 
+                              tries=4, delay=1)
+        except (requests.ConnectionError, RetryError):
             got_table = False
+        else:
+            if not resp.ok:
+                got_table = False
+    else:
+        warn = "No obsids to check, may be a vehicle load--please check " \
+               "if not."
+        got_table = False
     if got_table:
         tab = ascii.read(resp.text, header_start=0, data_start=2)
         tab.sort("OBSID")
@@ -244,6 +250,10 @@ def find_obsid_intervals(cmd_states, load_start):
     # Now we add the stuff we get from ocat_data
     obsids = [e["obsid"] for e in obsid_interval_list]
     ocat_data = fetch_ocat_data(obsids)
+    # For a vehicle load, or if the connection to the ocat server
+    # fails (rare), we will get no data from the ocat so we only
+    # add this info if we need to. In the case of a failed connection
+    # to the OCAT server, -109 C checks should be done by hand
     if ocat_data is not None:
         ocat_keys = list(ocat_data.keys())
         ocat_keys.remove("obsid")
