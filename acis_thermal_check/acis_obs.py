@@ -61,6 +61,10 @@ def fetch_ocat_data(obsid_list):
            "determine which observations can go to -109 C. " \
            "Any violations of eligible observations should " \
            "be hand-checked."
+    # If no obsids were found (vehicle-only load) do not bother
+    # with this check
+    if len(obsid_list) == 0:
+        return None
     # The following uses a request call to the obscat which explicitly
     # asks for text formatting so that the output can be ingested into
     # an AstroPy table.
