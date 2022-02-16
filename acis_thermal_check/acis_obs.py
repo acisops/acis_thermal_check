@@ -248,6 +248,10 @@ def find_obsid_intervals(cmd_states, load_start):
     # Now we add the stuff we get from ocat_data
     obsids = [e["obsid"] for e in obsid_interval_list]
     ocat_data = fetch_ocat_data(obsids)
+    # For a vehicle load, or if the connection to the ocat server
+    # fails (rare), we will get no data from the ocat so we only
+    # add this info if we need to. In the case of a failed connection
+    # to the OCAT server, -109 C checks should be done by hand
     if ocat_data is not None:
         ocat_keys = list(ocat_data.keys())
         ocat_keys.remove("obsid")
