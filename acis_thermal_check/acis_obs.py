@@ -61,26 +61,28 @@ def fetch_ocat_data(obsid_list):
            "determine which observations can go to -109 C. " \
            "Any violations of eligible observations should " \
            "be hand-checked."
-    # If no obsids were found (vehicle-only load) do not bother
-    # with this check
-    if len(obsid_list) == 0:
-        return None
-    # The following uses a request call to the obscat which explicitly
-    # asks for text formatting so that the output can be ingested into
-    # an AstroPy table.
-    urlbase = "https://cda.harvard.edu/srservices/ocatDetails.do?format=text"
-    obsid_list = ",".join([str(obsid) for obsid in obsid_list])
-    params = {"obsid": obsid_list}
-    # First fetch the information from the obsid itself
-    got_table = True
-    try:
-        resp = retry_call(requests.get, [urlbase], {"params": params}, 
-                          tries=4, delay=1)
-    except (requests.ConnectionError, RetryError):
-        got_table = False
-    else:
-        if not resp.ok:
+    # Only bother with this check if obsids are found
+    if len(obsid_list) > 0:
+        # The following uses a request call to the obscat which explicitly
+        # asks for text formatting so that the output can be ingested into
+        # an AstroPy table.
+        urlbase = "https://cda.harvard.edu/srservices/ocatDetails.do?format=text"
+        obsid_list = ",".join([str(obsid) for obsid in obsid_list])
+        params = {"obsid": obsid_list}
+        # First fetch the information from the obsid itself
+        got_table = True
+        try:
+            resp = retry_call(requests.get, [urlbase], {"params": params}, 
+                              tries=4, delay=1)
+        except (requests.ConnectionError, RetryError):
             got_table = False
+        else:
+            if not resp.ok:
+                got_table = False
+    else:
+        warn = "No obsids to check, may be a vehicle load--please check " \
+               "if not."
+        got_table = False
     if got_table:
         tab = ascii.read(resp.text, header_start=0, data_start=2)
         tab.sort("OBSID")
