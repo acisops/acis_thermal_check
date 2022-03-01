@@ -128,6 +128,7 @@ def fetch_ocat_data(obsid_list):
         table_dict = {"obsid": np.array(obsids),
                       "grating": tab["GRAT"].data,
                       "ccd_count": ccd_count,
+                      "S1": np.ma.filled(tab["S1"].data),
                       "S3": np.ma.filled(tab["S3"].data),
                       "num_counts": cnt_rate*app_exp}
     else:
@@ -298,7 +299,7 @@ def acis_filter(obsid_interval_list):
     for eachobs in obsid_interval_list:
         if "grating" in eachobs:
             hetg = eachobs["grating"] == "HETG"
-            s3_only = eachobs["S3"] == "Y" and eachobs["ccd_count"] == 1
+            s3_only = eachobs["S3"] == "Y" and eachobs["S1"] == "N" and eachobs["ccd_count"] <= 2
             hot_acis = hetg or (eachobs["num_counts"] < 300.0 and s3_only)
         else:
             hot_acis = False
