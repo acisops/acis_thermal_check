@@ -297,10 +297,20 @@ def acis_filter(obsid_interval_list):
     cold_ecs = []
 
     for eachobs in obsid_interval_list:
+        # First we check that we got ocat data using "grating"
         if "grating" in eachobs:
-            hetg = eachobs["grating"] == "HETG"
-            s3_only = eachobs["S3"] == "Y" and eachobs["S1"] == "N" and eachobs["ccd_count"] <= 2
-            hot_acis = hetg or (eachobs["num_counts"] < 300.0 and s3_only)
+            # First check to see if this is an S3 observation
+            if eachobs["ccd_count"] <= 2:
+                # S3 with low counts
+                low_ct_s3 = eachobs["num_counts"] < 300.0 and eachobs["S3"] == "Y"
+                # Is there another chip on? Make sure it's not S1
+                if eachobs["ccd_count"] == 2:
+                    low_ct_s3 &= eachobs["S1"] in ["N", "D"]
+            else:
+                # All higher ccd counts are invalid
+                low_ct_s3 = False
+            # Also check grating status
+            hot_acis = (eachobs["grating"] == "HETG") or low_ct_s3
         else:
             hot_acis = False
         if hot_acis:
