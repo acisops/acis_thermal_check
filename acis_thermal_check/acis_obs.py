@@ -99,8 +99,9 @@ def fetch_ocat_data(obsid_list):
         ccd_count -= tab["DROPPED_CHIP_CNT"].data.astype('int')
         # Now we have to find all of the obsids in each sequence and then
         # compute the complete exposure for each sequence
-        seq_nums = list(tab["SEQ_NUM"].data.astype("str"))
-        seq_num_list = ",".join([seq_num for seq_num in seq_nums if seq_num != " "])
+        seq_nums = np.unique([str(sn) for sn in tab["SEQ_NUM"].data.astype("str") 
+                              if sn != " "])
+        seq_num_list = ",".join(seq_nums)
         obsids = tab["OBSID"].data.astype("int")
         cnt_rate = tab["EST_CNT_RATE"].data.astype("float64")
         params = {"seqNum": seq_num_list}
@@ -121,9 +122,12 @@ def fetch_ocat_data(obsid_list):
             return None
         tab_seq = ascii.read(resp.text, header_start=0, data_start=2)
         app_exp = np.zeros_like(cnt_rate)
-        for row in tab_seq:
-            i = seq_nums.index(str(row["SEQ_NUM"]))
-            app_exp[i] += np.float64(row["APP_EXP"])
+        for i, row in enumerate(tab):
+            sn = str(row["SEQ_NUM"])
+            if sn == " ":
+                continue
+            j = np.where(str(row["SEQ_NUM"]) == seq_nums)[0][0]
+            app_exp[i] += np.float64(tab_seq["APP_EXP"][j])
         app_exp *= 1000.0
         table_dict = {"obsid": np.array(obsids),
                       "grating": tab["GRAT"].data,
