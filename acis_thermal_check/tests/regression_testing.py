@@ -415,3 +415,28 @@ class RegressionTester:
             with open(viol_json, "w") as f:
                 json.dump(viol_data, f, indent=4)
 
+    def check_hot_acis_reporting(self, load_week, hot_json, 
+                                 answer_store=False):
+        import json
+        self.run_model(load_week)
+        out_dir = self.outdir / load_week / self.name
+        index_rst = out_dir / "index.rst"
+        hot_data = []
+        with open(index_rst, 'r') as myfile:
+            read_obsids = False
+            for line in myfile.readlines():
+                words = line.strip().split()
+                if line.startswith("\"Hot\" ACIS"):
+                    read_obsids = True
+                elif read_obsids:
+                    if len(words) == 2:
+                        hot_data.append(int(words[1]))
+                    elif len(words) == 0:
+                        read_obsids = False
+        if answer_store:
+            with open(hot_json, "w") as f:
+                json.dump(hot_data, f, indent=4)
+        else:
+            with open(hot_json, "r") as f:
+                hot_data_stored = json.load(f)
+                assert_array_equal(hot_data, hot_data_stored)
