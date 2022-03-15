@@ -86,17 +86,6 @@ def fetch_ocat_data(obsid_list):
     if got_table:
         tab = ascii.read(resp.text, header_start=0, data_start=2)
         tab.sort("OBSID")
-        # We figure out the CCD count from the table by finding out
-        # which ccds were on, optional, or dropped, and then
-        # subtracting off the dropped chip count entry in the table
-        ccd_count = np.zeros(tab["S3"].size, dtype='int')
-        for a, r in zip(["I", "S"], [range(4), range(6)]):
-            for i in r:
-                ccd = np.ma.filled(tab[f"{a}{i}"].data)
-                ccd_count += (ccd == "Y").astype('int')
-                ccd_count += (ccd == "D").astype('int')
-                ccd_count += np.char.startswith(ccd, "O").astype('int')
-        ccd_count -= tab["DROPPED_CHIP_CNT"].data.astype('int')
         # Now we have to find all of the obsids in each sequence and then
         # compute the complete exposure for each sequence
         seq_nums = np.unique([str(sn) for sn in tab["SEQ_NUM"].data.astype("str") 
@@ -131,7 +120,6 @@ def fetch_ocat_data(obsid_list):
         app_exp *= 1000.0
         table_dict = {"obsid": np.array(obsids),
                       "grating": tab["GRAT"].data,
-                      "ccd_count": ccd_count,
                       "S1": np.ma.filled(tab["S1"].data),
                       "S3": np.ma.filled(tab["S3"].data),
                       "num_counts": cnt_rate*app_exp}
@@ -221,6 +209,7 @@ def find_obsid_intervals(cmd_states, load_start):
             xtztime = eachstate['tstart']
             # MUST fix the instrument now
             instrument = who_in_fp(eachstate['simpos'])
+            ccd_count = eachstate["ccd_count"]
 
         # Process the first AA00000000 line you see
         if pow_cmd == 'AA00000000' and firstpow:
@@ -241,7 +230,8 @@ def find_obsid_intervals(cmd_states, load_start):
                               "tstop": tstop,
                               "start_science": xtztime,
                               "obsid": eachstate['obsid'],
-                              "instrument": instrument}
+                              "instrument": instrument,
+                              "ccd_count": ccd_count}
                 obsid_interval_list.append(obsid_dict)
 
             # now clear out the data values
