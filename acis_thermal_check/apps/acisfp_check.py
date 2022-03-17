@@ -254,7 +254,7 @@ class ACISFPCheck(ACISThermalCheck):
         """
         times = self.predict_model.times
 
-        mylog.info(f"\nMAKE VIOLS Checking for limit violations in "
+        mylog.info(f"MAKE VIOLS Checking for limit violations in "
                    f"{len(self.acis_and_ecs_obs)} total science observations")
 
         viols = {}
@@ -278,7 +278,7 @@ class ACISFPCheck(ACISThermalCheck):
         acis_hot_limit = self.limits["acis_hot"].value
         cold_ecs_limit = self.limits["cold_ecs"].value
 
-        mylog.info(f'\n\nACIS-I Science ({acis_i_limit} C) violations')
+        mylog.info(f'ACIS-I Science ({acis_i_limit} C) violations')
 
         # Create the violation data structure.
         acis_i_viols = self.search_obsids_for_viols("ACIS-I",
@@ -293,7 +293,7 @@ class ACISFPCheck(ACISThermalCheck):
         # science run. These are load killers
         # ------------------------------------------------------------
         #
-        mylog.info(f'\n\nACIS-S Science ({acis_s_limit} C) violations')
+        mylog.info(f'ACIS-S Science ({acis_s_limit} C) violations')
 
         acis_s_viols = self.search_obsids_for_viols("ACIS-S",
             acis_s_limit, ACIS_S_obs, temp, times, load_start)
@@ -306,7 +306,7 @@ class ACISFPCheck(ACISThermalCheck):
         # science run which can run hot. These are load killers
         # ------------------------------------------------------------
         #
-        mylog.info(f'\n\nACIS-S Science ({acis_hot_limit} C) violations')
+        mylog.info(f'ACIS-S Science ({acis_hot_limit} C) violations')
 
         acis_hot_viols = self.search_obsids_for_viols("Hot ACIS-S",
             acis_hot_limit, ACIS_hot_obs, temp, times, load_start)
@@ -317,7 +317,7 @@ class ACISFPCheck(ACISThermalCheck):
         # ------------------------------------------------------------
         # Science Orbit ECS -119.5 violations; -119.5 violation check
         # ------------------------------------------------------------
-        mylog.info(f'\n\nScience Orbit ECS ({cold_ecs_limit} C) violations')
+        mylog.info(f'Science Orbit ECS ({cold_ecs_limit} C) violations')
 
         ecs_viols = self.search_obsids_for_viols("Science Orbit ECS",
             cold_ecs_limit, sci_ecs_obs, temp, times, load_start)
