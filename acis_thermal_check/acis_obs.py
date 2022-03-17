@@ -1,5 +1,6 @@
 import numpy as np
 from acis_thermal_check.utils import mylog
+from kadi.commands.states import decode_power
 
 
 def who_in_fp(simpos=80655):
@@ -120,8 +121,6 @@ def fetch_ocat_data(obsid_list):
         app_exp *= 1000.0
         table_dict = {"obsid": np.array(obsids),
                       "grating": tab["GRAT"].data,
-                      "S1": np.ma.filled(tab["S1"].data),
-                      "S3": np.ma.filled(tab["S3"].data),
                       "num_counts": cnt_rate*app_exp}
     else:
         # We weren't able to get a valid table for some reason, so
@@ -203,6 +202,11 @@ def find_obsid_intervals(cmd_states, load_start):
             datestart = eachstate['datestart']
             tstart = eachstate['tstart']
 
+        # Process the power command which turns things on
+        if pow_cmd.startswith("WSPOW") and pow_cmd != 'WSPOW00000' \
+            and firstpow:
+            ccds = decode_power(pow_cmd)['ccds']
+
         # Process the first XTZ0000005 line you see
         if pow_cmd in ['XTZ0000005', 'XCZ0000005'] and \
                 (xtztime is None and firstpow):
@@ -228,6 +232,7 @@ def find_obsid_intervals(cmd_states, load_start):
                               "datestop": datestop,
                               "tstart": tstart,
                               "tstop": tstop,
+                              "ccds": ccds,
                               "start_science": xtztime,
                               "obsid": eachstate['obsid'],
                               "instrument": instrument,
@@ -296,10 +301,11 @@ def acis_filter(obsid_interval_list):
             # First check to see if this is an S3 observation
             if eachobs["ccd_count"] <= 2:
                 # S3 with low counts
-                low_ct_s3 = eachobs["num_counts"] < 300.0 and eachobs["S3"] == "Y"
+                print(eachobs["obsid"], eachobs["ccds"], eachobs["num_counts"])
+                low_ct_s3 = eachobs["num_counts"] < 300.0 and "S3" in eachobs["ccds"]
                 # Is there another chip on? Make sure it's not S1
                 if eachobs["ccd_count"] == 2:
-                    low_ct_s3 &= eachobs["S1"] in ["N", "D"]
+                    low_ct_s3 &= "S1" not in eachobs["ccds"]
             else:
                 # All higher ccd counts are invalid
                 low_ct_s3 = False
