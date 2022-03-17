@@ -34,9 +34,15 @@ States                 `<states.dat>`_
 {% if proc.msid == "FPTEMP" %}
 "Hot" ACIS Observations (-109 C limit)
 --------------------------------------
-{% for obsid in acis_hot_obs %}
-| {{ obsid }}  
+{% if acis_hot_obs|length > 0 %}
+=====  =================  ===========  =======
+Obsid  CCDs               # of counts  Grating
+=====  =================  ===========  =======
+{% for eachobs in acis_hot_obs %}
+{{ eachobs.obsid }}  {{"{0: <17}".format(eachobs.ccds)}}  {{eachobs.num_counts}}          {{eachobs.grating}}
 {% endfor %}
+=====  =================  ===========  =======
+{% endif %}
 {% endif %}
 
 {% for key in viols.keys() %}

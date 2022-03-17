@@ -328,7 +328,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Store all obsids which can go to -109 C
         for obs in ACIS_hot_obs:
-            self.acis_hot_obs.append(obs["obsid"])
+            self.acis_hot_obs.append(obs)
 
         return viols
 
