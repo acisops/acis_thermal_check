@@ -112,16 +112,18 @@ def fetch_ocat_data(obsid_list):
             return None
         tab_seq = ascii.read(resp.text, header_start=0, data_start=2)
         app_exp = np.zeros_like(cnt_rate)
+        seq_nums = tab_seq["SEQ_NUM"].data.astype("str")
         for i, row in enumerate(tab):
             sn = str(row["SEQ_NUM"])
             if sn == " ":
                 continue
-            j = np.where(str(row["SEQ_NUM"]) == seq_nums)[0][0]
-            app_exp[i] += np.float64(tab_seq["APP_EXP"][j])
+            j = np.where(sn == seq_nums)[0]
+            app_exp[i] += np.float64(tab_seq["APP_EXP"][j]).sum()
         app_exp *= 1000.0
         table_dict = {"obsid": np.array(obsids),
                       "grating": tab["GRAT"].data,
-                      "num_counts": (cnt_rate*app_exp).astype('int')}
+                      "cnt_rate": cnt_rate,
+                      "app_exp": app_exp}
     else:
         # We weren't able to get a valid table for some reason, so
         # we cannot check for -109 data, but we proceed with the
@@ -295,10 +297,15 @@ def acis_filter(obsid_interval_list):
     acis_i = []
     cold_ecs = []
 
+    mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS")
     for eachobs in obsid_interval_list:
         # First we check that we got ocat data using "grating"
         if "grating" in eachobs:
+            eachobs["num_counts"] = int(eachobs["cnt_rate"] * eachobs["app_exp"])
             # First check to see if this is an S3 observation
+            mylog.debug(f"{eachobs['obsid']}\t{eachobs['cnt_rate']}\t"
+                        f"{eachobs['app_exp']*1.0e-3}\t{eachobs['num_counts']}\t"
+                        f"{eachobs['grating']}\t{eachobs['ccds']}")
             if eachobs["ccd_count"] <= 2:
                 # S3 with low counts
                 low_ct_s3 = eachobs["num_counts"] < 300 and "S3" in eachobs["ccds"]
