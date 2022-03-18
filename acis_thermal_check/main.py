@@ -339,12 +339,13 @@ class ACISThermalCheck:
         plt.rc("grid", linewidth=1.5)
 
         temps = {self.name: model.comp[self.msid].mvals}
-        # make_prediction_plots runs the validation of the model 
-        # against previous telemetry
-        plots = self.make_prediction_plots(outdir, states, temps, tstart)
 
         # make_prediction_viols determines the violations and prints them out
-        viols = self.make_prediction_viols(temps, tstart)
+        viols = self.make_prediction_viols(temps, states, tstart)
+
+        # make_prediction_plots runs the validation of the model
+        # against previous telemetry
+        plots = self.make_prediction_plots(outdir, states, temps, tstart)
 
         # write_states writes the commanded states to states.dat
         self.write_states(outdir, states)

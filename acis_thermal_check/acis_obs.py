@@ -300,6 +300,7 @@ def acis_filter(obsid_interval_list):
     mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS")
     for eachobs in obsid_interval_list:
         # First we check that we got ocat data using "grating"
+        hot_acis = False
         if "grating" in eachobs:
             eachobs["num_counts"] = int(eachobs["cnt_rate"] * eachobs["app_exp"])
             # First check to see if this is an S3 observation
@@ -317,8 +318,7 @@ def acis_filter(obsid_interval_list):
                 low_ct_s3 = False
             # Also check grating status
             hot_acis = (eachobs["grating"] == "HETG") or low_ct_s3
-        else:
-            hot_acis = False
+        eachobs['hot_acis'] = hot_acis
         if hot_acis:
             acis_hot.append(eachobs)
         else:
