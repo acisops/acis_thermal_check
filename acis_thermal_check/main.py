@@ -505,7 +505,7 @@ class ACISThermalCheck:
 
         return viols
 
-    def make_prediction_viols(self, temps, load_start):
+    def make_prediction_viols(self, temps, states, load_start):
         """
         Find limit violations where predicted temperature is above the
         specified limits.
@@ -514,6 +514,8 @@ class ACISThermalCheck:
         ----------
         temps : dict of NumPy arrays
             NumPy arrays corresponding to the modeled temperatures
+        states : NumPy record array
+            Commanded states
         load_start : float
             The start time of the load, used so that we only report
             violations for times later than this time for the model
