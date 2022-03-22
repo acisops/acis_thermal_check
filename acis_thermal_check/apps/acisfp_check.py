@@ -137,13 +137,6 @@ class ACISFPCheck(ACISThermalCheck):
         those from the commanded states data structure called "states" 
         """
 
-        # extract the OBSID's from the commanded states. NOTE: this contains all
-        # observations including ECS runs and HRC observations
-        observation_intervals = find_obsid_intervals(states, load_start)
-
-        # Filter out any HRC science observations BUT keep ACIS ECS observations
-        self.acis_and_ecs_obs = hrc_science_obs_filter(observation_intervals)
-
         # create an empty dictionary called plots to contain the returned
         # figures, axes 1 and axes 2 of the PredictPlot class
         plots = {}
@@ -193,14 +186,17 @@ class ACISFPCheck(ACISThermalCheck):
 
             # These next lines are dummies so we can get the obsids in the legend
             plots[name].ax.errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
+                                    lw=2, xlolims=True, color='blue',
+                                    capsize=4, capthick=2, label='Cold ECS')
+            plots[name].ax.errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
                                     lw=2, xlolims=True, color='red',
                                     capsize=4, capthick=2, label='ACIS-I')
             plots[name].ax.errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
                                     lw=2, xlolims=True, color='green',
                                     capsize=4, capthick=2, label='ACIS-S')
             plots[name].ax.errorbar([0.0, 0.0], [1.0, 1.0], xerr=1.0,
-                                    lw=2, xlolims=True, color='blue',
-                                    capsize=4, capthick=2, label='ECS')
+                                    lw=2, xlolims=True, color='saddlebrown',
+                                    capsize=4, capthick=2, label='Hot ACIS-S')
 
             # Make the legend on the temperature plot
             plots[name].ax.legend(bbox_to_anchor=(0.15, 0.99),
@@ -230,7 +226,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         return plots
 
-    def make_prediction_viols(self, temps, load_start):
+    def make_prediction_viols(self, temps, states, load_start):
         """
         Find limit violations where predicted temperature is above the
         red minus margin.
@@ -252,9 +248,16 @@ class ACISFPCheck(ACISThermalCheck):
                  - science_viols
 
         """
+        # extract the OBSID's from the commanded states. NOTE: this contains all
+        # observations including ECS runs and HRC observations
+        observation_intervals = find_obsid_intervals(states, load_start)
+
+        # Filter out any HRC science observations BUT keep ACIS ECS observations
+        self.acis_and_ecs_obs = hrc_science_obs_filter(observation_intervals)
+
         times = self.predict_model.times
 
-        mylog.info(f"\nMAKE VIOLS Checking for limit violations in "
+        mylog.info(f"MAKE VIOLS Checking for limit violations in "
                    f"{len(self.acis_and_ecs_obs)} total science observations")
 
         viols = {}
@@ -278,7 +281,7 @@ class ACISFPCheck(ACISThermalCheck):
         acis_hot_limit = self.limits["acis_hot"].value
         cold_ecs_limit = self.limits["cold_ecs"].value
 
-        mylog.info(f'\n\nACIS-I Science ({acis_i_limit} C) violations')
+        mylog.info(f'ACIS-I Science ({acis_i_limit} C) violations')
 
         # Create the violation data structure.
         acis_i_viols = self.search_obsids_for_viols("ACIS-I",
@@ -293,7 +296,7 @@ class ACISFPCheck(ACISThermalCheck):
         # science run. These are load killers
         # ------------------------------------------------------------
         #
-        mylog.info(f'\n\nACIS-S Science ({acis_s_limit} C) violations')
+        mylog.info(f'ACIS-S Science ({acis_s_limit} C) violations')
 
         acis_s_viols = self.search_obsids_for_viols("ACIS-S",
             acis_s_limit, ACIS_S_obs, temp, times, load_start)
@@ -306,7 +309,7 @@ class ACISFPCheck(ACISThermalCheck):
         # science run which can run hot. These are load killers
         # ------------------------------------------------------------
         #
-        mylog.info(f'\n\nACIS-S Science ({acis_hot_limit} C) violations')
+        mylog.info(f'ACIS-S Science ({acis_hot_limit} C) violations')
 
         acis_hot_viols = self.search_obsids_for_viols("Hot ACIS-S",
             acis_hot_limit, ACIS_hot_obs, temp, times, load_start)
@@ -317,7 +320,7 @@ class ACISFPCheck(ACISThermalCheck):
         # ------------------------------------------------------------
         # Science Orbit ECS -119.5 violations; -119.5 violation check
         # ------------------------------------------------------------
-        mylog.info(f'\n\nScience Orbit ECS ({cold_ecs_limit} C) violations')
+        mylog.info(f'Science Orbit ECS ({cold_ecs_limit} C) violations')
 
         ecs_viols = self.search_obsids_for_viols("Science Orbit ECS",
             cold_ecs_limit, sci_ecs_obs, temp, times, load_start)
@@ -328,7 +331,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Store all obsids which can go to -109 C
         for obs in ACIS_hot_obs:
-            self.acis_hot_obs.append(obs["obsid"])
+            self.acis_hot_obs.append(obs)
 
         return viols
 
@@ -416,6 +419,7 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
 
         obsid = eachobservation['obsid']
         in_fp = eachobservation['instrument']
+        hot_acis = eachobservation['hot_acis']
 
         if obsid > 60000:
             # ECS observations during the science orbit are colored blue
@@ -426,7 +430,7 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
             if in_fp == "ACIS-I":
                 color = 'red'
             else:
-                color = 'green'
+                color = 'saddlebrown' if hot_acis else 'green'
 
         obsid_txt = str(obsid)
         # If this is an ECS measurement in the science orbit mark

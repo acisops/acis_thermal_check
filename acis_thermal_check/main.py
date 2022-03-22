@@ -339,12 +339,13 @@ class ACISThermalCheck:
         plt.rc("grid", linewidth=1.5)
 
         temps = {self.name: model.comp[self.msid].mvals}
-        # make_prediction_plots runs the validation of the model 
-        # against previous telemetry
-        plots = self.make_prediction_plots(outdir, states, temps, tstart)
 
         # make_prediction_viols determines the violations and prints them out
-        viols = self.make_prediction_viols(temps, tstart)
+        viols = self.make_prediction_viols(temps, states, tstart)
+
+        # make_prediction_plots runs the validation of the model
+        # against previous telemetry
+        plots = self.make_prediction_plots(outdir, states, temps, tstart)
 
         # write_states writes the commanded states to states.dat
         self.write_states(outdir, states)
@@ -504,7 +505,7 @@ class ACISThermalCheck:
 
         return viols
 
-    def make_prediction_viols(self, temps, load_start):
+    def make_prediction_viols(self, temps, states, load_start):
         """
         Find limit violations where predicted temperature is above the
         specified limits.
@@ -513,6 +514,8 @@ class ACISThermalCheck:
         ----------
         temps : dict of NumPy arrays
             NumPy arrays corresponding to the modeled temperatures
+        states : NumPy record array
+            Commanded states
         load_start : float
             The start time of the load, used so that we only report
             violations for times later than this time for the model

@@ -1,5 +1,6 @@
 import numpy as np
 from acis_thermal_check.utils import mylog
+from kadi.commands.states import decode_power
 
 
 def who_in_fp(simpos=80655):
@@ -86,21 +87,11 @@ def fetch_ocat_data(obsid_list):
     if got_table:
         tab = ascii.read(resp.text, header_start=0, data_start=2)
         tab.sort("OBSID")
-        # We figure out the CCD count from the table by finding out
-        # which ccds were on, optional, or dropped, and then
-        # subtracting off the dropped chip count entry in the table
-        ccd_count = np.zeros(tab["S3"].size, dtype='int')
-        for a, r in zip(["I", "S"], [range(4), range(6)]):
-            for i in r:
-                ccd = np.ma.filled(tab[f"{a}{i}"].data)
-                ccd_count += (ccd == "Y").astype('int')
-                ccd_count += (ccd == "D").astype('int')
-                ccd_count += np.char.startswith(ccd, "O").astype('int')
-        ccd_count -= tab["DROPPED_CHIP_CNT"].data.astype('int')
         # Now we have to find all of the obsids in each sequence and then
         # compute the complete exposure for each sequence
-        seq_nums = list(tab["SEQ_NUM"].data.astype("str"))
-        seq_num_list = ",".join([seq_num for seq_num in seq_nums if seq_num != " "])
+        seq_nums = np.unique([str(sn) for sn in tab["SEQ_NUM"].data.astype("str") 
+                              if sn != " "])
+        seq_num_list = ",".join(seq_nums)
         obsids = tab["OBSID"].data.astype("int")
         cnt_rate = tab["EST_CNT_RATE"].data.astype("float64")
         params = {"seqNum": seq_num_list}
@@ -121,15 +112,18 @@ def fetch_ocat_data(obsid_list):
             return None
         tab_seq = ascii.read(resp.text, header_start=0, data_start=2)
         app_exp = np.zeros_like(cnt_rate)
-        for row in tab_seq:
-            i = seq_nums.index(str(row["SEQ_NUM"]))
-            app_exp[i] += np.float64(row["APP_EXP"])
+        seq_nums = tab_seq["SEQ_NUM"].data.astype("str")
+        for i, row in enumerate(tab):
+            sn = str(row["SEQ_NUM"])
+            if sn == " ":
+                continue
+            j = np.where(sn == seq_nums)[0]
+            app_exp[i] += np.float64(tab_seq["APP_EXP"][j]).sum()
         app_exp *= 1000.0
         table_dict = {"obsid": np.array(obsids),
                       "grating": tab["GRAT"].data,
-                      "ccd_count": ccd_count,
-                      "S3": np.ma.filled(tab["S3"].data),
-                      "num_counts": cnt_rate*app_exp}
+                      "cnt_rate": cnt_rate,
+                      "app_exp": app_exp}
     else:
         # We weren't able to get a valid table for some reason, so
         # we cannot check for -109 data, but we proceed with the
@@ -210,12 +204,18 @@ def find_obsid_intervals(cmd_states, load_start):
             datestart = eachstate['datestart']
             tstart = eachstate['tstart']
 
+        # Process the power command which turns things on
+        if pow_cmd.startswith("WSPOW") and pow_cmd != 'WSPOW00000' \
+            and firstpow:
+            ccds = decode_power(pow_cmd)['ccds'].replace(" ", ",")[:-1]
+
         # Process the first XTZ0000005 line you see
         if pow_cmd in ['XTZ0000005', 'XCZ0000005'] and \
                 (xtztime is None and firstpow):
             xtztime = eachstate['tstart']
             # MUST fix the instrument now
             instrument = who_in_fp(eachstate['simpos'])
+            ccd_count = eachstate["ccd_count"]
 
         # Process the first AA00000000 line you see
         if pow_cmd == 'AA00000000' and firstpow:
@@ -234,9 +234,11 @@ def find_obsid_intervals(cmd_states, load_start):
                               "datestop": datestop,
                               "tstart": tstart,
                               "tstop": tstop,
+                              "ccds": ccds,
                               "start_science": xtztime,
                               "obsid": eachstate['obsid'],
-                              "instrument": instrument}
+                              "instrument": instrument,
+                              "ccd_count": ccd_count}
                 obsid_interval_list.append(obsid_dict)
 
             # now clear out the data values
@@ -295,15 +297,30 @@ def acis_filter(obsid_interval_list):
     acis_i = []
     cold_ecs = []
 
+    mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS")
     for eachobs in obsid_interval_list:
+        # First we check that we got ocat data using "grating"
+        hot_acis = False
         if "grating" in eachobs:
-            hetg = eachobs["grating"] == "HETG"
-            s3_only = eachobs["S3"] == "Y" and eachobs["ccd_count"] == 1
-            hot_acis = hetg or (eachobs["num_counts"] < 300.0 and s3_only)
-        else:
-            hot_acis = False
+            eachobs["num_counts"] = int(eachobs["cnt_rate"] * eachobs["app_exp"])
+            # First check to see if this is an S3 observation
+            mylog.debug(f"{eachobs['obsid']}\t{eachobs['cnt_rate']}\t"
+                        f"{eachobs['app_exp']*1.0e-3}\t{eachobs['num_counts']}\t"
+                        f"{eachobs['grating']}\t{eachobs['ccds']}")
+            if eachobs["ccd_count"] <= 2:
+                # S3 with low counts
+                low_ct_s3 = eachobs["num_counts"] < 300 and "S3" in eachobs["ccds"]
+                # Is there another chip on? Make sure it's not S1
+                if eachobs["ccd_count"] == 2:
+                    low_ct_s3 &= "S1" not in eachobs["ccds"]
+            else:
+                # All higher ccd counts are invalid
+                low_ct_s3 = False
+            # Also check grating status
+            hot_acis = (eachobs["grating"] == "HETG") or low_ct_s3
+        eachobs['hot_acis'] = hot_acis
         if hot_acis:
-            acis_hot.append(eachobs) 
+            acis_hot.append(eachobs)
         else:
             if eachobs["instrument"] == "ACIS-S":
                 acis_s.append(eachobs)
