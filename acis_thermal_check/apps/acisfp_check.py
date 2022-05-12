@@ -47,8 +47,8 @@ class ACISFPCheck(ACISThermalCheck):
             "planning.data_quality.high.aciss": "acis_s",
             "planning.data_quality.high.aciss_hot": "acis_hot",
             "planning.data_quality.high.cold_ecs": "cold_ecs",
-            "planning.warning.high": -84.0,
-            "safety.caution.high": -80.0
+            "planning.warning.high": "planning_hi",
+            "safety.caution.high": "yellow_hi"
         }
         super(ACISFPCheck, self).__init__("fptemp", "acisfp", valid_limits,
                                           hist_limit,
