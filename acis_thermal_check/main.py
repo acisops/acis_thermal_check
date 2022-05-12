@@ -946,7 +946,7 @@ class ACISThermalCheck:
             ax.set_title(msid.upper() + ' validation', loc='left', pad=10)
             ax.set_xlabel("Date")
             ax.set_ylabel(labels[msid])
-            ax.grid()
+            ax.grid(zorder=-100)
             # add lines for perigee passages
             for rz in rzs:
                 ptimes = cxctime2plotdate([rz.tstart, rz.tstop])

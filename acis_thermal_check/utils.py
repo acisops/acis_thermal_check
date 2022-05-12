@@ -178,7 +178,7 @@ class PlotDate:
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
-        ax.grid()
+        ax.grid(zorder=-100)
 
         # Plot right y-axis
 
