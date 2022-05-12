@@ -208,7 +208,7 @@ class ACISFPCheck(ACISThermalCheck):
 
             # Make the legend on the temperature plot
             plots[name].ax.legend(bbox_to_anchor=(0.15, 0.99),
-                                  loc='lower left', ncol=4, fontsize=14)
+                                  loc='lower left', ncol=4, fontsize=13)
 
             # Build the file name
             filename = f'{self.msid.lower()}' \
@@ -287,7 +287,7 @@ class ACISFPCheck(ACISThermalCheck):
             times, temp, load_start, self.limits["planning_hi"].value,
             "planning", "max")
         viols = {"hi":
-                     {"name": f"Hot ({self.limits['planning_hi'].value} C)",
+                     {"name": f"Planning High ({self.limits['planning_hi'].value} C)",
                       "type": "Max",
                       "values": hi_viols}
                  }
