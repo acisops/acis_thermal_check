@@ -471,6 +471,7 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
                                   obs_stop,
                                   linestyle='-',
                                   color=color,
+                                  zorder=2,
                                   linewidth=2.0)
 
             # Plot vertical end caps for each obsid to visually show start/stop
@@ -478,11 +479,13 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
                                   endcapstart,
                                   endcapstop,
                                   color=color,
+                                  zorder=2,
                                   linewidth=2.0)
             plots[msid].ax.vlines(obs_stop,
                                   endcapstart,
                                   endcapstop,
                                   color=color,
+                                  zorder=2,
                                   linewidth=2.0)
 
             # Now print the obsid in the middle of the time span,
@@ -498,6 +501,7 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
                                     va='bottom',
                                     ma='left',
                                     rotation=90,
+                                    zorder=2,
                                     fontsize=fontsize)
 
 

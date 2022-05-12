@@ -935,24 +935,25 @@ class ACISThermalCheck:
             scale = scales.get(msid, 1.0)
             ticklocs, fig, ax = plot_cxctime(
                 model.times, pred[msid] / scale, label='Model',
-                fig=fig, ls='-', lw=4, color=thermal_red)
+                fig=fig, ls='-', lw=4, color=thermal_red, zorder=9)
             ticklocs, fig, ax = plot_cxctime(
                 model.times, tlm[msid] / scale, label='Data',
-                fig=fig, ls='-', lw=2, color=thermal_blue)
+                fig=fig, ls='-', lw=2, color=thermal_blue, zorder=10)
             if np.any(~good_mask):
                 ticklocs, fig, ax = plot_cxctime(model.times[~good_mask],
                                                  tlm[msid][~good_mask] / scale,
-                                                 fig=fig, fmt='.c')
+                                                 fig=fig, fmt='.c', zorder=10)
             ax.set_title(msid.upper() + ' validation', loc='left', pad=10)
             ax.set_xlabel("Date")
             ax.set_ylabel(labels[msid])
-            ax.grid(zorder=-100)
+            ax.grid()
+            ax.set_axisbelow(True)
             # add lines for perigee passages
             for rz in rzs:
                 ptimes = cxctime2plotdate([rz.tstart, rz.tstop])
                 for ptime in ptimes:
                     ax.axvline(ptime, ls='--', color='C2',
-                               linewidth=2, zorder=-10)
+                               linewidth=2, zorder=2)
             # Add horizontal lines for the planning and caution limits
             # or the limits for the focal plane model. Make sure we can
             # see all of the limits.
@@ -962,34 +963,34 @@ class ACISThermalCheck:
                     ax.axhline(self.limits["cold_ecs"].value,
                                linestyle='--', label='Cold ECS',
                                color=self.limits["cold_ecs"].color,
-                               zorder=-8, linewidth=2)
+                               zorder=2, linewidth=2)
                     ax.axhline(self.limits["acis_i"].value,
                                linestyle='--', label='ACIS-I',
                                color=self.limits["acis_i"].color,
-                               zorder=-8, linewidth=2)
+                               zorder=2, linewidth=2)
                     ax.axhline(self.limits["acis_s"].value,
                                linestyle='--', label='ACIS-S',
                                color=self.limits["acis_s"].color,
-                               zorder=-8, linewidth=2)
+                               zorder=2, linewidth=2)
                     ax.axhline(self.limits["acis_hot"].value,
                                linestyle='--', label='Hot ACIS',
                                color=self.limits["acis_hot"].color,
-                               zorder=-8, linewidth=2)
+                               zorder=2, linewidth=2)
                     ymax = max(self.limits["acis_hot"].value+1, ymax)
                 else:
                     ax.axhline(self.limits["yellow_hi"].value,
-                               linestyle='-', linewidth=2, zorder=-8,
+                               linestyle='-', linewidth=2, zorder=2,
                                color=self.limits["yellow_hi"].color)
                     ax.axhline(self.limits["planning_hi"].value,
-                               linestyle='-', linewidth=2, zorder=-8,
+                               linestyle='-', linewidth=2, zorder=2,
                                color=self.limits["planning_hi"].color)
                     ymax = max(self.limits["yellow_hi"].value+1, ymax)
                     if self.flag_cold_viols:
                         ax.axhline(self.limits["yellow_lo"].value,
-                                   linestyle='-', linewidth=2, zorder=-8,
+                                   linestyle='-', linewidth=2, zorder=2,
                                    color=self.limits["yellow_lo"].color)
                         ax.axhline(self.limits["planning_lo"].value,
-                                   linestyle='-', linewidth=2, zorder=-8,
+                                   linestyle='-', linewidth=2, zorder=2,
                                    color=self.limits["planning_lo"].color)
                         ymin = min(self.limits["yellow_lo"].value-1, ymin)
                 ax.set_ylim(ymin, ymax)
@@ -1042,9 +1043,9 @@ class ACISThermalCheck:
         fig = plt.figure(10+fig_id, figsize=(12, 6))
         fig.clf()
         ticklocs, fig, ax = plot_cxctime(model.times, model.comp['ccd_count'].dvals,
-                                         fig=fig, ls='-', lw=2, color=thermal_blue)
+                                         fig=fig, ls='-', lw=2, color=thermal_blue, zorder=10)
         ticklocs, fig, ax = plot_cxctime(model.times, model.comp['fep_count'].dvals,
-                                         fig=fig, ls='--', lw=2, color=thermal_blue)
+                                         fig=fig, ls='--', lw=2, color=thermal_blue, zorder=10)
         ax.set_ylim(0, 6.5)
         ax.set_title("ACIS CCD/FEPs")
         ax.set_xlabel("Date")
@@ -1058,7 +1059,7 @@ class ACISThermalCheck:
             ptimes = cxctime2plotdate([rz.tstart, rz.tstop])
             for ptime in ptimes:
                 ax.axvline(ptime, ls='--', color='C2',
-                           linewidth=2, zorder=-10)
+                           linewidth=2, zorder=2)
         ax.legend(fancybox=True, framealpha=0.5, loc=2)
         plots["ccd_count"] = {
             "lines": {"fig": fig,
@@ -1073,7 +1074,7 @@ class ACISThermalCheck:
             fig = plt.figure(10 + fig_id, figsize=(12, 6))
             fig.clf()
             ticklocs, fig, ax = plot_cxctime(model.times, model.comp['earthheat__fptemp'].dvals,
-                                             fig=fig, ls='-', lw=2, color=thermal_blue)
+                                             fig=fig, ls='-', lw=2, color=thermal_blue, zorder=10)
             ax.set_title("Earth Solid Angle in Rad FOV")
             ax.set_xlabel("Date")
             ax.set_ylabel("Earth Solid Angle (sr)")
@@ -1086,7 +1087,7 @@ class ACISThermalCheck:
                 ptimes = cxctime2plotdate([rz.tstart, rz.tstop])
                 for ptime in ptimes:
                     ax.axvline(ptime, ls='--', color='C2',
-                               linewidth=2, zorder=-10)
+                               linewidth=2, zorder=2)
 
             plots["earthheat__fptemp"] = {
                 "lines": {"fig": fig,
