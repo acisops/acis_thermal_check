@@ -208,7 +208,7 @@ class ACISFPCheck(ACISThermalCheck):
 
             # Make the legend on the temperature plot
             plots[name].ax.legend(bbox_to_anchor=(0.15, 0.99),
-                                  loc='lower left', ncol=4, fontsize=13)
+                                  loc='lower left', ncol=4, fontsize=12)
 
             # Build the file name
             filename = f'{self.msid.lower()}' \
