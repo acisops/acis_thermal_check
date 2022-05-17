@@ -104,7 +104,8 @@ class ACISFPCheck(ACISThermalCheck):
             name = f'orbitephem0_{axis}'
             model.comp[name].set_data(ephem[name], model.times)
             name = f'solarephem0_{axis}'
-            model.comp[name].set_data(ephem[name], model.times)
+            if name in model.comp:
+                model.comp[name].set_data(ephem[name], model.times)
 
         # Set some initial values. You do this because some
         # of these values may not be set at the actual start time.
