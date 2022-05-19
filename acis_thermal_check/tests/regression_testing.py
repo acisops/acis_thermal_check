@@ -397,8 +397,12 @@ class RegressionTester:
                         viol_data["datestops"].append(words[1])
                         viol_data["duration"].append(words[2])
                         viol_data["temps"].append(words[3])
-                        if self.msid == "fptemp":
-                            viol_data["obsids"].append(words[4])
+                        if self.msid == "fptemp": 
+                            if len(words) > 4:
+                                obsid = words[4]
+                            else:
+                                obsid = ""
+                            viol_data["obsids"].append(obsid)
                     else:
                         try:
                             assert viol_data["datestarts"][i] in line

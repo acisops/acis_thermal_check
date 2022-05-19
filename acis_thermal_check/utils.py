@@ -164,7 +164,7 @@ class PlotDate:
         ax = fig.add_subplot(1, 1, 1)
         # Plot left y-axis
         ax.plot(xt, y, linestyle='-', linewidth=2,
-                color=self._color)
+                color=self._color, zorder=10)
         if yy is not None:
             ax.plot(xt, yy, linestyle='--', linewidth=2,
                     color=self._color2)
@@ -179,7 +179,9 @@ class PlotDate:
         ax.set_ylabel(ylabel)
         ax.set_title(title)
         ax.grid()
-
+        ax.set_zorder(10)
+        ax.set_axisbelow(True)
+        
         # Plot right y-axis
 
         if x2 is not None and y2 is not None:
@@ -197,7 +199,7 @@ class PlotDate:
 
         if load_start is not None:
             # Add a vertical line to mark the start time of the load
-            ax.axvline(load_start, linestyle='-', color='g', linewidth=2.0)
+            ax.axvline(load_start, linestyle='-', color='g', zorder=2, linewidth=2.0)
 
         Ska.Matplotlib.set_time_ticks(ax)
         for label in ax.xaxis.get_ticklabels():
@@ -217,7 +219,6 @@ class PlotDate:
             rm = fig.subplotpars.right * width / w2
             fig.subplots_adjust(left=lm, right=rm)
 
-        ax.set_zorder(10)
         ax.patch.set_visible(False)
 
         self.fig = fig
@@ -240,7 +241,7 @@ class PlotDate:
             The line style for the limit line. Default: "-"
         """
         self.ax.axhline(limit.value, linestyle=ls, linewidth=2.0,
-                        color=limit.color, label=label, zorder=-8)
+                        color=limit.color, label=label, zorder=2.0)
 
 
 class PredictPlot(PlotDate):

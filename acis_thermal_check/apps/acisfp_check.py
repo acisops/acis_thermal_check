@@ -46,7 +46,9 @@ class ACISFPCheck(ACISThermalCheck):
             "planning.data_quality.high.acisi": "acis_i",
             "planning.data_quality.high.aciss": "acis_s",
             "planning.data_quality.high.aciss_hot": "acis_hot",
-            "planning.data_quality.high.cold_ecs": "cold_ecs"
+            "planning.data_quality.high.cold_ecs": "cold_ecs",
+            "planning.warning.high": "planning_hi",
+            "safety.caution.high": "yellow_hi"
         }
         super(ACISFPCheck, self).__init__("fptemp", "acisfp", valid_limits,
                                           hist_limit,
@@ -99,8 +101,11 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Input ephemeris explicitly for calculating Earth heating
         for axis in "xyz":
-            name = 'orbitephem0_{}'.format(axis)
+            name = f'orbitephem0_{axis}'
             model.comp[name].set_data(ephem[name], model.times)
+            name = f'solarephem0_{axis}'
+            if name in model.comp:
+                model.comp[name].set_data(ephem[name], model.times)
 
         # Set some initial values. You do this because some
         # of these values may not be set at the actual start time.
@@ -149,7 +154,7 @@ class ACISFPCheck(ACISThermalCheck):
         w1 = None
         # Make plots of FPTEMP and pitch vs time, looping over
         # three different temperature ranges
-        ylim = [(-120, -90), (-120, -119), (-120.0, -107.5)]
+        ylim = [(-120, -79), (-120, -119), (-120.0, -107.5)]
         ypos = [-110.0, -119.35, -116]
         capwidth = [2.0, 0.1, 0.4]
         textypos = [-108.0, -119.3, -115.7]
@@ -173,6 +178,10 @@ class ACISFPCheck(ACISThermalCheck):
             plots[name].add_limit_line(self.limits["acis_s"], "ACIS-S", ls='--')
             # Draw a horizontal line showing the hot ACIS-S cutoff
             plots[name].add_limit_line(self.limits["acis_hot"], "Hot ACIS-S", ls='--')
+            # Draw a horizontal line showing the planning warning limit
+            plots[name].add_limit_line(self.limits["planning_hi"], "Planning", ls='-')
+            # Draw a horizontal line showing the safety caution limit
+            plots[name].add_limit_line(self.limits["yellow_hi"], "Yellow", ls='-')
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
             if i == 0:
@@ -200,7 +209,7 @@ class ACISFPCheck(ACISThermalCheck):
 
             # Make the legend on the temperature plot
             plots[name].ax.legend(bbox_to_anchor=(0.15, 0.99),
-                                  loc='lower left', ncol=4, fontsize=14)
+                                  loc='lower left', ncol=4, fontsize=12)
 
             # Build the file name
             filename = f'{self.msid.lower()}' \
@@ -271,15 +280,28 @@ class ACISFPCheck(ACISThermalCheck):
 
         temp = temps[self.name]
 
-        # ------------------------------------------------------------
-        # ACIS-I - Collect any -112 C violations of any non-ECS ACIS-I
-        # science run. These are load killers
-        # ------------------------------------------------------------
-        #
+        # ---------------------------------------------------------------
+        # Planning - Collect any -84 C violations. These are load killers
+        # ---------------------------------------------------------------
+
+        hi_viols = self._make_prediction_viols(
+            times, temp, load_start, self.limits["planning_hi"].value,
+            "planning", "max")
+        viols = {"hi":
+                     {"name": f"Planning High ({self.limits['planning_hi'].value} C)",
+                      "type": "Max",
+                      "values": hi_viols}
+                 }
+
         acis_i_limit = self.limits["acis_i"].value
         acis_s_limit = self.limits["acis_s"].value
         acis_hot_limit = self.limits["acis_hot"].value
         cold_ecs_limit = self.limits["cold_ecs"].value
+
+        # ------------------------------------------------------------
+        # ACIS-I - Collect any -112 C violations of any non-ECS ACIS-I
+        # science run. These are load killers
+        # ------------------------------------------------------------
 
         mylog.info(f'ACIS-I Science ({acis_i_limit} C) violations')
 
@@ -295,7 +317,7 @@ class ACISFPCheck(ACISThermalCheck):
         # ACIS-S - Collect any -111 C violations of any non-ECS ACIS-S
         # science run. These are load killers
         # ------------------------------------------------------------
-        #
+
         mylog.info(f'ACIS-S Science ({acis_s_limit} C) violations')
 
         acis_s_viols = self.search_obsids_for_viols("ACIS-S",
@@ -450,6 +472,7 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
                                   obs_stop,
                                   linestyle='-',
                                   color=color,
+                                  zorder=2,
                                   linewidth=2.0)
 
             # Plot vertical end caps for each obsid to visually show start/stop
@@ -457,11 +480,13 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
                                   endcapstart,
                                   endcapstop,
                                   color=color,
+                                  zorder=2,
                                   linewidth=2.0)
             plots[msid].ax.vlines(obs_stop,
                                   endcapstart,
                                   endcapstop,
                                   color=color,
+                                  zorder=2,
                                   linewidth=2.0)
 
             # Now print the obsid in the middle of the time span,
@@ -477,6 +502,7 @@ def draw_obsids(obs_list, plots, msid, ypos, endcapstart, endcapstop,
                                     va='bottom',
                                     ma='left',
                                     rotation=90,
+                                    zorder=2,
                                     fontsize=fontsize)
 
 

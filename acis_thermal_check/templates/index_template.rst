@@ -174,7 +174,7 @@ ADDITIONAL PLOTS
 Additional plots of FPTEMP vs TIME for different temperature ranges
 
 .. image:: fptempM120toM119.png
-.. image:: fptempM120toM90.png
+.. image:: fptempM120toM79.png
 
 {% endif %}
 
