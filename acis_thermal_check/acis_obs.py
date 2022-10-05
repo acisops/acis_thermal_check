@@ -125,7 +125,7 @@ def fetch_ocat_data(obsid_list):
                       "grating": tab["GRAT"].data,
                       "cnt_rate": cnt_rate,
                       "app_exp": app_exp,
-                      "spectra_max_count": tab["SPECTRA_MAX_COUNT"].data,
+                      "spectra_max_count": tab["SPECTRA_MAX_COUNT"].data.astype("int"),
                       "obs_cycle": tab["OBS_CYCLE"].data}
     else:
         # We weren't able to get a valid table for some reason, so
