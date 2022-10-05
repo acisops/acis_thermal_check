@@ -1,6 +1,7 @@
 import numpy as np
 from acis_thermal_check.utils import mylog
 from kadi.commands.states import decode_power
+from cxotime import CxoTime
 
 
 def who_in_fp(simpos=80655):
@@ -299,6 +300,8 @@ def acis_filter(obsid_interval_list):
     acis_i = []
     cold_ecs = []
 
+    new_109_start = CxoTime("2022:318:00:00:00").secs
+
     mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS\t"
                 "SPEC_MAX_CNT\tCYCLE")
     for eachobs in obsid_interval_list:
@@ -312,7 +315,7 @@ def acis_filter(obsid_interval_list):
                         f"{eachobs['grating']}\t{eachobs['ccds']}\t"
                         f"{eachobs['spectra_max_count']}\t{eachobs['obs_cycle']}")
             low_ct = False
-            if eachobs["obs_cycle"] >= 23:
+            if eachobs["obs_cycle"] >= 23 and eachobs["tstart"] > new_109_start:
                 # Cycle 23 and beyond
                 if eachobs["instrument"] == "ACIS-I":
                     low_ct = 0 < eachobs["spectra_max_count"] < 1000
