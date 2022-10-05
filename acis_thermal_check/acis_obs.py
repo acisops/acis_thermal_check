@@ -310,9 +310,9 @@ def acis_filter(obsid_interval_list):
             mylog.debug(f"{eachobs['obsid']}\t{eachobs['cnt_rate']}\t"
                         f"{eachobs['app_exp']*1.0e-3}\t{eachobs['num_counts']}\t"
                         f"{eachobs['grating']}\t{eachobs['ccds']}\t"
-                        f"{eachobs['spectra_max_count']}\t{eachobs['cycle']}")
+                        f"{eachobs['spectra_max_count']}\t{eachobs['obs_cycle']}")
             low_ct = False
-            if eachobs["cycle"] >= 23:
+            if eachobs["obs_cycle"] >= 23:
                 # Cycle 23 and beyond
                 if eachobs["instrument"] == "ACIS-I":
                     low_ct = 0 < eachobs["spectra_max_count"] < 1000
