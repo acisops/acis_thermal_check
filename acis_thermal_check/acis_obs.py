@@ -129,7 +129,7 @@ def fetch_ocat_data(obsid_list):
                       "obs_cycle": tab["OBS_CYCLE"].data}
     else:
         # We weren't able to get a valid table for some reason, so
-        # we cannot check for -109 data, but we proceed with the
+        # we cannot check for hot observations, but we proceed with the
         # rest of the review regardless
         mylog.warning(warn)
         table_dict = None
