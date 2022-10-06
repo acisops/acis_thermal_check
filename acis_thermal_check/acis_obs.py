@@ -317,14 +317,19 @@ def acis_filter(obsid_interval_list):
                         f"{eachobs['grating']}\t{eachobs['ccds']}\t"
                         f"{eachobs['spectra_max_count']}\t{eachobs['obs_cycle']}")
             low_ct = False
-            if eachobs["obs_cycle"] >= 23 and eachobs["tstart"] > new_hot_start:
-                # Cycle 23 and beyond
+            # "New" hot ACIS category:
+            # 1. Cycle 23 and later
+            # 2. spectra_max_count must be greater than 0
+            # 3. Start time must be after ~NOV1422 load
+            if eachobs["obs_cycle"] >= 23 and \
+                    eachobs["spectra_max_count"] > 0 and \
+                    eachobs["tstart"] > new_hot_start:
                 if eachobs["instrument"] == "ACIS-I":
                     low_ct = 0 < eachobs["spectra_max_count"] < 1000
                 elif eachobs["instrument"] == "ACIS-S":
                     low_ct = 0 < eachobs["spectra_max_count"] < 2000
             elif eachobs["ccd_count"] <= 2:
-                # Before Cycle 23
+                # otherwise, fall back to "old" criteria
                 # S3 with low counts
                 low_ct = eachobs["num_counts"] < 300 and "S3" in eachobs["ccds"]
                 # Is there another chip on? Make sure it's not S1
