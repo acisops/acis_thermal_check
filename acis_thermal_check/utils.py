@@ -181,7 +181,7 @@ class PlotDate:
         ax.grid()
         ax.set_zorder(10)
         ax.set_axisbelow(True)
-        
+
         # Plot right y-axis
 
         if x2 is not None and y2 is not None:
@@ -404,7 +404,7 @@ def paint_perigee(perigee_passages, states, plots):
                                    color='black', linewidth=2.0)
 
 
-class ACISLimit:
+class ChandraLimit:
     def __init__(self, value, color):
         self.value = value
         self.color = color
@@ -447,5 +447,5 @@ def get_acis_limits(msid, model_spec, limits_map=None):
         if k == "unit":
             continue
         key = limits_map.get(k, k)
-        limits[key] = ACISLimit(v, get_limit_color(k))
+        limits[key] = ChandraLimit(v, get_limit_color(k))
     return limits

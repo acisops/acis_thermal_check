@@ -8,14 +8,11 @@ import logging
 from Ska.File import get_globfiles
 
 
-# Define state keys for states
-STATE_KEYS = ['ccd_count', 'clocking', 'dec', 'dither', 'eclipse',
-              'fep_count', 'hetg', 'letg', 'obsid', 'pcad_mode', 'pitch',
-              'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 'si_mode',
-              'simfa_pos', 'simpos', 'vid_board']
-
-
 class StateBuilder:
+    _state_keys = ['ccd_count', 'clocking', 'dec', 'dither', 'eclipse',
+                   'fep_count', 'hetg', 'letg', 'obsid', 'pcad_mode', 'pitch',
+                   'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 'si_mode',
+                   'simfa_pos', 'simpos', 'vid_board']
     """
     This is the base class for all StateBuilder objects. It
     should not be used by itself, but subclassed.
@@ -54,7 +51,7 @@ class StateBuilder:
                          (start.date, stop.date))
 
         with kadi_states.disable_grating_move_duration():
-            states = kadi_states.get_states(start, stop, state_keys=STATE_KEYS,
+            states = kadi_states.get_states(start, stop, state_keys=self._state_keys,
                                             merge_identical=True)
 
         # Set start and end state date/times to match telemetry span.  Extend the
@@ -181,7 +178,7 @@ class KadiStateBuilder(StateBuilder):
         # but this could probably be set to True.
         with kadi_states.disable_grating_move_duration():
             states = kadi_states.get_states(cmds=cmds, start=tbegin, stop=sched_stop,
-                                            state_keys=STATE_KEYS,
+                                            state_keys=self._state_keys,
                                             merge_identical=False)
 
         # Make the column order match legacy Chandra.cmd_states.
@@ -191,6 +188,13 @@ class KadiStateBuilder(StateBuilder):
         state0 = {key: states[0][key] for key in states.colnames}
 
         return states, state0
+
+
+class HRCStateBuilder(KadiStateBuilder):
+    _state_keys = ['ccd_count', 'clocking', 'dec', 'dither', 'eclipse',
+                   'fep_count', 'hetg', 'letg', 'obsid', 'pitch',
+                   'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 'si_mode',
+                   'simfa_pos', 'simpos', 'vid_board']
 
 
 #-------------------------------------------------------------------------------
@@ -311,7 +315,7 @@ class ACISStateBuilder(StateBuilder):
         with kadi_states.disable_grating_move_duration():
             states = kadi_states.get_states(cmds=bs_cmds, start=tbegin,
                                             stop=sched_stop,
-                                            state_keys=STATE_KEYS)
+                                            state_keys=self._state_keys)
 
         # Make the column order match legacy Chandra.cmd_states.
         states = states[sorted(states.colnames)]
@@ -326,4 +330,5 @@ class ACISStateBuilder(StateBuilder):
 
 
 state_builders = {"kadi": KadiStateBuilder,
-                  "acis": ACISStateBuilder}
+                  "acis": ACISStateBuilder,
+                  "hrc": HRCStateBuilder}
