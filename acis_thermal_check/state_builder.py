@@ -193,8 +193,9 @@ class KadiStateBuilder(StateBuilder):
 class HRCStateBuilder(KadiStateBuilder):
     _state_keys = ['ccd_count', 'clocking', 'dec', 'dither', 'eclipse',
                    'fep_count', 'hetg', 'letg', 'obsid', 'pitch',
-                   'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 'si_mode',
-                   'simfa_pos', 'simpos', 'vid_board']
+                   'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 
+                   'si_mode', 'simfa_pos', 'simpos', 'vid_board', "hrc_15v", 
+                   "hrc_i", "hrc_s"]
 
 
 #-------------------------------------------------------------------------------
