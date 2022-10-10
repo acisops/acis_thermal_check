@@ -325,10 +325,10 @@ def acis_filter(obsid_interval_list):
                     eachobs["spectra_max_count"] > 0 and \
                     eachobs["tstart"] > new_hot_start:
                 if eachobs["instrument"] == "ACIS-I":
-                    low_ct = eachobs["spectra_max_count"] < 1000
+                    low_ct = eachobs["spectra_max_count"] <= 1000
                 elif eachobs["instrument"] == "ACIS-S":
-                    low_ct = eachobs["spectra_max_count"] < 2000
-            elif eachobs["ccd_count"] <= 2:
+                    low_ct = eachobs["spectra_max_count"] <= 2000
+            elif eachobs["ccd_count"] <= 2 and eachobs["instrument"] == "ACIS-S":
                 # otherwise, fall back to "old" criteria
                 # S3 with low counts
                 low_ct = eachobs["num_counts"] < 300 and "S3" in eachobs["ccds"]
