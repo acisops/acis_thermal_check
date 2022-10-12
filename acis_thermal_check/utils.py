@@ -148,25 +148,30 @@ class PlotDate:
         The label for the left y-axis.
     ylabel2 : string, optional
         The label for the right y-axis.
+    linewidth : float, optional
+        The linewidth for the left y-axis.
+    linewidth2 : float, optional
+        The linewidth for the right y-axis.
     title : string, optional
         The title for the plot.
     figsize : 2-tuple of floats
         Size of plot in width and height in inches.
     """
-    def __init__(self, fig_id, x, y, x2=None, y2=None, yy=None, 
+    def __init__(self, fig_id, x, y, x2=None, y2=None, yy=None,
                  xmin=None, xmax=None, ylim=None, ylim2=None,
-                 xlabel='', ylabel='', ylabel2='', title='',
-                 figsize=(12, 6), load_start=None, width=None):
+                 xlabel='', ylabel='', ylabel2='', linewidth=2,
+                 linewidth2=2, title='', figsize=(12, 6),
+                 load_start=None, width=None):
         # Convert times to dates
         xt = cxctime2plotdate(x)
         fig = plt.figure(fig_id, figsize=figsize)
         fig.clf()
         ax = fig.add_subplot(1, 1, 1)
         # Plot left y-axis
-        ax.plot(xt, y, linestyle='-', linewidth=2,
+        ax.plot(xt, y, linestyle='-', linewidth=linewidth,
                 color=self._color, zorder=10)
         if yy is not None:
-            ax.plot(xt, yy, linestyle='--', linewidth=2,
+            ax.plot(xt, yy, linestyle='--', linewidth=linewidth,
                     color=self._color2)
         if xmin is None:
             xmin = min(xt)
@@ -187,8 +192,8 @@ class PlotDate:
         if x2 is not None and y2 is not None:
             ax2 = ax.twinx()
             xt2 = cxctime2plotdate(x2)
-            ax2.plot(xt2, y2, linestyle='-', 
-                     linewidth=2, color="magenta")
+            ax2.plot(xt2, y2, linestyle='-',
+                     linewidth=linewidth2, color="magenta")
             ax2.set_xlim(xmin, xmax)
             if ylim2:
                 ax2.set_ylim(*ylim2)
@@ -199,7 +204,8 @@ class PlotDate:
 
         if load_start is not None:
             # Add a vertical line to mark the start time of the load
-            ax.axvline(load_start, linestyle='-', color='g', zorder=2, linewidth=2.0)
+            ax.axvline(load_start, linestyle='-', color='g', 
+                       zorder=2, linewidth=2.0)
 
         Ska.Matplotlib.set_time_ticks(ax)
         for label in ax.xaxis.get_ticklabels():
@@ -388,19 +394,17 @@ def paint_perigee(perigee_passages, states, plots):
             if states['tstop'][-1] >= CxoTime(eachpassage[0]).secs >= states['tstart'][0]:
                 # Have to convert this time into the new x axis time scale
                 # necessitated by SKA
-                xpos = cxctime2plotdate([CxoTime(eachpassage[0]).secs])
-
-                ymin, ymax = plot.ax.get_ylim()
+                xpos = cxctime2plotdate([CxoTime(eachpassage[0]).secs])[0]
 
                 # now plot the line.
-                plot.ax.vlines(xpos, ymin, ymax, linestyle=':', color='red',
-                               linewidth=2.0)
+                plot.ax.axvline(xpos, linestyle=':', color='red',
+                                linewidth=2.0)
 
                 # Plot the perigee passage time so long as it was specified in
                 # the CTI_report file
                 if eachpassage[1] != "Not-within-load":
-                    perigee_time = cxctime2plotdate([CxoTime(eachpassage[1]).secs])
-                    plot.ax.vlines(perigee_time, ymin, ymax, linestyle=':',
+                    perigee_time = cxctime2plotdate([CxoTime(eachpassage[1]).secs])[0]
+                    plot.ax.axvline(perigee_time, linestyle=':',
                                    color='black', linewidth=2.0)
 
 

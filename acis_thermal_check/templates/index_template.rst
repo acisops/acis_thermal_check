@@ -74,6 +74,9 @@ No {{proc.msid}} {{viols[key]["name"]}} Violations
 {% endfor %}
 
 .. image:: {{plots.default.filename}}
+{% if proc.msid == "2CEAHVPT" %}
+.. image:: {{plots.hrc.filename}}
+{% endif %}
 .. image:: {{plots.pow_sim.filename}}
 {% if proc.msid == "FPTEMP" %}
 .. image:: {{plots.roll_taco.filename}}

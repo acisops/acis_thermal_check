@@ -6,7 +6,7 @@ cea_check
 ========================
 
 This code generates backstop load review outputs for checking the HRC
-CEA temperature 1DPAMZT.  It also generates CEA model validation
+CEA temperature 2CEAHVPT. It also generates CEA model validation
 plots comparing predicted values to telemetry for the previous three
 weeks.
 """
@@ -21,6 +21,8 @@ from acis_thermal_check import \
     ACISThermalCheck, \
     get_options, \
     mylog
+from acis_thermal_check.utils import PredictPlot
+from Ska.Matplotlib import pointpair
 
 
 class CEACheck(ACISThermalCheck):
@@ -93,6 +95,32 @@ class CEACheck(ACISThermalCheck):
         model.comp["2s2onst_on"].set_data(states["hrc_15v"] == "ON", state_times)
         model.comp["224pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
         model.comp["215pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
+
+    def _make_state_plots(self, plots, num_figs, w1, plot_start,
+                          states, load_start):
+        # Make a plot of ACIS HRC states
+        plots['hrc'] = PredictPlot(
+            fig_id=num_figs+1,
+            title='HRC States',
+            xlabel='Date',
+            x=pointpair(states['tstart'], states['tstop']),
+            y=pointpair(states['hrc_i']),
+            yy=pointpair(states['hrc_s']),
+            ylabel='HRC-I/S',
+            x2=pointpair(states['tstart'], states['tstop']),
+            y2=pointpair(states['hrc_15v']),
+            ylabel2='HRC 15 V',
+            linewidth2=4.0,
+            xmin=plot_start,
+            width=w1, load_start=load_start)
+        plots['hrc'].ax.lines[0].set_label('HRC-I')
+        plots['hrc'].ax.lines[1].set_label('HRC-S')
+        plots['hrc'].ax.legend(fancybox=True, framealpha=0.5, loc=2)
+        plots['hrc'].filename = 'hrc.png'
+
+        num_figs += 1
+        super()._make_state_plots(plots, num_figs, w1, plot_start,
+                                  states, load_start)
 
 
 def main():
