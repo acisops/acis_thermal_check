@@ -340,7 +340,7 @@ def make_state_builder(name, args):
     # originally the --state-builder="kadi"|"acis" input argument
     #
     # Instantiate the Kadi History Builder: KadiStateBuilder
-    if name == "kadi":
+    if name in ["kadi", "hrc"]:
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
                                       logger=mylog)

@@ -6,6 +6,7 @@ import kadi.commands
 import kadi.commands.states as kadi_states
 import logging
 from Ska.File import get_globfiles
+from acis_thermal_check import custom_states
 
 
 class StateBuilder:
@@ -196,6 +197,7 @@ class HRCStateBuilder(KadiStateBuilder):
                    'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 
                    'si_mode', 'simfa_pos', 'simpos', 'vid_board', "hrc_15v", 
                    "hrc_i", "hrc_s"]
+
 
 
 #-------------------------------------------------------------------------------

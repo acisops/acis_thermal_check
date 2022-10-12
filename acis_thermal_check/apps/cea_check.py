@@ -51,7 +51,15 @@ class CEACheck(ACISThermalCheck):
             else:
                 T_cea0 = state0["2ceahvpt"]
             model.comp['cea0'].set_data(T_cea0, model.times)
+        model.comp["2ps5aon_on"].set_data(True)
+        model.comp["2ps5bon_on"].set_data(False)
+        model.comp["2imonst_on"].set_data(states["hrc_i"] == "ON", state_times)
+        model.comp["2sponst_on"].set_data(states["hrc_s"] == "ON", state_times)
+        model.comp["2s2onst_on"].set_data(states["hrc_15v"] == "ON", state_times)
+        model.comp["224pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
+        model.comp["215pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
 
+        
 
 def main():
     args = get_options()
