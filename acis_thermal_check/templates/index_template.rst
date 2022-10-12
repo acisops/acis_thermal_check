@@ -131,8 +131,8 @@ No Validation Violations
 
 {% if msid == "ccd_count" %}
 
-CCD/FEP Count
--------------
+ACIS CCD/FEP Count
+------------------
 
 .. image:: {{plot.lines.filename}}
 

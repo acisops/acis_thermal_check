@@ -19,7 +19,8 @@ matplotlib.use('Agg')
 import sys
 from acis_thermal_check import \
     ACISThermalCheck, \
-    get_options
+    get_options, \
+    mylog
 
 
 class CEACheck(ACISThermalCheck):
@@ -28,10 +29,44 @@ class CEACheck(ACISThermalCheck):
                         'PITCH': [(1, 3.0), (99, 3.0)],
                         'TSCPOS': [(1, 2.5), (99, 2.5)]
                         }
-        hist_limit = [20.0]
+        hist_limit = [5.0]
         limits_map = {}
         super(CEACheck, self).__init__("2ceahvpt", "cea", valid_limits,
                                        hist_limit, limits_map=limits_map)
+
+    def make_prediction_viols(self, temps, states, load_start):
+        """
+        Find limit violations where predicted temperature is above the
+        specified limits.
+
+        Parameters
+        ----------
+        temps : dict of NumPy arrays
+            NumPy arrays corresponding to the modeled temperatures
+        states : NumPy record array
+            Commanded states
+        load_start : float
+            The start time of the load, used so that we only report
+            violations for times later than this time for the model
+            run.
+        """
+        mylog.info('Checking for limit violations')
+
+        temp = temps[self.name]
+        times = self.predict_model.times
+
+        # Only check this violation when HRC is on
+        mask = self.predict_model.comp['2imonst_on'].dvals
+        mask |= self.predict_model.comp['2sponst_on'].dvals
+        hi_viols = self._make_prediction_viols(
+            times, temp, load_start, self.limits["planning_hi"].value,
+            "planning", "max", mask=mask)
+        viols = {"hi":
+                     {"name": f"Hot ({self.limits['planning_hi'].value} C)",
+                      "type": "Max",
+                      "values": hi_viols}
+                 }
+        return viols
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
@@ -59,7 +94,6 @@ class CEACheck(ACISThermalCheck):
         model.comp["224pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
         model.comp["215pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
 
-        
 
 def main():
     args = get_options()
