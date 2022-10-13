@@ -1069,6 +1069,35 @@ class ACISThermalCheck:
 
         fig_id += 1
 
+        if self.name == "cea":
+            for msid in ["2imonst", "2sponst", "2s2onst"]:
+                fig = plt.figure(10 + fig_id, figsize=(12, 6))
+                fig.clf()
+                comp_hrc = model.comp[f"{msid}_on"].dvals
+                tlm_hrc = tlm[msid] == "ON"
+                ticklocs, fig, ax = plot_cxctime(model.times, comp_hrc, label="Model",
+                                                 fig=fig, ls='-', lw=4, color=thermal_red, zorder=9)
+                ticklocs, fig, ax = plot_cxctime(model.times, tlm_hrc, label="Data",
+                                                 fig=fig, ls='-', lw=2, color=thermal_blue, zorder=10)
+                ax.grid()
+                ax.set_xlim(xmin, xmax)
+                ax.set_yticks([0, 1])
+                ax.set_yticklabels(["OFF", "ON"])
+                ax.set_ylim([-0.1, 1.1])
+                # add lines for perigee passages
+                for rz in rzs:
+                    ptimes = cxctime2plotdate([rz.tstart, rz.tstop])
+                    for ptime in ptimes:
+                        ax.axvline(ptime, ls='--', color='C2',
+                                   linewidth=2, zorder=2)
+                ax.legend(fancybox=True, framealpha=0.5, loc=2)
+                plots[msid] = {
+                    "lines": {"fig": fig,
+                              "ax": ax,
+                              "filename": f'{msid}_valid.png'}
+                }
+                fig_id += 1 
+
         if 'earthheat__fptemp' in model.comp:
 
             fig = plt.figure(10 + fig_id, figsize=(12, 6))

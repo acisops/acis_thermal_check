@@ -33,8 +33,10 @@ class CEACheck(ACISThermalCheck):
                         }
         hist_limit = [5.0]
         limits_map = {}
+        other_telem = ["2imonst", "2sponst", "2s2onst"]
         super(CEACheck, self).__init__("2ceahvpt", "cea", valid_limits,
-                                       hist_limit, limits_map=limits_map)
+                                       hist_limit, limits_map=limits_map, 
+                                       other_telem=other_telem)
 
     def make_prediction_viols(self, temps, states, load_start):
         """

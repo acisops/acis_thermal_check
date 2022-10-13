@@ -139,6 +139,13 @@ ACIS CCD/FEP Count
 
 .. image:: {{plot.lines.filename}}
 
+{% elif msid in ["2imonst", "2sponst", "2s2onst"] %}
+
+{{ msid.upper() }}
+---------------------
+
+.. image:: {{plot.lines.filename}}
+
 {% elif msid == "earthheat__fptemp" %}
 
 Earth Solid Angle
