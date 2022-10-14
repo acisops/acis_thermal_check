@@ -1,6 +1,7 @@
 import numpy as np
 from acis_thermal_check.utils import mylog
 from kadi.commands.states import decode_power
+from cxotime import CxoTime
 
 
 def who_in_fp(simpos=80655):
@@ -99,7 +100,7 @@ def fetch_ocat_data(obsid_list):
         try:
             resp = retry_call(requests.get, [urlbase], {"params": params},
                               tries=4, delay=1)
-        except(requests.ConnectionError, RetryError):
+        except (requests.ConnectionError, RetryError):
             got_seq_table = False
         else:
             if not resp.ok:
@@ -123,10 +124,12 @@ def fetch_ocat_data(obsid_list):
         table_dict = {"obsid": np.array(obsids),
                       "grating": tab["GRAT"].data,
                       "cnt_rate": cnt_rate,
-                      "app_exp": app_exp}
+                      "app_exp": app_exp,
+                      "spectra_max_count": tab["SPECTRA_MAX_COUNT"].data.astype("int"),
+                      "obs_cycle": tab["OBS_CYCLE"].data}
     else:
         # We weren't able to get a valid table for some reason, so
-        # we cannot check for -109 data, but we proceed with the
+        # we cannot check for hot observations, but we proceed with the
         # rest of the review regardless
         mylog.warning(warn)
         table_dict = None
@@ -288,8 +291,8 @@ def hrc_science_obs_filter(obsid_interval_list):
 
 def acis_filter(obsid_interval_list):
     """
-    This method will filter between the different types of 
-    ACIS observations: ACIS-I, ACIS-S, "hot" ACIS-S, and 
+    This method will filter between the different types of
+    ACIS observations: ACIS-I, ACIS-S, "hot" ACIS, and
     cold science-orbit ECS.
     """
     acis_hot = []
@@ -297,7 +300,12 @@ def acis_filter(obsid_interval_list):
     acis_i = []
     cold_ecs = []
 
-    mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS")
+    # This is the approximate date after which we start applying new
+    # rules for going to hotter temperatures
+    new_hot_start = CxoTime("2022:318:00:00:00").secs
+
+    mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS\t"
+                "SPEC_MAX_CNT\tCYCLE")
     for eachobs in obsid_interval_list:
         # First we check that we got ocat data using "grating"
         hot_acis = False
@@ -306,18 +314,29 @@ def acis_filter(obsid_interval_list):
             # First check to see if this is an S3 observation
             mylog.debug(f"{eachobs['obsid']}\t{eachobs['cnt_rate']}\t"
                         f"{eachobs['app_exp']*1.0e-3}\t{eachobs['num_counts']}\t"
-                        f"{eachobs['grating']}\t{eachobs['ccds']}")
-            if eachobs["ccd_count"] <= 2:
+                        f"{eachobs['grating']}\t{eachobs['ccds']}\t"
+                        f"{eachobs['spectra_max_count']}\t{eachobs['obs_cycle']}")
+            low_ct = False
+            # "New" hot ACIS category:
+            # 1. Cycle 23 and later
+            # 2. spectra_max_count must be greater than 0
+            # 3. Start time must be after ~NOV1422 load
+            if eachobs["obs_cycle"] >= 23 and \
+                    eachobs["spectra_max_count"] > 0 and \
+                    eachobs["tstart"] > new_hot_start:
+                if eachobs["instrument"] == "ACIS-I":
+                    low_ct = eachobs["spectra_max_count"] <= 1000
+                elif eachobs["instrument"] == "ACIS-S":
+                    low_ct = eachobs["spectra_max_count"] <= 2000
+            elif eachobs["ccd_count"] <= 2 and eachobs["instrument"] == "ACIS-S":
+                # otherwise, fall back to "old" criteria
                 # S3 with low counts
-                low_ct_s3 = eachobs["num_counts"] < 300 and "S3" in eachobs["ccds"]
+                low_ct = eachobs["num_counts"] < 300 and "S3" in eachobs["ccds"]
                 # Is there another chip on? Make sure it's not S1
                 if eachobs["ccd_count"] == 2:
-                    low_ct_s3 &= "S1" not in eachobs["ccds"]
-            else:
-                # All higher ccd counts are invalid
-                low_ct_s3 = False
+                    low_ct &= "S1" not in eachobs["ccds"]
             # Also check grating status
-            hot_acis = (eachobs["grating"] == "HETG") or low_ct_s3
+            hot_acis = (eachobs["grating"] == "HETG") or low_ct
         eachobs['hot_acis'] = hot_acis
         if hot_acis:
             acis_hot.append(eachobs)

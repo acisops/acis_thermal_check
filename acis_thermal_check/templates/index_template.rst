@@ -35,13 +35,13 @@ States                 `<states.dat>`_
 "Hot" ACIS Observations (-109 C limit)
 --------------------------------------
 {% if acis_hot_obs|length > 0 %}
-=====  =================  ==================  =======
-Obsid  CCDs               # of counts in seq  Grating
-=====  =================  ==================  =======
+=====  =================  ==================  =======  ======  =================
+Obsid  CCDs               # of counts in seq  Grating  Cycle   Spectra Max Count
+=====  =================  ==================  =======  ======  =================
 {% for eachobs in acis_hot_obs %}
-{{ eachobs.obsid }}  {{"{0: <17}".format(eachobs.ccds)}}  {{"{0: <18}".format(eachobs.num_counts)}}          {{eachobs.grating}}
+{{ eachobs.obsid }}  {{"{0: <17}".format(eachobs.ccds)}}  {{"{0: <18}".format(eachobs.num_counts)}}  {{eachobs.grating}}     {{"{0: <6}".format(eachobs.obs_cycle)}}  {{"{0: <10}".format(eachobs.spectra_max_count)}}
 {% endfor %}
-=====  =================  ==================  =======
+=====  =================  ==================  =======  ======  =================
 {% endif %}
 {% endif %}
 
