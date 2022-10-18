@@ -6,7 +6,6 @@ import kadi.commands
 import kadi.commands.states as kadi_states
 import logging
 from Ska.File import get_globfiles
-from acis_thermal_check import custom_states
 
 
 class StateBuilder:
