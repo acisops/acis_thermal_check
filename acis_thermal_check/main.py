@@ -167,6 +167,7 @@ class ACISThermalCheck:
         # kadi
         hrc_states = self.name in ["cea"]
         state_builder = getattr(args, "state_builder", "kadi")
+        mylog.info(f"ACISThermalCheck is using the '{state_builder}' state builder.")
         self.state_builder = make_state_builder(state_builder, args, 
                                                 hrc_states=hrc_states)
 
@@ -1282,8 +1283,6 @@ class ACISThermalCheck:
         mylog.info('# acis_thermal_check version = %s' % version)
         mylog.info('# model_spec file MD5sum = %s' % md5sum)
         mylog.info('Command line options:\n%s\n' % pformat(args.__dict__))
-
-        mylog.info("ACISThermalCheck is using the '%s' state builder." % args.state_builder)
 
         if args.backstop_file is None:
             self.bsdir = None
