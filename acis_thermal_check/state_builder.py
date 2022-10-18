@@ -77,7 +77,7 @@ class KadiStateBuilder(StateBuilder):
     be used for validation only.
     """
     def __init__(self, interrupt=False, backstop_file=None,
-                 logger=None):
+                 logger=None, hrc_states=False):
         """
         Give the KadiStateBuilder arguments that were passed in
         from the command line, and set up the connection to the
@@ -92,8 +92,12 @@ class KadiStateBuilder(StateBuilder):
             file will be searched for within this directory.
         logger : Logger object, optional
             The Python Logger object to be used when logging.
+        hrc_states : boolean, optional
+            Whether or not to add HRC-specific states. Default: False
         """
         super().__init__(logger=logger)
+        if hrc_states:
+            self._state_keys += ["hrc_15v", "hrc_i", "hrc_s"]
 
         # Note: `interrupt` is ignored in this class. This concept is not needed
         # since backstop 6.9, which provides the RUNNING_LOAD_TERMINATION_TIME
@@ -189,15 +193,6 @@ class KadiStateBuilder(StateBuilder):
         state0 = {key: states[0][key] for key in states.colnames}
 
         return states, state0
-
-
-class HRCStateBuilder(KadiStateBuilder):
-    _state_keys = ['ccd_count', 'clocking', 'dec', 'dither', 'eclipse',
-                   'fep_count', 'hetg', 'letg', 'obsid', 'pitch',
-                   'power_cmd', 'q1', 'q2', 'q3', 'q4', 'ra', 'roll', 
-                   'si_mode', 'simfa_pos', 'simpos', 'vid_board', "hrc_15v", 
-                   "hrc_i", "hrc_s"]
-
 
 
 #-------------------------------------------------------------------------------
@@ -333,5 +328,4 @@ class ACISStateBuilder(StateBuilder):
 
 
 state_builders = {"kadi": KadiStateBuilder,
-                  "acis": ACISStateBuilder,
-                  "hrc": HRCStateBuilder}
+                  "acis": ACISStateBuilder}

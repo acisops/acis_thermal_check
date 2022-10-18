@@ -163,7 +163,12 @@ class ACISThermalCheck:
         proc = self._setup_proc_and_logger(args, model_spec)
 
         # Record the selected state builder in the class attributes
-        self.state_builder = make_state_builder(args.state_builder, args)
+        # If there is no "state_builder" command line argument assume
+        # kadi
+        hrc_states = self.name in ["cea"]
+        state_builder = getattr(args, "state_builder", "kadi")
+        self.state_builder = make_state_builder(state_builder, args, 
+                                                hrc_states=hrc_states)
 
         # If args.run_start is not none, write validation and prediction
         # data to a pickle later

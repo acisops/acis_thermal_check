@@ -255,7 +255,7 @@ class PredictPlot(PlotDate):
     _color2 = thermal_blue
 
 
-def get_options(opts=None):
+def get_options(opts=None, use_acis_opts=True):
     """
     Construct the argument parser for command-line options for running
     predictions and validations for a load. Sets up the parser and 
@@ -267,6 +267,8 @@ def get_options(opts=None):
     opts: dictionary
         A (key, value) dictionary of additional options for the parser. These
         may be defined by the thermal model checking tool if necessary.
+    use_acis_opts : boolean, optional
+        Whether or not to include ACIS-specific options. Default: True
     """
     from argparse import ArgumentParser
     parser = ArgumentParser()
@@ -297,12 +299,13 @@ def get_options(opts=None):
                         help="Verbosity (0=quiet, 1=normal, 2=debug)")
     parser.add_argument("--T-init", type=float,
                         help="Starting temperature (degC). Default is to compute it from telemetry.")
-    parser.add_argument("--state-builder", default="acis",
-                        help="StateBuilder to use (kadi|acis). Default: acis")
-    parser.add_argument("--nlet_file",
-                        default='/data/acis/LoadReviews/NonLoadTrackedEvents.txt',
-                        help="Full path to the Non-Load Event Tracking file that should be "
-                             "used for this model run.")
+    if use_acis_opts:
+        parser.add_argument("--state-builder", default="acis",
+                            help="StateBuilder to use (kadi|acis). Default: acis")
+        parser.add_argument("--nlet_file",
+                            default='/data/acis/LoadReviews/NonLoadTrackedEvents.txt',
+                            help="Full path to the Non-Load Event Tracking file that should be "
+                                 "used for this model run.")
     parser.add_argument("--version", action='store_true', help="Print version")
 
     if opts is not None:
@@ -322,7 +325,7 @@ def get_options(opts=None):
     return args
 
 
-def make_state_builder(name, args):
+def make_state_builder(name, args, hrc_states=False):
     """
     Take the command-line arguments and use them to construct
     a StateBuilder object which will be used for the thermal
@@ -330,10 +333,12 @@ def make_state_builder(name, args):
 
     Parameters
     ----------
-    name : string 
+    name : string
         The identifier for the state builder to be used.
     args : ArgumentParser arguments
         The arguments to pass to the StateBuilder subclass.
+    hrc_states : boolean, optional
+        Whether or not to add HRC-specific states. Default: False
     """
     # Import the dictionary of possible state builders. This
     # dictionary is located in state_builder.py
@@ -346,10 +351,10 @@ def make_state_builder(name, args):
     # originally the --state-builder="kadi"|"acis" input argument
     #
     # Instantiate the Kadi History Builder: KadiStateBuilder
-    if name in ["kadi", "hrc"]:
+    if name == "kadi":
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
-                                      logger=mylog)
+                                      logger=mylog, hrc_states=hrc_states)
 
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
     elif name == "acis":

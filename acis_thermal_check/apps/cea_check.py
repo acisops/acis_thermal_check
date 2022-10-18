@@ -122,7 +122,7 @@ class CEACheck(ACISThermalCheck):
 
 
 def main():
-    args = get_options()
+    args = get_options(use_acis_opts=False)
     cea_check = CEACheck()
     try:
         cea_check.run(args)
