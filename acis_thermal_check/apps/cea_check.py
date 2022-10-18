@@ -74,22 +74,18 @@ class CEACheck(ACISThermalCheck):
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
-        Update to initialize the cea0 pseudo-node. If 1dpamzt
+        Update to initialize the cea0 pseudo-node. If 2ceahvpt
         has an initial value (T_cea) - which it does at
         prediction time (gets it from state0), then T_cea0 
         is set to that.  If we are running the validation,
         T_cea is set to None so we use the dvals in model.comp
-
-        NOTE: If you change the name of the dpa0 pseudo node you
-              have to edit the new name into the if statement
-              below.
         """
-        if 'cea0' in model.comp:
+        for node in ["cea0", "cea1"]:
             if state0 is None:
-                T_cea0 = model.comp["2ceahvpt"].dvals
+                T_cea = model.comp["2ceahvpt"].dvals
             else:
-                T_cea0 = state0["2ceahvpt"]
-            model.comp['cea0'].set_data(T_cea0, model.times)
+                T_cea = state0["2ceahvpt"]
+            model.comp[node].set_data(T_cea, model.times)
         model.comp["2ps5aon_on"].set_data(True)
         model.comp["2ps5bon_on"].set_data(False)
         model.comp["2imonst_on"].set_data(states["hrc_i"] == "ON", state_times)
