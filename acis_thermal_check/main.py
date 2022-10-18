@@ -1074,7 +1074,7 @@ class ACISThermalCheck:
                 fig = plt.figure(10 + fig_id, figsize=(12, 6))
                 fig.clf()
                 comp_hrc = model.comp[f"{msid}_on"].dvals
-                tlm_hrc = tlm[msid] == "ON"
+                tlm_hrc = np.char.strip(tlm[msid]) == "ON"
                 ticklocs, fig, ax = plot_cxctime(model.times, comp_hrc, label="Model",
                                                  fig=fig, ls='-', lw=4, color=thermal_red, zorder=9)
                 ticklocs, fig, ax = plot_cxctime(model.times, tlm_hrc, label="Data",
