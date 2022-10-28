@@ -95,7 +95,7 @@ class KadiStateBuilder(StateBuilder):
             Whether or not to add HRC-specific states. Default: False
         """
         super().__init__(logger=logger)
-        if hrc_states:
+        if hrc_states and "hrc_15v" not in self._state_keys:
             self._state_keys += ["hrc_15v", "hrc_i", "hrc_s"]
 
         # Note: `interrupt` is ignored in this class. This concept is not needed
