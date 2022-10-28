@@ -373,44 +373,26 @@ def make_state_builder(name, args, hrc_states=False):
     return state_builder
 
 
-def paint_perigee(perigee_passages, states, plots):
+def paint_perigee(perigee_passages, plots):
     """
-    This function draws vertical dashed lines for EEF, Perigee and XEF
-    events in the load.EEF and XEF lines are black; Perigee is red.
+    This function draws vertical dashed lines for radzone entry and
+    exit (black) and perigee (red)
 
-    You supply the list of perigee passage events which are:
-        Radzone Start/Stop time
-        Perigee Passage time
-
-        The states you created in main
-
-        The dictionary of plots you created
-
-        The MSID (in this case FP_TEMP) used to access the dictionary
+    Parameters
+    ==========
+    perigee_passages : dict of lists
+        Lists of times for radzone entry, exit, and perigee
+    plots : dict of plots
+        the plots to add the lines to
     """
-    #
-    # Now plot any perigee passages that occur between xmin and xmax
-    from cxotime import CxoTime
     for plot in plots.values():
-        for eachpassage in perigee_passages:
-            # The index [1] item is always the Perigee Passage time. Draw that
-            # line in red If this line is between tstart and tstop then it
-            # needs to be drawn on the plot. otherwise ignore
-            if states['tstop'][-1] >= CxoTime(eachpassage[0]).secs >= states['tstart'][0]:
-                # Have to convert this time into the new x axis time scale
-                # necessitated by SKA
-                xpos = cxctime2plotdate([CxoTime(eachpassage[0]).secs])[0]
-
-                # now plot the line.
-                plot.ax.axvline(xpos, linestyle=':', color='red',
+        for key in ["entry", "perigee", "exit"]:
+            color = "black" if key == "perigee" else "red"
+            for time in perigee_passages[key]:
+                xpos = cxctime2plotdate([time])[0]
+                plot.ax.axvline(xpos, linestyle=':', color=color,
                                 linewidth=2.0)
 
-                # Plot the perigee passage time so long as it was specified in
-                # the CTI_report file
-                if eachpassage[1] != "Not-within-load":
-                    perigee_time = cxctime2plotdate([CxoTime(eachpassage[1]).secs])[0]
-                    plot.ax.axvline(perigee_time, linestyle=':',
-                                   color='black', linewidth=2.0)
 
 
 class ChandraLimit:

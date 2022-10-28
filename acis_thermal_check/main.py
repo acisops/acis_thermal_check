@@ -125,7 +125,7 @@ class ACISThermalCheck:
         if hist_ops is None:
             hist_ops = ["greater_equal"]*len(hist_limit)
         self.hist_ops = hist_ops
-        self.perigee_passages = []
+        self.perigee_passages = defaultdict(list)
         self.write_pickle = False
         self.limits = {}
 
@@ -621,59 +621,26 @@ class ACISThermalCheck:
         temp_table.write(outfile, format='ascii', delimiter='\t', overwrite=True)
 
     def _gather_perigee(self, plot_start, load_start):
-        import glob
-        # The first step is to build a list of all the perigee passages.
-
         # Gather the perigee passages that occur from the
         # beginning of the model run up to the start of the load
         # from kadi
         rzs = events.rad_zones.filter(plot_start, load_start)
         for rz in rzs:
-            self.perigee_passages.append([rz.start, rz.perigee])
-        for rz in rzs:
-            self.perigee_passages.append([rz.stop, rz.perigee])
+            self.perigee_passages["entry"].append(rz.start)
+            self.perigee_passages["perigee"].append(rz.perigee)
+            self.perigee_passages["exit"].append(rz.stop)
 
-        # We will get the load passages from the relevant CRM pad time file
-        # (e.g. DO12143_CRM_Pad.txt) inside the bsdir directory
-        # Each line is either an inbound or outbound ECS
-        #
-        # The reason we are doing this is because we want to draw vertical
-        # lines denoting each perigee passage on the plots
-        #
-        # Open the file
-        crm_file_path = glob.glob(f"{self.bsdir}/*CRM*")[0]
-        crm_file = open(crm_file_path, 'r')
-
-        alines = crm_file.readlines()
-
-        idx = None
-        # Keep reading until you hit the last header line which is all "*"'s
-        for i, aline in enumerate(alines):
-            if len(aline) > 0 and aline[0] == "*":
-                idx = i+1
-                break
-
-        if idx is None:
-            raise RuntimeError("Couldn't find the end of the CRM Pad Time file header!")
-
-        # Found the last line of the header. Start processing Perigee Passages
-
-        # While there are still lines to be read
-        for aline in alines[idx:]:
-            # create an empty Peri. Passage instance location
-            passage = []
-
-            # split the CRM Pad Time file line read in and extract the
-            # relevant information
-            splitline = aline.split()
-            passage.append(splitline[6])  # Radzone entry/exit
-            passage.append(splitline[9])  # Perigee Passage time
-
-            # append this passage to the passages list
-            self.perigee_passages.append(passage)
-
-        # Done with the CRM Pad Time file - close it
-        crm_file.close()
+        # obtain the rest from the backstop file
+        for cmd in self.state_builder.bs_cmds:
+            if cmd["tlmsid"] == "OORMPDS":
+                key = "entry"
+            elif cmd["tlmsid"] == "OORMPEN":
+                key = "exit"
+            elif cmd["type"] == "ORBPOINT" and cmd["event_type"] == "EPERIGEE":
+                key = "perigee"
+            else:
+                continue
+            self.perigee_passages[key].append(cmd["time"])
 
     def _make_state_plots(self, plots, num_figs, w1, plot_start,
                           states, load_start):
@@ -802,7 +769,7 @@ class ACISThermalCheck:
 
         # Now plot any perigee passages that occur between xmin and xmax
         # for eachpassage in perigee_passages:
-        paint_perigee(self.perigee_passages, states, plots)
+        paint_perigee(self.perigee_passages, plots)
 
         # Now write all of the plots after possible
         # customizations have been made
