@@ -221,7 +221,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Now plot any perigee passages that occur between xmin and xmax
         # for eachpassage in perigee_passages:
-        paint_perigee(self.perigee_passages, states, plots)
+        paint_perigee(self.perigee_passages, plots)
 
         plots['default'] = plots[f"{self.name}_3"]
 

@@ -216,7 +216,6 @@ class RegressionTester:
         answer_dir = tests_path / f"{self.name}/answers" / load_week
         if not answer_dir.exists():
             answer_dir.mkdir(parents=True)
-        print(answer_dir)
         return answer_dir
 
     def run_test(self, test_name, load_week, answer_store=False):
