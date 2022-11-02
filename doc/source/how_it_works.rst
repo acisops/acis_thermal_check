@@ -7,13 +7,14 @@ The Model Check Tools
 =====================
 
 ``acis_thermal_check`` is a library that is utilized by various tools to run 
-ACIS thermal models and produce web pages for prediction and validation. The 
-current tools which use ``acis_thermal_check`` for load review are:
+ACIS and HRC thermal models and produce web pages for prediction and validation. 
+The current tools which use ``acis_thermal_check`` for load review are:
 
 * ``dpa_check`` for the 1DPAMZT model
 * ``dea_check`` for the 1DEAMZT model
 * ``psmc_check`` for the 1PDEAAT model
 * ``acisfp_check`` for the ACIS Focal Plane model
+* ``cea_check`` for the HRC CEA model
 
 These tools run models for the BEP and FEP models which are not currently used
 for flight, but are still checked at every load review:
@@ -69,3 +70,7 @@ should update the NLET file. See
 `here <https://asc.harvard.edu/acis/memos/webpage/NonLoadEventTracker.html>`_
 and `here <https://cxc.cfa.harvard.edu/acis/memos/webpage/WhenToUseNLETGUI.html>`_
 for more information on how to do this. 
+
+.. warning::
+
+    The HRC CEA model can only use the "kadi" ``StateBuilder``.

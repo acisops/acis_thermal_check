@@ -125,7 +125,7 @@ class ACISThermalCheck:
         if hist_ops is None:
             hist_ops = ["greater_equal"]*len(hist_limit)
         self.hist_ops = hist_ops
-        self.perigee_passages = []
+        self.perigee_passages = defaultdict(list)
         self.write_pickle = False
         self.limits = {}
 
@@ -163,7 +163,13 @@ class ACISThermalCheck:
         proc = self._setup_proc_and_logger(args, model_spec)
 
         # Record the selected state builder in the class attributes
-        self.state_builder = make_state_builder(args.state_builder, args)
+        # If there is no "state_builder" command line argument assume
+        # kadi
+        hrc_states = self.name in ["cea"]
+        state_builder = getattr(args, "state_builder", "kadi")
+        mylog.info(f"ACISThermalCheck is using the '{state_builder}' state builder.")
+        self.state_builder = make_state_builder(state_builder, args, 
+                                                hrc_states=hrc_states)
 
         # If args.run_start is not none, write validation and prediction
         # data to a pickle later
@@ -615,59 +621,26 @@ class ACISThermalCheck:
         temp_table.write(outfile, format='ascii', delimiter='\t', overwrite=True)
 
     def _gather_perigee(self, plot_start, load_start):
-        import glob
-        # The first step is to build a list of all the perigee passages.
-
         # Gather the perigee passages that occur from the
         # beginning of the model run up to the start of the load
         # from kadi
         rzs = events.rad_zones.filter(plot_start, load_start)
         for rz in rzs:
-            self.perigee_passages.append([rz.start, rz.perigee])
-        for rz in rzs:
-            self.perigee_passages.append([rz.stop, rz.perigee])
+            self.perigee_passages["entry"].append(rz.start)
+            self.perigee_passages["perigee"].append(rz.perigee)
+            self.perigee_passages["exit"].append(rz.stop)
 
-        # We will get the load passages from the relevant CRM pad time file
-        # (e.g. DO12143_CRM_Pad.txt) inside the bsdir directory
-        # Each line is either an inbound or outbound ECS
-        #
-        # The reason we are doing this is because we want to draw vertical
-        # lines denoting each perigee passage on the plots
-        #
-        # Open the file
-        crm_file_path = glob.glob(f"{self.bsdir}/*CRM*")[0]
-        crm_file = open(crm_file_path, 'r')
-
-        alines = crm_file.readlines()
-
-        idx = None
-        # Keep reading until you hit the last header line which is all "*"'s
-        for i, aline in enumerate(alines):
-            if len(aline) > 0 and aline[0] == "*":
-                idx = i+1
-                break
-
-        if idx is None:
-            raise RuntimeError("Couldn't find the end of the CRM Pad Time file header!")
-
-        # Found the last line of the header. Start processing Perigee Passages
-
-        # While there are still lines to be read
-        for aline in alines[idx:]:
-            # create an empty Peri. Passage instance location
-            passage = []
-
-            # split the CRM Pad Time file line read in and extract the
-            # relevant information
-            splitline = aline.split()
-            passage.append(splitline[6])  # Radzone entry/exit
-            passage.append(splitline[9])  # Perigee Passage time
-
-            # append this passage to the passages list
-            self.perigee_passages.append(passage)
-
-        # Done with the CRM Pad Time file - close it
-        crm_file.close()
+        # obtain the rest from the backstop file
+        for cmd in self.state_builder.bs_cmds:
+            if cmd["tlmsid"] == "OORMPDS":
+                key = "entry"
+            elif cmd["tlmsid"] == "OORMPEN":
+                key = "exit"
+            elif cmd["type"] == "ORBPOINT" and cmd["event_type"] == "EPERIGEE":
+                key = "perigee"
+            else:
+                continue
+            self.perigee_passages[key].append(cmd["time"])
 
     def _make_state_plots(self, plots, num_figs, w1, plot_start,
                           states, load_start):
@@ -796,7 +769,7 @@ class ACISThermalCheck:
 
         # Now plot any perigee passages that occur between xmin and xmax
         # for eachpassage in perigee_passages:
-        paint_perigee(self.perigee_passages, states, plots)
+        paint_perigee(self.perigee_passages, plots)
 
         # Now write all of the plots after possible
         # customizations have been made
@@ -1069,6 +1042,35 @@ class ACISThermalCheck:
 
         fig_id += 1
 
+        if self.name == "cea":
+            for msid in ["2imonst", "2sponst", "2s2onst"]:
+                fig = plt.figure(10 + fig_id, figsize=(12, 6))
+                fig.clf()
+                comp_hrc = model.comp[f"{msid}_on"].dvals
+                tlm_hrc = np.char.strip(tlm[msid]) == "ON"
+                ticklocs, fig, ax = plot_cxctime(model.times, comp_hrc, label="Model",
+                                                 fig=fig, ls='-', lw=4, color=thermal_red, zorder=9)
+                ticklocs, fig, ax = plot_cxctime(model.times, tlm_hrc, label="Data",
+                                                 fig=fig, ls='-', lw=2, color=thermal_blue, zorder=10)
+                ax.grid()
+                ax.set_xlim(xmin, xmax)
+                ax.set_yticks([0, 1])
+                ax.set_yticklabels(["OFF", "ON"])
+                ax.set_ylim([-0.1, 1.1])
+                # add lines for perigee passages
+                for rz in rzs:
+                    ptimes = cxctime2plotdate([rz.tstart, rz.tstop])
+                    for ptime in ptimes:
+                        ax.axvline(ptime, ls='--', color='C2',
+                                   linewidth=2, zorder=2)
+                ax.legend(fancybox=True, framealpha=0.5, loc=2)
+                plots[msid] = {
+                    "lines": {"fig": fig,
+                              "ax": ax,
+                              "filename": f'{msid}_valid.png'}
+                }
+                fig_id += 1 
+
         if 'earthheat__fptemp' in model.comp:
 
             fig = plt.figure(10 + fig_id, figsize=(12, 6))
@@ -1248,8 +1250,6 @@ class ACISThermalCheck:
         mylog.info('# acis_thermal_check version = %s' % version)
         mylog.info('# model_spec file MD5sum = %s' % md5sum)
         mylog.info('Command line options:\n%s\n' % pformat(args.__dict__))
-
-        mylog.info("ACISThermalCheck is using the '%s' state builder." % args.state_builder)
 
         if args.backstop_file is None:
             self.bsdir = None

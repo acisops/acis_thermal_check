@@ -15,6 +15,8 @@ test_loads = {"normal": ["MAR0617A", "MAR2017E", "JUL3117B", "SEP0417A"],
                             "MAR0817B", "MAR1117A", "APR0217B", "SEP0917C"]}
 all_loads = test_loads["normal"]+test_loads["interrupt"]
 
+hrc_loads = {"normal": ["SEP1922A", "SEP2622A"]}
+
 nlets = {"MAR0617A", "MAR0817B", "SEP0417A"}
 
 
@@ -178,7 +180,7 @@ class RegressionTester:
         self.atc_obj.run(args, override_limits=override_limits)
 
     def run_models(self, normal=True, interrupt=True, run_start=None,
-                   state_builder='acis'):
+                   state_builder='acis', hrc=False):
         """
         Run the internally set list of models for regression testing.
 
@@ -194,13 +196,19 @@ class RegressionTester:
         state_builder : string, optional
             The mode used to create the list of commanded states. "kadi" or
             "acis", default "acis".
+        hrc : boolean, optional
+            If True, use loads specified for HRC model testing. Default: False
         """
-        if normal:
-            for load in test_loads["normal"]:
+        if hrc:
+            loads = hrc_loads
+        else:
+            loads = test_loads
+        if normal and "normal" in loads:
+            for load in loads["normal"]:
                 self.run_model(load, run_start=run_start,
                                state_builder=state_builder)
-        if interrupt:
-            for load in test_loads["interrupt"]:
+        if interrupt and "interrupt" in loads:
+            for load in loads["interrupt"]:
                 self.run_model(load, interrupt=True, run_start=run_start,
                                state_builder=state_builder)
 
@@ -346,7 +354,7 @@ class RegressionTester:
             shutil.copyfile(fromfile, tofile)
 
     def check_violation_reporting(self, load_week, viol_json, 
-                                  answer_store=False):
+                                  answer_store=False, state_builder="acis"):
         """
         This method runs loads which report violations of
         limits and ensures that they report the violation,
@@ -368,6 +376,9 @@ class RegressionTester:
         answer_store : boolean, optional
             If True, store the generated data as the new answers.
             If False, only test. Default: False
+        state_builder : string, optional
+            The mode used to create the list of commanded states. "kadi" or
+            "acis", default "acis".
         """
         import json
         with open(viol_json, "r") as f:
@@ -382,7 +393,8 @@ class RegressionTester:
         load_year = "20%s" % load_week[-3:-1]
         next_year = f"{int(load_year)+1}"
         self.run_model(load_week, run_start=viol_data['run_start'], 
-                       override_limits=viol_data['limits'])
+                       override_limits=viol_data['limits'], 
+                       state_builder=state_builder)
         out_dir = self.outdir / load_week / self.name
         index_rst = out_dir / "index.rst"
         with open(index_rst, 'r') as myfile:

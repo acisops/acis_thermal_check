@@ -148,25 +148,30 @@ class PlotDate:
         The label for the left y-axis.
     ylabel2 : string, optional
         The label for the right y-axis.
+    linewidth : float, optional
+        The linewidth for the left y-axis.
+    linewidth2 : float, optional
+        The linewidth for the right y-axis.
     title : string, optional
         The title for the plot.
     figsize : 2-tuple of floats
         Size of plot in width and height in inches.
     """
-    def __init__(self, fig_id, x, y, x2=None, y2=None, yy=None, 
+    def __init__(self, fig_id, x, y, x2=None, y2=None, yy=None,
                  xmin=None, xmax=None, ylim=None, ylim2=None,
-                 xlabel='', ylabel='', ylabel2='', title='',
-                 figsize=(12, 6), load_start=None, width=None):
+                 xlabel='', ylabel='', ylabel2='', linewidth=2,
+                 linewidth2=2, title='', figsize=(12, 6),
+                 load_start=None, width=None):
         # Convert times to dates
         xt = cxctime2plotdate(x)
         fig = plt.figure(fig_id, figsize=figsize)
         fig.clf()
         ax = fig.add_subplot(1, 1, 1)
         # Plot left y-axis
-        ax.plot(xt, y, linestyle='-', linewidth=2,
+        ax.plot(xt, y, linestyle='-', linewidth=linewidth,
                 color=self._color, zorder=10)
         if yy is not None:
-            ax.plot(xt, yy, linestyle='--', linewidth=2,
+            ax.plot(xt, yy, linestyle='--', linewidth=linewidth,
                     color=self._color2)
         if xmin is None:
             xmin = min(xt)
@@ -181,14 +186,14 @@ class PlotDate:
         ax.grid()
         ax.set_zorder(10)
         ax.set_axisbelow(True)
-        
+
         # Plot right y-axis
 
         if x2 is not None and y2 is not None:
             ax2 = ax.twinx()
             xt2 = cxctime2plotdate(x2)
-            ax2.plot(xt2, y2, linestyle='-', 
-                     linewidth=2, color="magenta")
+            ax2.plot(xt2, y2, linestyle='-',
+                     linewidth=linewidth2, color="magenta")
             ax2.set_xlim(xmin, xmax)
             if ylim2:
                 ax2.set_ylim(*ylim2)
@@ -199,7 +204,8 @@ class PlotDate:
 
         if load_start is not None:
             # Add a vertical line to mark the start time of the load
-            ax.axvline(load_start, linestyle='-', color='g', zorder=2, linewidth=2.0)
+            ax.axvline(load_start, linestyle='-', color='g', 
+                       zorder=2, linewidth=2.0)
 
         Ska.Matplotlib.set_time_ticks(ax)
         for label in ax.xaxis.get_ticklabels():
@@ -249,7 +255,7 @@ class PredictPlot(PlotDate):
     _color2 = thermal_blue
 
 
-def get_options(opts=None):
+def get_options(opts=None, use_acis_opts=True):
     """
     Construct the argument parser for command-line options for running
     predictions and validations for a load. Sets up the parser and 
@@ -261,6 +267,8 @@ def get_options(opts=None):
     opts: dictionary
         A (key, value) dictionary of additional options for the parser. These
         may be defined by the thermal model checking tool if necessary.
+    use_acis_opts : boolean, optional
+        Whether or not to include ACIS-specific options. Default: True
     """
     from argparse import ArgumentParser
     parser = ArgumentParser()
@@ -291,12 +299,13 @@ def get_options(opts=None):
                         help="Verbosity (0=quiet, 1=normal, 2=debug)")
     parser.add_argument("--T-init", type=float,
                         help="Starting temperature (degC). Default is to compute it from telemetry.")
-    parser.add_argument("--state-builder", default="acis",
-                        help="StateBuilder to use (kadi|acis). Default: acis")
-    parser.add_argument("--nlet_file",
-                        default='/data/acis/LoadReviews/NonLoadTrackedEvents.txt',
-                        help="Full path to the Non-Load Event Tracking file that should be "
-                             "used for this model run.")
+    if use_acis_opts:
+        parser.add_argument("--state-builder", default="acis",
+                            help="StateBuilder to use (kadi|acis). Default: acis")
+        parser.add_argument("--nlet_file",
+                            default='/data/acis/LoadReviews/NonLoadTrackedEvents.txt',
+                            help="Full path to the Non-Load Event Tracking file that should be "
+                                 "used for this model run.")
     parser.add_argument("--version", action='store_true', help="Print version")
 
     if opts is not None:
@@ -316,7 +325,7 @@ def get_options(opts=None):
     return args
 
 
-def make_state_builder(name, args):
+def make_state_builder(name, args, hrc_states=False):
     """
     Take the command-line arguments and use them to construct
     a StateBuilder object which will be used for the thermal
@@ -324,10 +333,12 @@ def make_state_builder(name, args):
 
     Parameters
     ----------
-    name : string 
+    name : string
         The identifier for the state builder to be used.
     args : ArgumentParser arguments
         The arguments to pass to the StateBuilder subclass.
+    hrc_states : boolean, optional
+        Whether or not to add HRC-specific states. Default: False
     """
     # Import the dictionary of possible state builders. This
     # dictionary is located in state_builder.py
@@ -343,7 +354,7 @@ def make_state_builder(name, args):
     if name == "kadi":
         state_builder = builder_class(interrupt=args.interrupt,
                                       backstop_file=args.backstop_file,
-                                      logger=mylog)
+                                      logger=mylog, hrc_states=hrc_states)
 
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
     elif name == "acis":
@@ -362,49 +373,29 @@ def make_state_builder(name, args):
     return state_builder
 
 
-def paint_perigee(perigee_passages, states, plots):
+def paint_perigee(perigee_passages, plots):
     """
-    This function draws vertical dashed lines for EEF, Perigee and XEF
-    events in the load.EEF and XEF lines are black; Perigee is red.
+    This function draws vertical dashed lines for radzone entry and
+    exit (black) and perigee (red)
 
-    You supply the list of perigee passage events which are:
-        Radzone Start/Stop time
-        Perigee Passage time
-
-        The states you created in main
-
-        The dictionary of plots you created
-
-        The MSID (in this case FP_TEMP) used to access the dictionary
+    Parameters
+    ==========
+    perigee_passages : dict of lists
+        Lists of times for radzone entry, exit, and perigee
+    plots : dict of plots
+        the plots to add the lines to
     """
-    #
-    # Now plot any perigee passages that occur between xmin and xmax
-    from cxotime import CxoTime
     for plot in plots.values():
-        for eachpassage in perigee_passages:
-            # The index [1] item is always the Perigee Passage time. Draw that
-            # line in red If this line is between tstart and tstop then it
-            # needs to be drawn on the plot. otherwise ignore
-            if states['tstop'][-1] >= CxoTime(eachpassage[0]).secs >= states['tstart'][0]:
-                # Have to convert this time into the new x axis time scale
-                # necessitated by SKA
-                xpos = cxctime2plotdate([CxoTime(eachpassage[0]).secs])
-
-                ymin, ymax = plot.ax.get_ylim()
-
-                # now plot the line.
-                plot.ax.vlines(xpos, ymin, ymax, linestyle=':', color='red',
-                               linewidth=2.0)
-
-                # Plot the perigee passage time so long as it was specified in
-                # the CTI_report file
-                if eachpassage[1] != "Not-within-load":
-                    perigee_time = cxctime2plotdate([CxoTime(eachpassage[1]).secs])
-                    plot.ax.vlines(perigee_time, ymin, ymax, linestyle=':',
-                                   color='black', linewidth=2.0)
+        for key in ["entry", "perigee", "exit"]:
+            color = "black" if key == "perigee" else "red"
+            for time in perigee_passages[key]:
+                xpos = cxctime2plotdate([time])[0]
+                plot.ax.axvline(xpos, linestyle=':', color=color,
+                                linewidth=2.0)
 
 
-class ACISLimit:
+
+class ChandraLimit:
     def __init__(self, value, color):
         self.value = value
         self.color = color
@@ -447,5 +438,5 @@ def get_acis_limits(msid, model_spec, limits_map=None):
         if k == "unit":
             continue
         key = limits_map.get(k, k)
-        limits[key] = ACISLimit(v, get_limit_color(k))
+        limits[key] = ChandraLimit(v, get_limit_color(k))
     return limits

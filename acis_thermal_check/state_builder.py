@@ -25,6 +25,7 @@ class StateBuilder:
             # Make a logger but with no output
             logger = logging.getLogger('statebuilder-no-logger')
         self.logger = logger
+        self.state_keys = STATE_KEYS.copy()
 
     def get_prediction_states(self, tlm):
         """
@@ -54,7 +55,7 @@ class StateBuilder:
                          (start.date, stop.date))
 
         with kadi_states.disable_grating_move_duration():
-            states = kadi_states.get_states(start, stop, state_keys=STATE_KEYS,
+            states = kadi_states.get_states(start, stop, state_keys=self.state_keys,
                                             merge_identical=True)
 
         # Set start and end state date/times to match telemetry span.  Extend the
@@ -79,7 +80,7 @@ class KadiStateBuilder(StateBuilder):
     be used for validation only.
     """
     def __init__(self, interrupt=False, backstop_file=None,
-                 logger=None):
+                 logger=None, hrc_states=False):
         """
         Give the KadiStateBuilder arguments that were passed in
         from the command line, and set up the connection to the
@@ -94,8 +95,12 @@ class KadiStateBuilder(StateBuilder):
             file will be searched for within this directory.
         logger : Logger object, optional
             The Python Logger object to be used when logging.
+        hrc_states : boolean, optional
+            Whether or not to add HRC-specific states. Default: False
         """
         super().__init__(logger=logger)
+        if hrc_states:
+            self.state_keys += ["hrc_15v", "hrc_i", "hrc_s"]
 
         # Note: `interrupt` is ignored in this class. This concept is not needed
         # since backstop 6.9, which provides the RUNNING_LOAD_TERMINATION_TIME
@@ -181,7 +186,7 @@ class KadiStateBuilder(StateBuilder):
         # but this could probably be set to True.
         with kadi_states.disable_grating_move_duration():
             states = kadi_states.get_states(cmds=cmds, start=tbegin, stop=sched_stop,
-                                            state_keys=STATE_KEYS,
+                                            state_keys=self.state_keys,
                                             merge_identical=False)
 
         # Make the column order match legacy Chandra.cmd_states.
@@ -311,7 +316,7 @@ class ACISStateBuilder(StateBuilder):
         with kadi_states.disable_grating_move_duration():
             states = kadi_states.get_states(cmds=bs_cmds, start=tbegin,
                                             stop=sched_stop,
-                                            state_keys=STATE_KEYS)
+                                            state_keys=self.state_keys)
 
         # Make the column order match legacy Chandra.cmd_states.
         states = states[sorted(states.colnames)]
