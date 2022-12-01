@@ -328,13 +328,10 @@ def acis_filter(obsid_interval_list):
                     low_ct = eachobs["spectra_max_count"] <= 1000
                 elif eachobs["instrument"] == "ACIS-S":
                     low_ct = eachobs["spectra_max_count"] <= 2000
-            elif eachobs["ccd_count"] <= 2 and eachobs["instrument"] == "ACIS-S":
-                # otherwise, fall back to "old" criteria
-                # S3 with low counts
-                low_ct = eachobs["num_counts"] < 300 and "S3" in eachobs["ccds"]
-                # Is there another chip on? Make sure it's not S1
-                if eachobs["ccd_count"] == 2:
-                    low_ct &= "S1" not in eachobs["ccds"]
+            else:
+                # otherwise, fall back to modified "old" criterion
+                # of less than 300 total expected counts
+                low_ct = eachobs["num_counts"] < 300
             # Also check grating status
             hot_acis = (eachobs["grating"] == "HETG") or low_ct
         eachobs['hot_acis'] = hot_acis
