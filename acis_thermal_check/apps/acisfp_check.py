@@ -225,7 +225,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         plots['default'] = plots[f"{self.name}_3"]
 
-        # Now write all of the plots after possible
+        # Now write all the plots after possible
         # customizations have been made
         for key in plots:
             if key != self.msid:
