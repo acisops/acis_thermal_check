@@ -7,6 +7,53 @@ Running a Thermal Model with ``acis_thermal_check``
 command line. This section provides a brief description on how to run the 
 models, including what the various options are. 
 
+.. _where-to-run:
+
+Where to Run the Models From
+============================
+
+These models are run from a "Ska" Python stack. It can be one already installed
+or it can be `one you installed yourself <https://github.com/sot/skare3/wiki/Ska3-runtime-environment-for-users>`_.
+
+To run as ``acisdude`` on the HEAD LAN, simply issue the command ``setska`` in
+the terminal. If you want to run as yourself and you do not have this alias, 
+you can set it up in your startup file:
+
+.. code-block:: text
+
+    # for csh/tsch
+
+    alias setska 'eval `/proj/sot/ska3/flight/bin/flt_envs -shell tcsh -ska`'
+
+    # for bash/zsh
+
+    alias setska='eval `/proj/sot/ska3/flight/bin/flt_envs -shell bash -ska`'
+
+The ACIS Ops Ska stack often has versions of ``acis_thermal_check`` that are more
+up-to-date than in flight Ska. To use the ACIS Ops Ska stack as ``acisdude``, issue
+the command ``acisska`` in the terminal. If you want to run as yourself and you 
+do not have this alias, you can set it up in your startup file:
+
+.. code-block:: text
+
+    # for csh/tcsh
+
+    alias acisska 'source /data/acis/mambaforge/etc/profile.d/conda.csh; \
+        setenv SKA /proj/sot/ska; conda activate ska'
+    
+    # for bash
+
+    alias acisska='eval "$(/data/acis/mambaforge/bin/conda shell.bash hook)"; \
+        export SKA=/proj/sot/ska; conda activate ska'
+    
+    # for zsh
+    
+    alias acisska='eval "$(/data/acis/mambaforge/bin/conda shell.zsh hook)"; \
+        export SKA=/proj/sot/ska; conda activate ska’
+
+In either case, all commands (e.g. ``dpa_check``, ``dea_check``, etc.) should 
+be in your path after running one of the two aliases.
+
 Base Command-Line Arguments
 ===========================
 
