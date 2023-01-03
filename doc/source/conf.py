@@ -25,15 +25,15 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.abspath('../../'))
 
-import sphinx_bootstrap_theme
-html_theme = 'bootstrap'
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
-
-html_theme_options = dict(
-    bootswatch_theme = "readable",
-    navbar_sidebarrel = False,
-    globaltoc_depth = 2,
-)
+html_theme = 'bootstrap-ska'
+html_theme_options = {
+    'logotext1': 'Ska!' ,
+    'logotext2': 'acis_thermal_check',
+    'logotext3': '',
+    'homepage_url': 'https://cxc.cfa.harvard.edu/acis/acis_thermal_check',
+    'homepage_text': 'ska',
+    'homepage_text_2': 'tools'
+}
 
 # -- General configuration ------------------------------------------------
 
@@ -46,7 +46,8 @@ html_theme_options = dict(
 # ones.
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.intersphinx',
-              'sphinx.ext.viewcode']
+              'sphinx.ext.viewcode',
+              'numpydoc']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

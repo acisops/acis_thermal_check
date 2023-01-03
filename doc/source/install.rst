@@ -6,7 +6,8 @@ Installation and Development
 .. note:: 
 
     If all you want to do is run the existing thermal models installed on
-    flight Ska, you can safely ignore this section. 
+    flight Ska or the ACIS ops Ska stack, you can safely ignore this 
+    section. 
 
 This assumes that you have a cloned copy of ``acis_thermal_check`` from
 https://github.com/acisops/acis_thermal_check. To install the package simply 
