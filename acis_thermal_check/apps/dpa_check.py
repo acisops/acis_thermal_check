@@ -23,10 +23,10 @@ matplotlib.use("Agg")
 
 class DPACheck(ACISThermalCheck):
     def __init__(self):
-        valid_limits = {
-            "1DPAMZT": [(1, 2.0), (50, 1.0), (99, 2.0)],
-            "PITCH": [(1, 3.0), (99, 3.0)],
-            "TSCPOS": [(1, 2.5), (99, 2.5)],
+        valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
+        hist_limit = [20.0]
+        limits_map = {
+            "planning.caution.low": "zero_feps"
         }
         hist_limit = [20.0]
         limits_map = {"planning.caution.low": "zero_feps"}

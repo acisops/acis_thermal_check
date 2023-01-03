@@ -25,11 +25,7 @@ matplotlib.use("Agg")
 
 class FEP1MongCheck(DPABoardTempCheck):
     def __init__(self):
-        valid_limits = {
-            "TMP_FEP1_MONG": [(1, 2.0), (50, 1.0), (99, 2.0)],
-            "PITCH": [(1, 3.0), (99, 3.0)],
-            "TSCPOS": [(1, 2.5), (99, 2.5)],
-        }
+        valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [25.0, 20.0]  # First limit is >=, second limit is <=
         super().__init__("tmp_fep1_mong", "fep1_mong", valid_limits, hist_limit)
 
