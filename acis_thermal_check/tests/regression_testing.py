@@ -148,15 +148,17 @@ class RegressionTester:
         if not self.outdir.exists():
             self.outdir.mkdir(parents=True)
 
-    def run_model(self, load_week, run_start=None, state_builder='acis',
-                  interrupt=False, override_limits=None):
+    def run_model(self, load_week=None, run_start=None, state_builder='acis',
+                  interrupt=False, override_limits=None, out_dir=None):
         """
         Run a thermal model in test mode for a single load week.
 
         Parameters
         ----------
-        load_week : string
+        load_week : string, optional
             The load week to be tested, in a format like "MAY2016A".
+            If not set, it is assumed that this is performing
+            validation only. 
         run_start : string, optional
             The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
             specified, one will be created 3 days prior to the model run.
@@ -168,8 +170,16 @@ class RegressionTester:
         override_limits : dict, optional
             Override any margin by setting a new value to its name
             in this dictionary. SHOULD ONLY BE USED FOR TESTING.
+        out_dir : string, optional
+            Where to place the model results. If not set, one will be
+            created based on the value of load_week, but an error will
+            be raised if the latter is not set. 
         """
-        out_dir = self.outdir / load_week / self.name
+        if out_dir is None:
+            if load_week is None:
+                raise ValueError("Both 'out_dir' and 'load_week' cannot "
+                                 "be None!")
+            out_dir = self.outdir / load_week / self.name
         if load_week in nlets:
             nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
         else:
@@ -205,11 +215,11 @@ class RegressionTester:
             loads = test_loads
         if normal and "normal" in loads:
             for load in loads["normal"]:
-                self.run_model(load, run_start=run_start,
+                self.run_model(load_week=load, run_start=run_start,
                                state_builder=state_builder)
         if interrupt and "interrupt" in loads:
             for load in loads["interrupt"]:
-                self.run_model(load, interrupt=True, run_start=run_start,
+                self.run_model(load_week=load, interrupt=True, run_start=run_start,
                                state_builder=state_builder)
 
     def _set_answer_dir(self, load_week):
@@ -244,22 +254,22 @@ class RegressionTester:
         else:
             raise RuntimeError("Invalid test specification! "
                                "Test name = %s." % test_name)
+        answer_dir = self._set_answer_dir(load_week)
         if not answer_store:
             compare_test = getattr(self, "compare_"+test_name)
-            compare_test(load_week, out_dir, filenames)
+            compare_test(answer_dir, out_dir, filenames)
         else:
-            answer_dir = self._set_answer_dir(load_week)
             self.copy_new_files(out_dir, answer_dir, filenames)
 
-    def compare_validation(self, load_week, out_dir, filenames):
+    def compare_validation(self, answer_dir, out_dir, filenames):
         """
         This method compares the "gold standard" validation data 
         with the current test run's data.
 
         Parameters
         ----------
-        load_week : string
-            The load week to be tested, in a format like "MAY2016A".
+        answer_dir : Path object
+            The path to where the answers are stored.
         out_dir : Path
             The path to the output directory.
         filenames : list of strings
@@ -270,8 +280,7 @@ class RegressionTester:
         # and current
         new_answer_file = out_dir / filenames[0]
         new_results = pickle.load(open(new_answer_file, "rb"))
-        old_answer_file = tests_path / f"{self.name}/answers" / load_week \
-                          / filenames[0]
+        old_answer_file = answer_dir / filenames[0]
         old_results = pickle.load(open(old_answer_file, "rb"))
         # Compare predictions
         new_pred = new_results["pred"]
@@ -300,7 +309,7 @@ class RegressionTester:
             exception_catcher(assert_array_equal, new_tlm[k], old_tlm[k],
                               "Validation telemetry arrays for %s" % k)
 
-    def compare_prediction(self, load_week, out_dir, filenames):
+    def compare_prediction(self, answer_dir, out_dir, filenames):
         """
         This method compares the "gold standard" prediction data with 
         the current test run's data for the .dat files produced in the 
@@ -308,8 +317,8 @@ class RegressionTester:
 
         Parameters
         ----------
-        load_week : string
-            The load week to be tested, in a format like "MAY2016A".
+        answer_dir : Path object
+            The path to where the answers are stored.
         out_dir : Path
             The path to the output directory.
         filenames : list of strings
@@ -318,7 +327,7 @@ class RegressionTester:
         from astropy.io import ascii
         for fn in filenames:
             new_fn = out_dir / fn
-            old_fn = tests_path / f"{self.name}/answers" / load_week / fn
+            old_fn = answer_dir / fn
             new_data = ascii.read(new_fn).as_array()
             old_data = ascii.read(old_fn).as_array()
             # Compare test run data to gold standard. Since we're loading from
@@ -348,6 +357,8 @@ class RegressionTester:
         filenames : list of strings
             The filenames to be copied.
         """
+        if not answer_dir.exists():
+            answer_dir.mkdir(parents=True)
         for filename in filenames:
             fromfile = out_dir / filename
             tofile = answer_dir / filename

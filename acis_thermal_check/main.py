@@ -230,7 +230,10 @@ class ACISThermalCheck:
             valid_viols = defaultdict(lambda: None)
             plots_validation = defaultdict(lambda: None)
 
-        any_viols = sum(len(viol["values"]) for viol in pred["viols"].values())
+        if pred["viols"] is not None:
+            any_viols = sum(len(viol["values"]) for viol in pred["viols"].values())
+        else:
+            any_viols = 0
 
         # Write everything to the web page.
         # First, write the reStructuredText file.
