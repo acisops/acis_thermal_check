@@ -118,7 +118,11 @@ class ACISThermalCheck:
     ):
         self.msid = msid
         self.name = name
-        self.validation_limits = validation_limits
+        self.validation_limits = {
+            msid.upper(): validation_limits,
+            'PITCH': [(1, 3.0), (99, 3.0)],
+            'TSCPOS': [(1, 2.5), (99, 2.5)]
+        }
         self.hist_limit = hist_limit
         self.other_telem = other_telem
         self.other_map = other_map

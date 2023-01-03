@@ -26,11 +26,7 @@ matplotlib.use("Agg")
 
 class CEACheck(ACISThermalCheck):
     def __init__(self):
-        valid_limits = {
-            "2CEAHVPT": [(1, 2.0), (50, 1.0), (99, 2.0)],
-            "PITCH": [(1, 3.0), (99, 3.0)],
-            "TSCPOS": [(1, 2.5), (99, 2.5)],
-        }
+        valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [5.0]
         limits_map = {}
         other_telem = ["2imonst", "2sponst", "2s2onst", "1dahtbon"]

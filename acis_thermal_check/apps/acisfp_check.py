@@ -38,7 +38,7 @@ matplotlib.use("Agg")
 
 class ACISFPCheck(ACISThermalCheck):
     def __init__(self):
-        valid_limits = {"PITCH": [(1, 3.0), (99, 3.0)], "TSCPOS": [(1, 2.5), (99, 2.5)]}
+        valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [(-120.0, -100.0)]
         limits_map = {
             "planning.data_quality.high.acisi": "acis_i",
