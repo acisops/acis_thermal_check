@@ -402,7 +402,7 @@ class ACISThermalCheck:
         model.comp['roll'].set_data(roll, model.times)
         model.comp['pitch'].set_data(pitch, model.times)
 
-        if self.name in ["psmc", "acisfp"] and state0 is not None:
+        if self.name in ["psmc", "acisfp", "cea"] and state0 is not None:
             # Detector housing heater contribution to heating
             htrbfn = TASK_DATA / "acis_thermal_check/data/dahtbon_history.rdb"
             mylog.info('Reading file of dahtrb commands from file %s' % htrbfn)
