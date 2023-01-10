@@ -78,9 +78,7 @@ def fetch_ocat_data(obsid_list):
         # First fetch the information from the obsid itself
         got_table = True
         try:
-            resp = retry_call(
-                requests.get, [urlbase], {"params": params}, tries=4, delay=1
-            )
+            resp = retry_call(requests.get, [urlbase], {"params": params}, tries=4, delay=1)
         except (requests.ConnectionError, RetryError):
             got_table = False
         else:
@@ -94,18 +92,14 @@ def fetch_ocat_data(obsid_list):
         tab.sort("OBSID")
         # Now we have to find all of the obsids in each sequence and then
         # compute the complete exposure for each sequence
-        seq_nums = np.unique(
-            [str(sn) for sn in tab["SEQ_NUM"].data.astype("str") if sn != " "]
-        )
+        seq_nums = np.unique([str(sn) for sn in tab["SEQ_NUM"].data.astype("str") if sn != " "])
         seq_num_list = ",".join(seq_nums)
         obsids = tab["OBSID"].data.astype("int")
         cnt_rate = tab["EST_CNT_RATE"].data.astype("float64")
         params = {"seqNum": seq_num_list}
         got_seq_table = True
         try:
-            resp = retry_call(
-                requests.get, [urlbase], {"params": params}, tries=4, delay=1
-            )
+            resp = retry_call(requests.get, [urlbase], {"params": params}, tries=4, delay=1)
         except (requests.ConnectionError, RetryError):
             got_seq_table = False
         else:
@@ -291,10 +285,7 @@ def hrc_science_obs_filter(obsid_interval_list):
     """
     acis_and_ecs_only = []
     for eachobservation in obsid_interval_list:
-        if (
-            eachobservation["instrument"].startswith("ACIS-")
-            or eachobservation["obsid"] >= 60000
-        ):
+        if eachobservation["instrument"].startswith("ACIS-") or eachobservation["obsid"] >= 60000:
             acis_and_ecs_only.append(eachobservation)
     return acis_and_ecs_only
 
@@ -314,9 +305,7 @@ def acis_filter(obsid_interval_list):
     # rules for going to hotter temperatures
     new_hot_start = CxoTime("2022:318:00:00:00").secs
 
-    mylog.debug(
-        "OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS\t" "SPEC_MAX_CNT\tCYCLE"
-    )
+    mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS\t" "SPEC_MAX_CNT\tCYCLE")
     for eachobs in obsid_interval_list:
         # First we check that we got ocat data using "grating"
         hot_acis = False

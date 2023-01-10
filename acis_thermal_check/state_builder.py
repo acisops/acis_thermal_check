@@ -72,9 +72,7 @@ class StateBuilder:
         """
         start = CxoTime(datestart)
         stop = CxoTime(datestop)
-        self.logger.info(
-            "Getting commanded states between %s - %s" % (start.date, stop.date)
-        )
+        self.logger.info("Getting commanded states between %s - %s" % (start.date, stop.date))
 
         with kadi_states.disable_grating_move_duration():
             states = kadi_states.get_states(
@@ -103,9 +101,7 @@ class KadiStateBuilder(StateBuilder):
     be used for validation only.
     """
 
-    def __init__(
-        self, interrupt=False, backstop_file=None, logger=None, hrc_states=False
-    ):
+    def __init__(self, interrupt=False, backstop_file=None, logger=None, hrc_states=False):
         """
         Give the KadiStateBuilder arguments that were passed in
         from the command line, and set up the connection to the
@@ -142,9 +138,7 @@ class KadiStateBuilder(StateBuilder):
         """
         if os.path.isdir(self.backstop_file):
             # Returns a list but requires exactly 1 match
-            backstop_file = get_globfiles(
-                os.path.join(self.backstop_file, "CR[0-9]*.backstop")
-            )[0]
+            backstop_file = get_globfiles(os.path.join(self.backstop_file, "CR[0-9]*.backstop"))[0]
             self.backstop_file = backstop_file
 
         self.logger.info("Using backstop file %s" % self.backstop_file)
@@ -324,9 +318,7 @@ class ACISStateBuilder(StateBuilder):
         self.BSC.Assemble_History(self.backstop_file, tbegin, self.interrupt)
 
         # Read in the assembled history file as kadi commands
-        bs_cmds = kadi.commands.get_cmds_from_backstop(
-            self.BSC.assembled_hist_file_path
-        )
+        bs_cmds = kadi.commands.get_cmds_from_backstop(self.BSC.assembled_hist_file_path)
 
         bs_cmds["time"] = CxoTime(bs_cmds["date"]).secs
 
@@ -358,9 +350,7 @@ class ACISStateBuilder(StateBuilder):
         # Get the first state as a dict.
         state0 = {key: states[0][key] for key in states.colnames}
 
-        self.logger.debug(
-            f"state0 at {CxoTime(state0['tstart']).date} " f"is\n{pformat(state0)}"
-        )
+        self.logger.debug(f"state0 at {CxoTime(state0['tstart']).date} " f"is\n{pformat(state0)}")
 
         return states, state0
 
