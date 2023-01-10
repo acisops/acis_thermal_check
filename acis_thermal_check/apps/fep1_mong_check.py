@@ -14,23 +14,25 @@ weeks.
 # Matplotlib setup
 # Use Agg backend for command-line (non-interactive) operation
 import matplotlib
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 
 import sys
-from acis_thermal_check import \
-    DPABoardTempCheck, \
-    get_options
+
+from acis_thermal_check import DPABoardTempCheck, get_options
 
 
 class FEP1MongCheck(DPABoardTempCheck):
     def __init__(self):
-        valid_limits = {'TMP_FEP1_MONG': [(1, 2.0), (50, 1.0), (99, 2.0)],
-                        'PITCH': [(1, 3.0), (99, 3.0)],
-                        'TSCPOS': [(1, 2.5), (99, 2.5)]
-                       }
+        valid_limits = {
+            "TMP_FEP1_MONG": [(1, 2.0), (50, 1.0), (99, 2.0)],
+            "PITCH": [(1, 3.0), (99, 3.0)],
+            "TSCPOS": [(1, 2.5), (99, 2.5)],
+        }
         hist_limit = [25.0, 20.0]  # First limit is >=, second limit is <=
-        super(FEP1MongCheck, self).__init__("tmp_fep1_mong", "fep1_mong", 
-                                            valid_limits, hist_limit)
+        super(FEP1MongCheck, self).__init__(
+            "tmp_fep1_mong", "fep1_mong", valid_limits, hist_limit
+        )
 
 
 def main():
@@ -46,5 +48,5 @@ def main():
             sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

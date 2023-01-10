@@ -1,7 +1,8 @@
 import numpy as np
-from acis_thermal_check.utils import mylog
-from kadi.commands.states import decode_power
 from cxotime import CxoTime
+from kadi.commands.states import decode_power
+
+from acis_thermal_check.utils import mylog
 
 
 def who_in_fp(simpos=80655):
@@ -24,18 +25,18 @@ def who_in_fp(simpos=80655):
                    "HRC-I"
                    "HRC-S"
     """
-    is_in_the_fp = 'launchlock'
+    is_in_the_fp = "launchlock"
 
     #  Set the value of is_in_the_fp to the appropriate value. It will default
     #  to "launchlock" if no value matches
     if 104839 >= simpos >= 82109:
-        is_in_the_fp = 'ACIS-I'
+        is_in_the_fp = "ACIS-I"
     elif 82108 >= simpos >= 70736:
-        is_in_the_fp = 'ACIS-S'
+        is_in_the_fp = "ACIS-S"
     elif -20000 >= simpos >= -86147:
-        is_in_the_fp = 'HRC-I'
+        is_in_the_fp = "HRC-I"
     elif -86148 >= simpos >= -104362:
-        is_in_the_fp = 'HRC-S'
+        is_in_the_fp = "HRC-S"
 
     #  return the string indicating which instrument is in the Focal Plane
     return is_in_the_fp
@@ -57,12 +58,15 @@ def fetch_ocat_data(obsid_list):
     A dict of NumPy arrays of the above properties.
     """
     import requests
-    from ska_helpers.retry import retry_call, RetryError
     from astropy.io import ascii
-    warn = "Could not get the table from the Obscat to " \
-           "determine which observations can go to -109 C. " \
-           "Any violations of eligible observations should " \
-           "be hand-checked."
+    from ska_helpers.retry import RetryError, retry_call
+
+    warn = (
+        "Could not get the table from the Obscat to "
+        "determine which observations can go to -109 C. "
+        "Any violations of eligible observations should "
+        "be hand-checked."
+    )
     # Only bother with this check if obsids are found
     if len(obsid_list) > 0:
         # The following uses a request call to the obscat which explicitly
@@ -74,32 +78,34 @@ def fetch_ocat_data(obsid_list):
         # First fetch the information from the obsid itself
         got_table = True
         try:
-            resp = retry_call(requests.get, [urlbase], {"params": params}, 
-                              tries=4, delay=1)
+            resp = retry_call(
+                requests.get, [urlbase], {"params": params}, tries=4, delay=1
+            )
         except (requests.ConnectionError, RetryError):
             got_table = False
         else:
             if not resp.ok:
                 got_table = False
     else:
-        warn = "No obsids to check, may be a vehicle load--please check " \
-               "if not."
+        warn = "No obsids to check, may be a vehicle load--please check " "if not."
         got_table = False
     if got_table:
         tab = ascii.read(resp.text, header_start=0, data_start=2)
         tab.sort("OBSID")
         # Now we have to find all of the obsids in each sequence and then
         # compute the complete exposure for each sequence
-        seq_nums = np.unique([str(sn) for sn in tab["SEQ_NUM"].data.astype("str") 
-                              if sn != " "])
+        seq_nums = np.unique(
+            [str(sn) for sn in tab["SEQ_NUM"].data.astype("str") if sn != " "]
+        )
         seq_num_list = ",".join(seq_nums)
         obsids = tab["OBSID"].data.astype("int")
         cnt_rate = tab["EST_CNT_RATE"].data.astype("float64")
         params = {"seqNum": seq_num_list}
         got_seq_table = True
         try:
-            resp = retry_call(requests.get, [urlbase], {"params": params},
-                              tries=4, delay=1)
+            resp = retry_call(
+                requests.get, [urlbase], {"params": params}, tries=4, delay=1
+            )
         except (requests.ConnectionError, RetryError):
             got_seq_table = False
         else:
@@ -121,12 +127,14 @@ def fetch_ocat_data(obsid_list):
             j = np.where(sn == seq_nums)[0]
             app_exp[i] += np.float64(tab_seq["APP_EXP"][j]).sum()
         app_exp *= 1000.0
-        table_dict = {"obsid": np.array(obsids),
-                      "grating": tab["GRAT"].data,
-                      "cnt_rate": cnt_rate,
-                      "app_exp": app_exp,
-                      "spectra_max_count": tab["SPECTRA_MAX_COUNT"].data.astype("int"),
-                      "obs_cycle": tab["OBS_CYCLE"].data}
+        table_dict = {
+            "obsid": np.array(obsids),
+            "grating": tab["GRAT"].data,
+            "cnt_rate": cnt_rate,
+            "app_exp": app_exp,
+            "spectra_max_count": tab["SPECTRA_MAX_COUNT"].data.astype("int"),
+            "obs_cycle": tab["OBS_CYCLE"].data,
+        }
     else:
         # We weren't able to get a valid table for some reason, so
         # we cannot check for hot observations, but we proceed with the
@@ -139,7 +147,7 @@ def fetch_ocat_data(obsid_list):
 def find_obsid_intervals(cmd_states, load_start):
     """
     User reads the SKA commanded states archive, via
-    a call to the SKA kadi.commands.states.get_states, 
+    a call to the SKA kadi.commands.states.get_states,
     between the user specified START and STOP times.
 
     Problem is, ALL commanded states that were stored
@@ -191,7 +199,7 @@ def find_obsid_intervals(cmd_states, load_start):
     for eachstate in cmd_states:
 
         # Make sure we skip maneuver obsids explicitly
-        if 60000 > eachstate['obsid'] >= 38001:
+        if 60000 > eachstate["obsid"] >= 38001:
             continue
 
         # Only check states which are at least partially
@@ -199,31 +207,29 @@ def find_obsid_intervals(cmd_states, load_start):
         if eachstate["tstop"] < load_start:
             continue
 
-        pow_cmd = eachstate['power_cmd']
+        pow_cmd = eachstate["power_cmd"]
 
         # is this the first WSPOW of the interval?
-        if pow_cmd in ['WSPOW00000', 'WSVIDALLDN'] and not firstpow:
+        if pow_cmd in ["WSPOW00000", "WSVIDALLDN"] and not firstpow:
             firstpow = True
-            datestart = eachstate['datestart']
-            tstart = eachstate['tstart']
+            datestart = eachstate["datestart"]
+            tstart = eachstate["tstart"]
 
         # Process the power command which turns things on
-        if pow_cmd.startswith("WSPOW") and pow_cmd != 'WSPOW00000' \
-            and firstpow:
-            ccds = decode_power(pow_cmd)['ccds'].replace(" ", ",")[:-1]
+        if pow_cmd.startswith("WSPOW") and pow_cmd != "WSPOW00000" and firstpow:
+            ccds = decode_power(pow_cmd)["ccds"].replace(" ", ",")[:-1]
 
         # Process the first XTZ0000005 line you see
-        if pow_cmd in ['XTZ0000005', 'XCZ0000005'] and \
-                (xtztime is None and firstpow):
-            xtztime = eachstate['tstart']
+        if pow_cmd in ["XTZ0000005", "XCZ0000005"] and (xtztime is None and firstpow):
+            xtztime = eachstate["tstart"]
             # MUST fix the instrument now
-            instrument = who_in_fp(eachstate['simpos'])
+            instrument = who_in_fp(eachstate["simpos"])
             ccd_count = eachstate["ccd_count"]
 
         # Process the first AA00000000 line you see
-        if pow_cmd == 'AA00000000' and firstpow:
-            datestop = eachstate['datestop']
-            tstop = eachstate['tstop']
+        if pow_cmd == "AA00000000" and firstpow:
+            datestop = eachstate["datestop"]
+            tstop = eachstate["tstop"]
 
             # now calculate the exposure time
             if xtztime is not None:
@@ -233,15 +239,17 @@ def find_obsid_intervals(cmd_states, load_start):
                 # the Master List. We add the text version of who is in
                 # the focal plane
 
-                obsid_dict = {"datestart": datestart,
-                              "datestop": datestop,
-                              "tstart": tstart,
-                              "tstop": tstop,
-                              "ccds": ccds,
-                              "start_science": xtztime,
-                              "obsid": eachstate['obsid'],
-                              "instrument": instrument,
-                              "ccd_count": ccd_count}
+                obsid_dict = {
+                    "datestart": datestart,
+                    "datestop": datestop,
+                    "tstart": tstart,
+                    "tstop": tstop,
+                    "ccds": ccds,
+                    "start_science": xtztime,
+                    "obsid": eachstate["obsid"],
+                    "instrument": instrument,
+                    "ccd_count": ccd_count,
+                }
                 obsid_interval_list.append(obsid_dict)
 
             # now clear out the data values
@@ -283,8 +291,10 @@ def hrc_science_obs_filter(obsid_interval_list):
     """
     acis_and_ecs_only = []
     for eachobservation in obsid_interval_list:
-        if eachobservation["instrument"].startswith("ACIS-") or \
-                eachobservation["obsid"] >= 60000:
+        if (
+            eachobservation["instrument"].startswith("ACIS-")
+            or eachobservation["obsid"] >= 60000
+        ):
             acis_and_ecs_only.append(eachobservation)
     return acis_and_ecs_only
 
@@ -304,26 +314,31 @@ def acis_filter(obsid_interval_list):
     # rules for going to hotter temperatures
     new_hot_start = CxoTime("2022:318:00:00:00").secs
 
-    mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS\t"
-                "SPEC_MAX_CNT\tCYCLE")
+    mylog.debug(
+        "OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS\t" "SPEC_MAX_CNT\tCYCLE"
+    )
     for eachobs in obsid_interval_list:
         # First we check that we got ocat data using "grating"
         hot_acis = False
         if "grating" in eachobs:
             eachobs["num_counts"] = int(eachobs["cnt_rate"] * eachobs["app_exp"])
             # First check to see if this is an S3 observation
-            mylog.debug(f"{eachobs['obsid']}\t{eachobs['cnt_rate']}\t"
-                        f"{eachobs['app_exp']*1.0e-3}\t{eachobs['num_counts']}\t"
-                        f"{eachobs['grating']}\t{eachobs['ccds']}\t"
-                        f"{eachobs['spectra_max_count']}\t{eachobs['obs_cycle']}")
+            mylog.debug(
+                f"{eachobs['obsid']}\t{eachobs['cnt_rate']}\t"
+                f"{eachobs['app_exp']*1.0e-3}\t{eachobs['num_counts']}\t"
+                f"{eachobs['grating']}\t{eachobs['ccds']}\t"
+                f"{eachobs['spectra_max_count']}\t{eachobs['obs_cycle']}"
+            )
             low_ct = False
             # "New" hot ACIS category:
             # 1. Cycle 23 and later
             # 2. spectra_max_count must be greater than 0
             # 3. Start time must be after ~NOV1422 load
-            if eachobs["obs_cycle"] >= 23 and \
-                    eachobs["spectra_max_count"] > 0 and \
-                    eachobs["tstart"] > new_hot_start:
+            if (
+                eachobs["obs_cycle"] >= 23
+                and eachobs["spectra_max_count"] > 0
+                and eachobs["tstart"] > new_hot_start
+            ):
                 if eachobs["instrument"] == "ACIS-I":
                     low_ct = eachobs["spectra_max_count"] <= 1000
                 elif eachobs["instrument"] == "ACIS-S":
@@ -334,7 +349,7 @@ def acis_filter(obsid_interval_list):
                 low_ct = eachobs["num_counts"] < 300
             # Also check grating status
             hot_acis = (eachobs["grating"] == "HETG") or low_ct
-        eachobs['hot_acis'] = hot_acis
+        eachobs["hot_acis"] = hot_acis
         if hot_acis:
             acis_hot.append(eachobs)
         else:
@@ -345,7 +360,8 @@ def acis_filter(obsid_interval_list):
             elif eachobs["instrument"] == "HRC-S" and eachobs["obsid"] >= 60000:
                 cold_ecs.append(eachobs)
             else:
-                raise RuntimeError(f"Cannot determine what kind of thermal "
-                                   f"limit {eachobs['obsid']} should have!")
+                raise RuntimeError(
+                    f"Cannot determine what kind of thermal "
+                    f"limit {eachobs['obsid']} should have!"
+                )
     return acis_i, acis_s, acis_hot, cold_ecs
-

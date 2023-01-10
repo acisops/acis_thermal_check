@@ -1,19 +1,41 @@
 import os
-from numpy.testing import assert_array_equal, \
-    assert_allclose
+import pickle
 import shutil
 import tempfile
-import pickle
 from pathlib import Path, PurePath
 
-months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-          "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+from numpy.testing import assert_allclose, assert_array_equal
+
+months = [
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
+]
 
 # Loads for regression testing
-test_loads = {"normal": ["MAR0617A", "MAR2017E", "JUL3117B", "SEP0417A"],
-              "interrupt": ["MAR1517B", "JUL2717A", "AUG2517C", "AUG3017A",
-                            "MAR0817B", "MAR1117A", "APR0217B", "SEP0917C"]}
-all_loads = test_loads["normal"]+test_loads["interrupt"]
+test_loads = {
+    "normal": ["MAR0617A", "MAR2017E", "JUL3117B", "SEP0417A"],
+    "interrupt": [
+        "MAR1517B",
+        "JUL2717A",
+        "AUG2517C",
+        "AUG3017A",
+        "MAR0817B",
+        "MAR1117A",
+        "APR0217B",
+        "SEP0917C",
+    ],
+}
+all_loads = test_loads["normal"] + test_loads["interrupt"]
 
 hrc_loads = {"normal": ["SEP1922A", "SEP2622A"]}
 
@@ -29,12 +51,12 @@ def get_lr_root():
 
     :returns: str, first path from above which exists.
     """
-    data_acis_lr = Path('data', 'acis', 'LoadReviews')
-    path = '/' / data_acis_lr
+    data_acis_lr = Path("data", "acis", "LoadReviews")
+    path = "/" / data_acis_lr
     if not path.exists():
-        path = os.environ['SKA'] / data_acis_lr
+        path = os.environ["SKA"] / data_acis_lr
         if not path.exists():
-            raise FileNotFoundError('no available ACIS load review directory')
+            raise FileNotFoundError("no available ACIS load review directory")
     return path
 
 
@@ -76,15 +98,26 @@ class TestArgs:
         The path to an alternative NLET file to be used. Default: None,
         which is to use the default one.
     """
-    def __init__(self, outdir, run_start=None, load_week=None, 
-                 days=21.0, T_init=None, interrupt=False,
-                 state_builder='acis', verbose=0, model_spec=None,
-                 nlet_file=None):
+
+    def __init__(
+        self,
+        outdir,
+        run_start=None,
+        load_week=None,
+        days=21.0,
+        T_init=None,
+        interrupt=False,
+        state_builder="acis",
+        verbose=0,
+        model_spec=None,
+        nlet_file=None,
+    ):
         from datetime import datetime
+
         self.load_week = load_week
         if run_start is None:
             year = 2000 + int(load_week[5:7])
-            month = months.index(load_week[:3])+1
+            month = months.index(load_week[:3]) + 1
             day = int(load_week[3:5])
             run_start = datetime(year, month, day).strftime("%Y:%j:%H:%M:%S")
         self.run_start = run_start
@@ -96,8 +129,9 @@ class TestArgs:
         else:
             load_year = f"20{load_week[-3:-1]}"
             load_letter = load_week[-1].lower()
-            self.backstop_file = lr_root / load_year / load_week[:-1] \
-                                 / f"ofls{load_letter}"
+            self.backstop_file = (
+                lr_root / load_year / load_week[:-1] / f"ofls{load_letter}"
+            )
         self.days = days
         if nlet_file is None:
             nlet_file = lr_root / "NonLoadTrackedEvents.txt"
@@ -124,8 +158,9 @@ def exception_catcher(test, old, new, data_type, **kwargs):
 
 
 class RegressionTester:
-    def __init__(self, atc_class, atc_args=None, atc_kwargs=None, 
-                 test_root=None, sub_dir=None):
+    def __init__(
+        self, atc_class, atc_args=None, atc_kwargs=None, test_root=None, sub_dir=None
+    ):
         if atc_args is None:
             atc_args = ()
         if atc_kwargs is None:
@@ -143,13 +178,19 @@ class RegressionTester:
         if sub_dir is not None:
             rootdir = rootdir / sub_dir
         self.outdir = rootdir.resolve()
-        self.test_model_spec = tests_path / self.name / \
-                               f"{self.name}_test_spec.json"
+        self.test_model_spec = tests_path / self.name / f"{self.name}_test_spec.json"
         if not self.outdir.exists():
             self.outdir.mkdir(parents=True)
 
-    def run_model(self, load_week=None, run_start=None, state_builder='acis',
-                  interrupt=False, override_limits=None, out_dir=None):
+    def run_model(
+        self,
+        load_week=None,
+        run_start=None,
+        state_builder="acis",
+        interrupt=False,
+        override_limits=None,
+        out_dir=None,
+    ):
         """
         Run a thermal model in test mode for a single load week.
 
@@ -158,7 +199,7 @@ class RegressionTester:
         load_week : string, optional
             The load week to be tested, in a format like "MAY2016A".
             If not set, it is assumed that this is performing
-            validation only. 
+            validation only.
         run_start : string, optional
             The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
             specified, one will be created 3 days prior to the model run.
@@ -173,24 +214,35 @@ class RegressionTester:
         out_dir : string, optional
             Where to place the model results. If not set, one will be
             created based on the value of load_week, but an error will
-            be raised if the latter is not set. 
+            be raised if the latter is not set.
         """
         if out_dir is None:
             if load_week is None:
-                raise ValueError("Both 'out_dir' and 'load_week' cannot "
-                                 "be None!")
+                raise ValueError("Both 'out_dir' and 'load_week' cannot " "be None!")
             out_dir = self.outdir / load_week / self.name
         if load_week in nlets:
             nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
         else:
             nlet_file = None
-        args = TestArgs(out_dir, run_start=run_start, load_week=load_week,
-                        interrupt=interrupt, nlet_file=nlet_file,
-                        state_builder=state_builder, model_spec=self.test_model_spec)
+        args = TestArgs(
+            out_dir,
+            run_start=run_start,
+            load_week=load_week,
+            interrupt=interrupt,
+            nlet_file=nlet_file,
+            state_builder=state_builder,
+            model_spec=self.test_model_spec,
+        )
         self.atc_obj.run(args, override_limits=override_limits)
 
-    def run_models(self, normal=True, interrupt=True, run_start=None,
-                   state_builder='acis', hrc=False):
+    def run_models(
+        self,
+        normal=True,
+        interrupt=True,
+        run_start=None,
+        state_builder="acis",
+        hrc=False,
+    ):
         """
         Run the internally set list of models for regression testing.
 
@@ -215,12 +267,17 @@ class RegressionTester:
             loads = test_loads
         if normal and "normal" in loads:
             for load in loads["normal"]:
-                self.run_model(load_week=load, run_start=run_start,
-                               state_builder=state_builder)
+                self.run_model(
+                    load_week=load, run_start=run_start, state_builder=state_builder
+                )
         if interrupt and "interrupt" in loads:
             for load in loads["interrupt"]:
-                self.run_model(load_week=load, interrupt=True, run_start=run_start,
-                               state_builder=state_builder)
+                self.run_model(
+                    load_week=load,
+                    interrupt=True,
+                    run_start=run_start,
+                    state_builder=state_builder,
+                )
 
     def _set_answer_dir(self, load_week):
         answer_dir = tests_path / f"{self.name}/answers" / load_week
@@ -252,18 +309,19 @@ class RegressionTester:
         elif test_name == "validation":
             filenames = ["validation_data.pkl"]
         else:
-            raise RuntimeError("Invalid test specification! "
-                               "Test name = %s." % test_name)
+            raise RuntimeError(
+                "Invalid test specification! " "Test name = %s." % test_name
+            )
         answer_dir = self._set_answer_dir(load_week)
         if not answer_store:
-            compare_test = getattr(self, "compare_"+test_name)
+            compare_test = getattr(self, "compare_" + test_name)
             compare_test(answer_dir, out_dir, filenames)
         else:
             self.copy_new_files(out_dir, answer_dir, filenames)
 
     def compare_validation(self, answer_dir, out_dir, filenames):
         """
-        This method compares the "gold standard" validation data 
+        This method compares the "gold standard" validation data
         with the current test run's data.
 
         Parameters
@@ -288,31 +346,52 @@ class RegressionTester:
         pred_keys = set(new_pred.keys()) | set(old_pred.keys())
         for k in pred_keys:
             if k not in new_pred:
-                print("WARNING in pred: '%s' in old answer but not new. Answers should be updated." % k)
+                print(
+                    "WARNING in pred: '%s' in old answer but not new. Answers should be updated."
+                    % k
+                )
                 continue
             if k not in old_pred:
-                print("WARNING in pred: '%s' in new answer but not old. Answers should be updated." % k)
+                print(
+                    "WARNING in pred: '%s' in new answer but not old. Answers should be updated."
+                    % k
+                )
                 continue
-            exception_catcher(assert_allclose, new_pred[k], old_pred[k],
-                              "Validation model arrays for %s" % k, rtol=1.0e-5)
+            exception_catcher(
+                assert_allclose,
+                new_pred[k],
+                old_pred[k],
+                "Validation model arrays for %s" % k,
+                rtol=1.0e-5,
+            )
         # Compare telemetry
-        new_tlm = new_results['tlm']
-        old_tlm = old_results['tlm']
+        new_tlm = new_results["tlm"]
+        old_tlm = old_results["tlm"]
         tlm_keys = set(new_tlm.dtype.names) | set(old_tlm.dtype.names)
         for k in tlm_keys:
             if k not in new_tlm.dtype.names:
-                print("WARNING in tlm: '%s' in old answer but not new. Answers should be updated." % k)
+                print(
+                    "WARNING in tlm: '%s' in old answer but not new. Answers should be updated."
+                    % k
+                )
                 continue
             if k not in old_tlm.dtype.names:
-                print("WARNING in tlm: '%s' in new answer but not old. Answers should be updated." % k)
+                print(
+                    "WARNING in tlm: '%s' in new answer but not old. Answers should be updated."
+                    % k
+                )
                 continue
-            exception_catcher(assert_array_equal, new_tlm[k], old_tlm[k],
-                              "Validation telemetry arrays for %s" % k)
+            exception_catcher(
+                assert_array_equal,
+                new_tlm[k],
+                old_tlm[k],
+                "Validation telemetry arrays for %s" % k,
+            )
 
     def compare_prediction(self, answer_dir, out_dir, filenames):
         """
-        This method compares the "gold standard" prediction data with 
-        the current test run's data for the .dat files produced in the 
+        This method compares the "gold standard" prediction data with
+        the current test run's data for the .dat files produced in the
         thermal model run.
 
         Parameters
@@ -325,6 +404,7 @@ class RegressionTester:
             The list of files which will be used in the comparison.
         """
         from astropy.io import ascii
+
         for fn in filenames:
             new_fn = out_dir / fn
             old_fn = answer_dir / fn
@@ -334,13 +414,22 @@ class RegressionTester:
             # ASCII text files here, floating-point comparisons will be different
             # at machine precision, others will be exact.
             for k, dt in new_data.dtype.descr:
-                if 'f' in dt:
-                    exception_catcher(assert_allclose, new_data[k], old_data[k],
-                                      f"Prediction arrays for {k}", rtol=1.0e-5)
+                if "f" in dt:
+                    exception_catcher(
+                        assert_allclose,
+                        new_data[k],
+                        old_data[k],
+                        f"Prediction arrays for {k}",
+                        rtol=1.0e-5,
+                    )
                 else:
-                    exception_catcher(assert_array_equal, new_data[k], old_data[k],
-                                      f"Prediction arrays for {k}")
- 
+                    exception_catcher(
+                        assert_array_equal,
+                        new_data[k],
+                        old_data[k],
+                        f"Prediction arrays for {k}",
+                    )
+
     def copy_new_files(self, out_dir, answer_dir, filenames):
         """
         This method copies the files generated in this test
@@ -364,8 +453,9 @@ class RegressionTester:
             tofile = answer_dir / filename
             shutil.copyfile(fromfile, tofile)
 
-    def check_violation_reporting(self, load_week, viol_json, 
-                                  answer_store=False, state_builder="acis"):
+    def check_violation_reporting(
+        self, load_week, viol_json, answer_store=False, state_builder="acis"
+    ):
         """
         This method runs loads which report violations of
         limits and ensures that they report the violation,
@@ -374,7 +464,7 @@ class RegressionTester:
         Parameters
         ----------
         load_week : string
-            The load to check. 
+            The load to check.
         model_spec : string
             The path to the model specification file to
             use. For this test, to ensure the violation is
@@ -392,6 +482,7 @@ class RegressionTester:
             "acis", default "acis".
         """
         import json
+
         with open(viol_json, "r") as f:
             viol_data = json.load(f)
         if answer_store:
@@ -403,12 +494,15 @@ class RegressionTester:
                 viol_data["obsids"] = []
         load_year = "20%s" % load_week[-3:-1]
         next_year = f"{int(load_year)+1}"
-        self.run_model(load_week, run_start=viol_data['run_start'], 
-                       override_limits=viol_data['limits'], 
-                       state_builder=state_builder)
+        self.run_model(
+            load_week,
+            run_start=viol_data["run_start"],
+            override_limits=viol_data["limits"],
+            state_builder=state_builder,
+        )
         out_dir = self.outdir / load_week / self.name
         index_rst = out_dir / "index.rst"
-        with open(index_rst, 'r') as myfile:
+        with open(index_rst, "r") as myfile:
             i = 0
             for line in myfile.readlines():
                 if line.startswith("Model status"):
@@ -420,7 +514,7 @@ class RegressionTester:
                         viol_data["datestops"].append(words[1])
                         viol_data["duration"].append(words[2])
                         viol_data["temps"].append(words[3])
-                        if self.msid == "fptemp": 
+                        if self.msid == "fptemp":
                             if len(words) > 4:
                                 obsid = words[4]
                             else:
@@ -435,21 +529,22 @@ class RegressionTester:
                             if self.msid == "fptemp":
                                 assert viol_data["obsids"][i] in line
                         except AssertionError:
-                            raise AssertionError("Comparison failed. Check file at "
-                                                 "%s." % index_rst)
+                            raise AssertionError(
+                                "Comparison failed. Check file at " "%s." % index_rst
+                            )
                     i += 1
         if answer_store:
             with open(viol_json, "w") as f:
                 json.dump(viol_data, f, indent=4)
 
-    def check_hot_acis_reporting(self, load_week, hot_json, 
-                                 answer_store=False):
+    def check_hot_acis_reporting(self, load_week, hot_json, answer_store=False):
         import json
+
         self.run_model(load_week)
         out_dir = self.outdir / load_week / self.name
         index_rst = out_dir / "index.rst"
         hot_data = []
-        with open(index_rst, 'r') as myfile:
+        with open(index_rst, "r") as myfile:
             read_hot_data = False
             for i, line in enumerate(myfile.readlines()):
                 words = line.strip().split()
