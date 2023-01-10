@@ -10,15 +10,16 @@ BEP PCB temperature. It also generates BEP PCB model validation plots
 comparing predicted values to telemetry for the previous three weeks.
 """
 
-# Matplotlib setup
-# Use Agg backend for command-line (non-interactive) operation
-import matplotlib
-
-matplotlib.use("Agg")
-
 import sys
 
+import matplotlib
+
 from acis_thermal_check import DPABoardTempCheck, get_options
+
+# Matplotlib setup
+# Use Agg backend for command-line (non-interactive) operation
+
+matplotlib.use("Agg")
 
 
 class BEPPCBCheck(DPABoardTempCheck):

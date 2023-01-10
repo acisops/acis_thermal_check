@@ -125,7 +125,7 @@ class PlotDate:
     y2 : NumPy array
         Quantity to plot against the times on the right y-axis.
     yy : NumPy array, optional
-        A second quantity to plot against the times on the 
+        A second quantity to plot against the times on the
         left x-axis. Default: None
     xmin : float, optional
         The left-most value of the x-axis.

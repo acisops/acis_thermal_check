@@ -1,35 +1,26 @@
-# Matplotlib setup
-# Use Agg backend for command-line (non-interactive) operation
-import matplotlib
-
-matplotlib.use("Agg")
-
 import getpass
+import json
 import re
 import shutil
 import time
 from collections import OrderedDict, defaultdict
+from pathlib import Path, PurePath
 from pprint import pformat
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import Ska.DBI
 import Ska.engarchive.fetch_sci as fetch
 import Ska.Numpy
 from astropy.io import ascii
+from astropy.table import Table
 from cxotime import CxoTime
+from kadi import events
 from Ska.Matplotlib import cxctime2plotdate, plot_cxctime, pointpair
 from xija.get_model_spec import get_xija_model_spec
 
 import acis_thermal_check
-
-version = acis_thermal_check.__version__
-import json
-from pathlib import Path, PurePath
-
-from astropy.table import Table
-from kadi import events
-
 from acis_thermal_check.utils import (
     TASK_DATA,
     PredictPlot,
@@ -42,6 +33,12 @@ from acis_thermal_check.utils import (
     thermal_blue,
     thermal_red,
 )
+
+# Matplotlib setup
+# Use Agg backend for command-line (non-interactive) operation
+matplotlib.use("Agg")
+
+version = acis_thermal_check.__version__
 
 op_map = {"greater": ">", "greater_equal": ">=", "less": "<", "less_equal": "<="}
 
@@ -766,7 +763,7 @@ class ACISThermalCheck:
             y2=self.predict_model.comp["pitch"].mvals,
             xmin=plot_start,
             xlabel="Date",
-            ylabel="Temperature ($^\circ$C)",
+            ylabel=r"Temperature ($^\circ$C)",
             ylabel2="Pitch (deg)",
             ylim2=(40, 180),
             width=w1,
@@ -907,7 +904,7 @@ class ACISThermalCheck:
 
         # Set up labels for validation plots
         labels = {
-            self.msid: "Temperature ($^\circ$C)",
+            self.msid: r"Temperature ($^\circ$C)",
             "pitch": "Pitch (deg)",
             "tscpos": "SIM-Z (steps/1000)",
             "roll": "Off-Nominal Roll (deg)",

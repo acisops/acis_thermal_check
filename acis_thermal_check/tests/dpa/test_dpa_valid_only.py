@@ -1,5 +1,3 @@
-import pytest
-
 from acis_thermal_check.apps.dpa_check import DPACheck
 from acis_thermal_check.tests.regression_testing import RegressionTester, tests_path
 

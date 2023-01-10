@@ -11,18 +11,17 @@ plots comparing predicted values to telemetry for the previous three
 weeks.
 """
 
-# Matplotlib setup
-# Use Agg backend for command-line (non-interactive) operation
-import matplotlib
-
-matplotlib.use("Agg")
-
 import sys
 
+import matplotlib
 from Ska.Matplotlib import pointpair
 
 from acis_thermal_check import ACISThermalCheck, get_options, mylog
 from acis_thermal_check.utils import PredictPlot
+
+# Matplotlib setup
+# Use Agg backend for command-line (non-interactive) operation
+matplotlib.use("Agg")
 
 
 class CEACheck(ACISThermalCheck):

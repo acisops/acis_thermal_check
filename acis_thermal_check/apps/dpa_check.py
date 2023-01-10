@@ -10,16 +10,15 @@ DPA temperature 1DPAMZT.  It also generates DPA model validation
 plots comparing predicted values to telemetry for the previous three
 weeks.
 """
+import sys
+
+import matplotlib
+
+from acis_thermal_check import ACISThermalCheck, get_options
 
 # Matplotlib setup
 # Use Agg backend for command-line (non-interactive) operation
-import matplotlib
-
 matplotlib.use("Agg")
-
-import sys
-
-from acis_thermal_check import ACISThermalCheck, get_options
 
 
 class DPACheck(ACISThermalCheck):

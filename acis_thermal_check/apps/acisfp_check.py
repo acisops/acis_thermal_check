@@ -6,20 +6,15 @@ dpa_check
 ========================
 
 This code generates backstop load review outputs for checking the ACIS
-focal plane temperature: FP_TEMP11. It also generates FP_TEMP11 model 
-validation plots comparing predicted values to telemetry for the 
+focal plane temperature: FP_TEMP11. It also generates FP_TEMP11 model
+validation plots comparing predicted values to telemetry for the
 previous three weeks.
 """
-
-# Matplotlib setup
-# Use Agg backend for command-line (non-interactive) operation
-import matplotlib
-
-matplotlib.use("Agg")
 
 import os
 import sys
 
+import matplotlib
 from astropy.table import Table
 from cxotime import CxoTime
 from Ska.Matplotlib import cxctime2plotdate
@@ -36,6 +31,10 @@ from acis_thermal_check.acis_obs import (
     hrc_science_obs_filter,
 )
 from acis_thermal_check.utils import PredictPlot, paint_perigee
+
+# Matplotlib setup
+# Use Agg backend for command-line (non-interactive) operation
+matplotlib.use("Agg")
 
 
 class ACISFPCheck(ACISThermalCheck):
@@ -142,7 +141,7 @@ class ACISFPCheck(ACISThermalCheck):
         """
         Next we need to find all the ACIS-S observations within the start/stop
         times so that we can paint those on the plots as well. We will get
-        those from the commanded states data structure called "states" 
+        those from the commanded states data structure called "states"
         """
 
         # create an empty dictionary called plots to contain the returned
@@ -171,7 +170,7 @@ class ACISFPCheck(ACISThermalCheck):
                 x2=self.predict_model.times,
                 y2=self.predict_model.comp["pitch"].mvals,
                 xlabel="Date",
-                ylabel="Temperature ($^\circ$C)",
+                ylabel=r"Temperature ($^\circ$C)",
                 ylabel2="Pitch (deg)",
                 xmin=plot_start,
                 ylim=ylim[i],
