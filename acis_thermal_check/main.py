@@ -1295,7 +1295,8 @@ class ACISThermalCheck:
         """
 
     def rst_to_html(self, outdir):
-        """Render index.rst as HTML
+        """
+        Render index.rst as HTML
 
         Parameters
         ----------
@@ -1366,6 +1367,8 @@ class ACISThermalCheck:
         args : ArgumentParser arguments
             The command-line options object, which has the options
             attached to it as attributes
+        model_spec : string
+            The path to the thermal model specification.
         """
         import hashlib
 

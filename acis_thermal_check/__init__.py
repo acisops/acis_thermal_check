@@ -8,9 +8,7 @@ from acis_thermal_check.utils import get_acis_limits, get_options, mylog
 
 
 def test(*args, **kwargs):
-    """
-    Run py.test unit tests.
-    """
+    # Run py.test unit tests.
     import testr
 
     return testr.test(*args, **kwargs)

@@ -87,7 +87,7 @@ def fetch_ocat_data(obsid_list):
             if not resp.ok:
                 got_table = False
     else:
-        warn = "No obsids to check, may be a vehicle load--please check " "if not."
+        warn = "No obsids to check, may be a vehicle load--please check if not."
         got_table = False
     if got_table:
         tab = ascii.read(resp.text, header_start=0, data_start=2)
@@ -314,9 +314,7 @@ def acis_filter(obsid_interval_list):
     # rules for going to hotter temperatures
     new_hot_start = CxoTime("2022:318:00:00:00").secs
 
-    mylog.debug(
-        "OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS\t" "SPEC_MAX_CNT\tCYCLE"
-    )
+    mylog.debug("OBSID\tCNT_RATE\tAPP_EXP\tNUM_CTS\tGRATING\tCCDS\tSPEC_MAX_CNT\tCYCLE")
     for eachobs in obsid_interval_list:
         # First we check that we got ocat data using "grating"
         hot_acis = False

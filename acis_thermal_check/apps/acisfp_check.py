@@ -82,16 +82,16 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Now set any data values for the components of your model
         # What you have to push in manually are:
-        #       any states information like vid_board or ccd count
-        #       any pseudo-MSID's such as 1cbat (because the node does not reflect the MSID)
-        #       any single value initializations you think ought to be made.
-        #         - e.g. fptemp in this case since it's what you are looking for.
+        #    any states information like vid_board or ccd count
+        #    any pseudo-MSIDs such as 1cbat (because the node does not reflect the MSID)
+        #    any single value initializations you think ought to be made.
+        #    - e.g. fptemp in this case since it's what you are looking for.
 
         # For each item in the Commanded States data structure which matters to us,
         # insert the values in the commanded states data structure into the model:
         #
-        # Telemetry doesn't have to be pushed in - the model handles that.But items in the states
-        # array have to be manually shoved in.
+        # Telemetry doesn't have to be pushed in - the model handles that. But
+        # items in the states array have to be manually shoved in.
         #
         # pitch comes from the telemetry
 
@@ -263,7 +263,7 @@ class ACISFPCheck(ACISThermalCheck):
 
             # Build the file name
             filename = (
-                f"{self.msid.lower()}" f"M{-int(ylim[i][0])}toM{-int(ylim[i][1])}.png"
+                f"{self.msid.lower()}M{-int(ylim[i][0])}toM{-int(ylim[i][1])}.png"
             )
             plots[name].filename = filename
 
@@ -280,7 +280,7 @@ class ACISFPCheck(ACISThermalCheck):
         for key in plots:
             if key != self.msid:
                 outfile = os.path.join(outdir, plots[key].filename)
-                mylog.info("Writing plot file %s" % outfile)
+                mylog.info("Writing plot file %s", outfile)
                 plots[key].fig.savefig(outfile)
 
         return plots
@@ -495,15 +495,15 @@ def draw_obsids(
     located in each LR directory and is created by the LR script.
 
     The caller supplies:
-               Options from the Command line supplied by the user at runtime
-               The plot dictionary
-               The MSID used to index into the plot dictionary (superfluous but required)
-               The position on the Y axis you'd like these indicators to appear
-               The Y position of the bottom of the end caps
-               The Y position of the top of the end caps
-               The starting position of the OBSID number text
-               The font size
-               The left time of the plot in plot_date units
+        Options from the Command line supplied by the user at runtime
+        The plot dictionary
+        The MSID used to index into the plot dictionary (superfluous but required)
+        The position on the Y axis you'd like these indicators to appear
+        The Y position of the bottom of the end caps
+        The Y position of the top of the end caps
+        The starting position of the OBSID number text
+        The font size
+        The left time of the plot in plot_date units
     """
     # Now run through the observation list
     for eachobservation in obs_list:

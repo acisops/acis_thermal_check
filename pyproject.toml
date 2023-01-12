@@ -41,9 +41,17 @@ ignore = [
     "BLE001",
     "T",
     "RET",
+    "D205",
+    "N802",
+    "N803",
+    "N806",
+    "S324",
+    "FBT002",
+    "FBT003",
+    "ARG002",
 ]
 extend-exclude = [
-    "docs",
+    "doc",
 ]
 
 [tool.ruff.per-file-ignores]

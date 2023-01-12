@@ -17,15 +17,19 @@ thermal_red = "red"
 
 
 def calc_pitch_roll(times, ephem, states):
-    """Calculate the normalized sun vector in body coordinates.
+    """
+    Calculate the normalized sun vector in body coordinates.
     Shamelessly copied from Ska.engarchive.derived.pcad but
     modified to use commanded states quaternions
 
     Parameters
     ----------
-    times : NumPy array of times in seconds
-    ephem : orbitephem and solarephem info
-    states : commanded states NumPy recarray
+    times : array-like
+        NumPy array of times in seconds
+    ephem : array-like
+        orbitephem and solarephem info
+    states : array-like
+        commanded states NumPy recarray
 
     Returns
     -------

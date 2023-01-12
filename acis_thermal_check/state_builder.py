@@ -121,7 +121,7 @@ class KadiStateBuilder(StateBuilder):
         logger : Logger object, optional
             The Python Logger object to be used when logging.
         hrc_states : boolean, optional
-            Whether or not to add HRC-specific states. Default: False
+            Whether to add HRC-specific states. Default: False
         """
         super().__init__(logger=logger)
         if hrc_states:
@@ -255,6 +255,9 @@ class ACISStateBuilder(StateBuilder):
             file will be searched for within this directory.
         nlet_file : string
             full path to the Non-Load Event Tracking file
+        outdir : Path
+            The location of the directory which the model outputs
+            are being written to.
         verbose: int
             Verbosity level to be used by the ACIS state builder
               - obtained from the model invocation command line arguments.
@@ -358,7 +361,7 @@ class ACISStateBuilder(StateBuilder):
         state0 = {key: states[0][key] for key in states.colnames}
 
         self.logger.debug(
-            f"state0 at {CxoTime(state0['tstart']).date} " f"is\n{pformat(state0)}"
+            f"state0 at {CxoTime(state0['tstart']).date} is\n{pformat(state0)}"
         )
 
         return states, state0

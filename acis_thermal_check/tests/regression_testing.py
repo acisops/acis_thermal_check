@@ -43,7 +43,8 @@ nlets = {"MAR0617A", "MAR0817B", "SEP0417A"}
 
 
 def get_lr_root():
-    """Get root directory for ACIS load review data.
+    """
+    Get root directory for ACIS load review data.
 
     Try (in order):
     - /data/acis/LoadReviews
@@ -153,8 +154,9 @@ def exception_catcher(test, old, new, data_type, **kwargs):
         old = old.astype("U")
     try:
         test(old, new, **kwargs)
-    except AssertionError:
-        raise AssertionError("%s are not the same!" % data_type)
+    except AssertionError as e:
+        e.add_note("%s are not the same!" % data_type)
+        raise
 
 
 class RegressionTester:
@@ -218,7 +220,7 @@ class RegressionTester:
         """
         if out_dir is None:
             if load_week is None:
-                raise ValueError("Both 'out_dir' and 'load_week' cannot " "be None!")
+                raise ValueError("Both 'out_dir' and 'load_week' cannot be None!")
             out_dir = self.outdir / load_week / self.name
         if load_week in nlets:
             nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
@@ -310,7 +312,7 @@ class RegressionTester:
             filenames = ["validation_data.pkl"]
         else:
             raise RuntimeError(
-                "Invalid test specification! " "Test name = %s." % test_name
+                "Invalid test specification! Test name = %s." % test_name
             )
         answer_dir = self._set_answer_dir(load_week)
         if not answer_store:
@@ -344,18 +346,15 @@ class RegressionTester:
         new_pred = new_results["pred"]
         old_pred = old_results["pred"]
         pred_keys = set(new_pred.keys()) | set(old_pred.keys())
+        msg_tmpl = (
+            "Warning in {}: '{}' in {} answer but not {}. Answers should be updated."
+        )
         for k in pred_keys:
             if k not in new_pred:
-                print(
-                    "WARNING in pred: '%s' in old answer but not new. Answers should be updated."
-                    % k
-                )
+                print(msg_tmpl.format("pred", k, "old", "new"))
                 continue
             if k not in old_pred:
-                print(
-                    "WARNING in pred: '%s' in new answer but not old. Answers should be updated."
-                    % k
-                )
+                print(msg_tmpl.format("pred", k, "new", "old"))
                 continue
             exception_catcher(
                 assert_allclose,
@@ -370,16 +369,10 @@ class RegressionTester:
         tlm_keys = set(new_tlm.dtype.names) | set(old_tlm.dtype.names)
         for k in tlm_keys:
             if k not in new_tlm.dtype.names:
-                print(
-                    "WARNING in tlm: '%s' in old answer but not new. Answers should be updated."
-                    % k
-                )
+                print(msg_tmpl.format("tlm", k, "old", "new"))
                 continue
             if k not in old_tlm.dtype.names:
-                print(
-                    "WARNING in tlm: '%s' in new answer but not old. Answers should be updated."
-                    % k
-                )
+                print(msg_tmpl.format("tlm", k, "new", "old"))
                 continue
             exception_catcher(
                 assert_array_equal,
@@ -528,10 +521,11 @@ class RegressionTester:
                             assert viol_data["temps"][i] in line
                             if self.msid == "fptemp":
                                 assert viol_data["obsids"][i] in line
-                        except AssertionError:
-                            raise AssertionError(
-                                "Comparison failed. Check file at " "%s." % index_rst
+                        except AssertionError as e:
+                            e.add_note(
+                                "Comparison failed. Check file at %s." % index_rst
                             )
+                            raise
                     i += 1
         if answer_store:
             with open(viol_json, "w") as f:
