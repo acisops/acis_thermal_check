@@ -183,7 +183,9 @@ class ACISThermalCheck:
         hrc_states = self.name in ["cea"]
         state_builder = getattr(args, "state_builder", "kadi")
         mylog.info(f"ACISThermalCheck is using the '{state_builder}' state builder.")
-        self.state_builder = make_state_builder(state_builder, args, hrc_states=hrc_states)
+        self.state_builder = make_state_builder(
+            state_builder, args, hrc_states=hrc_states
+        )
 
         # If args.run_start is not none, write validation and prediction
         # data to a pickle later
@@ -204,7 +206,9 @@ class ACISThermalCheck:
         # stored in state_builder or punt by using NOW and None for
         # tstart and tstop.
         is_weekly_load = args.backstop_file is not None
-        tstart, tstop, t_run_start = self._determine_times(args.run_start, is_weekly_load)
+        tstart, tstop, t_run_start = self._determine_times(
+            args.run_start, is_weekly_load
+        )
 
         # Store off the start date, and, if you have it, the
         # stop date in proc
@@ -220,7 +224,9 @@ class ACISThermalCheck:
 
         # make predictions on a backstop file if defined
         if args.backstop_file is not None:
-            pred = self.make_week_predict(tstart, tstop, tlm, args.T_init, model_spec, args.outdir)
+            pred = self.make_week_predict(
+                tstart, tstop, tlm, args.T_init, model_spec, args.outdir
+            )
         else:
             pred = defaultdict(lambda: None)
 
@@ -308,7 +314,9 @@ class ACISThermalCheck:
         # command line, use it, otherwise construct T_init
         # from an average of telemetry values around state0
         if T_init is None:
-            ok = (tlm["date"] >= state0["tstart"] - 700) & (tlm["date"] <= state0["tstart"] + 700)
+            ok = (tlm["date"] >= state0["tstart"] - 700) & (
+                tlm["date"] <= state0["tstart"] + 700
+            )
             T_init = np.mean(tlm[self.msid][ok])
 
         state0.update({self.msid: T_init})
@@ -342,7 +350,9 @@ class ACISThermalCheck:
 
         # calc_model actually does the model calculation by running
         # model-specific code.
-        model = self.calc_model(model_spec, states, state0["tstart"], tstop, state0=state0)
+        model = self.calc_model(
+            model_spec, states, state0["tstart"], tstop, state0=state0
+        )
 
         self.predict_model = model
 
@@ -370,7 +380,9 @@ class ACISThermalCheck:
         # write_temps writes the temperatures to temperatures.dat
         self.write_temps(outdir, model.times, temps)
 
-        return dict(states=states, times=model.times, temps=temps, plots=plots, viols=viols)
+        return dict(
+            states=states, times=model.times, temps=temps, plots=plots, viols=viols
+        )
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         pass
@@ -397,7 +409,9 @@ class ACISThermalCheck:
         """
         import xija
 
-        model = xija.ThermalModel(self.name, start=tstart, stop=tstop, model_spec=model_spec)
+        model = xija.ThermalModel(
+            self.name, start=tstart, stop=tstop, model_spec=model_spec
+        )
         ephem = self.get_ephemeris(tstart, tstop, model.times)
         state_times = np.array([states["tstart"], states["tstop"]])
         model.comp["sim_z"].set_data(states["simpos"], state_times)
@@ -474,7 +488,9 @@ class ACISThermalCheck:
 
         return viols
 
-    def _make_prediction_viols(self, times, temp, load_start, limit, lim_name, lim_type, mask=None):
+    def _make_prediction_viols(
+        self, times, temp, load_start, limit, lim_name, lim_type, mask=None
+    ):
         if mask is None:
             mask = np.ones_like(temp, dtype="bool")
         viols = []
@@ -517,7 +533,8 @@ class ACISThermalCheck:
                 }
                 mylog.info(
                     "WARNING: %s violates %s limit " % (self.msid, lim_name)
-                    + "of %.2f degC from %s to %s" % (limit, viol["datestart"], viol["datestop"])
+                    + "of %.2f degC from %s to %s"
+                    % (limit, viol["datestart"], viol["datestop"])
                 )
                 viols.append(viol)
 
@@ -930,7 +947,9 @@ class ACISThermalCheck:
         rzs = events.rad_zones.filter(start, stop)
 
         plots = {}
-        mylog.info("Making %s model validation plots and quantile table", self.name.upper())
+        mylog.info(
+            "Making %s model validation plots and quantile table", self.name.upper()
+        )
         quantiles = (1, 5, 16, 50, 84, 95, 99)
         # store lines of quantile table in a string and write out later
         quant_table = ""
@@ -1141,7 +1160,9 @@ class ACISThermalCheck:
             for ptime in ptimes:
                 ax.axvline(ptime, ls="--", color="C2", linewidth=2, zorder=2)
         ax.legend(fancybox=True, framealpha=0.5, loc=2)
-        plots["ccd_count"] = {"lines": {"fig": fig, "ax": ax, "filename": "ccd_count_valid.png"}}
+        plots["ccd_count"] = {
+            "lines": {"fig": fig, "ax": ax, "filename": "ccd_count_valid.png"}
+        }
 
         fig_id += 1
 
@@ -1182,7 +1203,9 @@ class ACISThermalCheck:
                     for ptime in ptimes:
                         ax.axvline(ptime, ls="--", color="C2", linewidth=2, zorder=2)
                 ax.legend(fancybox=True, framealpha=0.5, loc=2)
-                plots[msid] = {"lines": {"fig": fig, "ax": ax, "filename": f"{msid}_valid.png"}}
+                plots[msid] = {
+                    "lines": {"fig": fig, "ax": ax, "filename": f"{msid}_valid.png"}
+                }
                 fig_id += 1
 
         if "earthheat__fptemp" in model.comp:
@@ -1291,7 +1314,9 @@ class ACISThermalCheck:
         dirname = PurePath(docutils.writers.html4css1.__file__).parent
         shutil.copy2(dirname / "html4css1.css", outdir)
 
-        shutil.copy2(TASK_DATA / "acis_thermal_check/templates/acis_thermal_check.css", outdir)
+        shutil.copy2(
+            TASK_DATA / "acis_thermal_check/templates/acis_thermal_check.css", outdir
+        )
 
         stylesheet_path = str(outdir / "acis_thermal_check.css")
         infile = str(outdir / "index.rst")
@@ -1371,7 +1396,10 @@ class ACISThermalCheck:
             ms = open(model_spec, "rb").read()
         # Figure out the MD5 sum of the model spec file
         md5sum = hashlib.md5(ms).hexdigest()
-        mylog.info("# %s_check run at %s by %s" % (self.name, proc["run_time"], proc["run_user"]))
+        mylog.info(
+            "# %s_check run at %s by %s"
+            % (self.name, proc["run_time"], proc["run_user"])
+        )
         mylog.info("# acis_thermal_check version = %s" % version)
         mylog.info("# model_spec file MD5sum = %s" % md5sum)
         mylog.info("Command line options:\n%s\n" % pformat(args.__dict__))
@@ -1460,7 +1488,9 @@ class ACISThermalCheck:
 
         # Finished when we found at least 4 good records (20 mins)
         if len(msidset.times) < 4:
-            raise ValueError("Found no telemetry within %d days of %s" % (days, str(tstart)))
+            raise ValueError(
+                "Found no telemetry within %d days of %s" % (days, str(tstart))
+            )
 
         # Construct the NumPy record array of telemetry values
         # for the different MSIDs (temperatures, pitch, etc).

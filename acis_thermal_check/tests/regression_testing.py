@@ -129,7 +129,9 @@ class TestArgs:
         else:
             load_year = f"20{load_week[-3:-1]}"
             load_letter = load_week[-1].lower()
-            self.backstop_file = lr_root / load_year / load_week[:-1] / f"ofls{load_letter}"
+            self.backstop_file = (
+                lr_root / load_year / load_week[:-1] / f"ofls{load_letter}"
+            )
         self.days = days
         if nlet_file is None:
             nlet_file = lr_root / "NonLoadTrackedEvents.txt"
@@ -156,7 +158,9 @@ def exception_catcher(test, old, new, data_type, **kwargs):
 
 
 class RegressionTester:
-    def __init__(self, atc_class, atc_args=None, atc_kwargs=None, test_root=None, sub_dir=None):
+    def __init__(
+        self, atc_class, atc_args=None, atc_kwargs=None, test_root=None, sub_dir=None
+    ):
         if atc_args is None:
             atc_args = ()
         if atc_kwargs is None:
@@ -263,7 +267,9 @@ class RegressionTester:
             loads = test_loads
         if normal and "normal" in loads:
             for load in loads["normal"]:
-                self.run_model(load_week=load, run_start=run_start, state_builder=state_builder)
+                self.run_model(
+                    load_week=load, run_start=run_start, state_builder=state_builder
+                )
         if interrupt and "interrupt" in loads:
             for load in loads["interrupt"]:
                 self.run_model(
@@ -303,7 +309,9 @@ class RegressionTester:
         elif test_name == "validation":
             filenames = ["validation_data.pkl"]
         else:
-            raise RuntimeError("Invalid test specification! " "Test name = %s." % test_name)
+            raise RuntimeError(
+                "Invalid test specification! " "Test name = %s." % test_name
+            )
         answer_dir = self._set_answer_dir(load_week)
         if not answer_store:
             compare_test = getattr(self, "compare_" + test_name)
@@ -363,12 +371,14 @@ class RegressionTester:
         for k in tlm_keys:
             if k not in new_tlm.dtype.names:
                 print(
-                    "WARNING in tlm: '%s' in old answer but not new. Answers should be updated." % k
+                    "WARNING in tlm: '%s' in old answer but not new. Answers should be updated."
+                    % k
                 )
                 continue
             if k not in old_tlm.dtype.names:
                 print(
-                    "WARNING in tlm: '%s' in new answer but not old. Answers should be updated." % k
+                    "WARNING in tlm: '%s' in new answer but not old. Answers should be updated."
+                    % k
                 )
                 continue
             exception_catcher(

@@ -263,7 +263,9 @@ class ACISFPCheck(ACISThermalCheck):
             )
 
             # Build the file name
-            filename = f"{self.msid.lower()}" f"M{-int(ylim[i][0])}toM{-int(ylim[i][1])}.png"
+            filename = (
+                f"{self.msid.lower()}" f"M{-int(ylim[i][0])}toM{-int(ylim[i][1])}.png"
+            )
             plots[name].filename = filename
 
         self._make_state_plots(plots, 3, w1, plot_start, states, load_start)
@@ -326,7 +328,9 @@ class ACISFPCheck(ACISThermalCheck):
         #   Create subsets of all the observations
         # ------------------------------------------------------
         # Now divide out observations by ACIS-S and ACIS-I
-        ACIS_I_obs, ACIS_S_obs, ACIS_hot_obs, sci_ecs_obs = acis_filter(self.acis_and_ecs_obs)
+        ACIS_I_obs, ACIS_S_obs, ACIS_hot_obs, sci_ecs_obs = acis_filter(
+            self.acis_and_ecs_obs
+        )
 
         temp = temps[self.name]
 
@@ -421,7 +425,9 @@ class ACISFPCheck(ACISThermalCheck):
 
         return viols
 
-    def search_obsids_for_viols(self, limit_name, limit, observations, temp, times, load_start):
+    def search_obsids_for_viols(
+        self, limit_name, limit, observations, temp, times, load_start
+    ):
         """
         Given a planning limit and a list of observations, find those time intervals
         where the temp gets warmer than the planning limit and identify which

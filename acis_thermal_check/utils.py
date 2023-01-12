@@ -33,11 +33,17 @@ def calc_pitch_roll(times, ephem, states):
     """
     from Ska.engarchive.derived.pcad import arccos_clip, qrotate
 
-    idxs = Ska.Numpy.interpolate(np.arange(len(states)), states["tstart"], times, method="nearest")
+    idxs = Ska.Numpy.interpolate(
+        np.arange(len(states)), states["tstart"], times, method="nearest"
+    )
     states = states[idxs]
 
-    chandra_eci = np.array([ephem["orbitephem0_x"], ephem["orbitephem0_y"], ephem["orbitephem0_z"]])
-    sun_eci = np.array([ephem["solarephem0_x"], ephem["solarephem0_y"], ephem["solarephem0_z"]])
+    chandra_eci = np.array(
+        [ephem["orbitephem0_x"], ephem["orbitephem0_y"], ephem["orbitephem0_z"]]
+    )
+    sun_eci = np.array(
+        [ephem["solarephem0_x"], ephem["solarephem0_y"], ephem["solarephem0_z"]]
+    )
     sun_vec = -chandra_eci + sun_eci
     est_quat = np.array([states["q1"], states["q2"], states["q3"], states["q4"]])
 
@@ -81,7 +87,9 @@ def config_logging(outdir, verbose):
     logger.setLevel(logging.DEBUG)
 
     # Set numerical values for the different log levels
-    loglevel = {0: logging.CRITICAL, 1: logging.INFO, 2: logging.DEBUG}.get(verbose, logging.INFO)
+    loglevel = {0: logging.CRITICAL, 1: logging.INFO, 2: logging.DEBUG}.get(
+        verbose, logging.INFO
+    )
 
     formatter = logging.Formatter("%(name)-3s: [%(levelname)-9s] %(message)s")
 
@@ -290,7 +298,8 @@ def get_options(opts=None, use_acis_opts=True):
     parser.add_argument(
         "--outdir",
         default="out",
-        help="Output directory. If it does not " "exist it will be created. Default: 'out'",
+        help="Output directory. If it does not "
+        "exist it will be created. Default: 'out'",
     )
     parser.add_argument(
         "--backstop_file",
@@ -307,7 +316,8 @@ def get_options(opts=None, use_acis_opts=True):
     )
     parser.add_argument(
         "--model-spec",
-        help="Model specification file. Defaults to the one included with " "the model package.",
+        help="Model specification file. Defaults to the one included with "
+        "the model package.",
     )
     parser.add_argument(
         "--days", type=float, default=21.0, help="Days of validation data. Default: 21"
