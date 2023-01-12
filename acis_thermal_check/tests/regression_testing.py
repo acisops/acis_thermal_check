@@ -154,9 +154,8 @@ def exception_catcher(test, old, new, data_type, **kwargs):
         old = old.astype("U")
     try:
         test(old, new, **kwargs)
-    except AssertionError as e:
-        e.add_note("%s are not the same!" % data_type)
-        raise
+    except AssertionError:
+        raise AssertionError("%s are not the same!" % data_type)
 
 
 class RegressionTester:
@@ -521,11 +520,10 @@ class RegressionTester:
                             assert viol_data["temps"][i] in line
                             if self.msid == "fptemp":
                                 assert viol_data["obsids"][i] in line
-                        except AssertionError as e:
-                            e.add_note(
+                        except AssertionError:
+                            raise AssertionError(
                                 "Comparison failed. Check file at %s." % index_rst
                             )
-                            raise
                     i += 1
         if answer_store:
             with open(viol_json, "w") as f:

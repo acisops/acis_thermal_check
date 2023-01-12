@@ -49,6 +49,7 @@ ignore = [
     "FBT002",
     "FBT003",
     "ARG002",
+    "B904",
 ]
 extend-exclude = [
     "doc",
