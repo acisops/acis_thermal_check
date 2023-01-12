@@ -30,7 +30,7 @@ class DPACheck(ACISThermalCheck):
         }
         hist_limit = [20.0]
         limits_map = {"planning.caution.low": "zero_feps"}
-        super(DPACheck, self).__init__(
+        super().__init__(
             "1dpamzt", "dpa", valid_limits, hist_limit, limits_map=limits_map
         )
 

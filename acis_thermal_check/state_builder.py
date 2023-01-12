@@ -261,7 +261,6 @@ class ACISStateBuilder(StateBuilder):
         logger : Logger object, optional
             The Python Logger object to be used when logging.
         """
-
         # Import the BackstopHistory class
         from backstop_history import BackstopHistory
 

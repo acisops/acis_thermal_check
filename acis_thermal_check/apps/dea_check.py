@@ -32,7 +32,7 @@ class DEACheck(ACISThermalCheck):
             "TSCPOS": [(1, 2.5), (99, 2.5)],
         }
         hist_limit = [20.0]
-        super(DEACheck, self).__init__("1deamzt", "dea", valid_limits, hist_limit)
+        super().__init__("1deamzt", "dea", valid_limits, hist_limit)
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """

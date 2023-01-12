@@ -49,7 +49,7 @@ class ACISFPCheck(ACISThermalCheck):
             "planning.warning.high": "planning_hi",
             "safety.caution.high": "yellow_hi",
         }
-        super(ACISFPCheck, self).__init__(
+        super().__init__(
             "fptemp",
             "acisfp",
             valid_limits,
@@ -132,7 +132,6 @@ class ACISFPCheck(ACISThermalCheck):
             The start time of the load in seconds from the beginning of the
             mission.
         """
-
         times = self.predict_model.times
 
         # Gather perigee passages
@@ -433,7 +432,6 @@ class ACISFPCheck(ACISThermalCheck):
         where the temp gets warmer than the planning limit and identify which
         observations (if any) include part or all of those intervals.
         """
-
         viols_list = []
 
         # Run through all observations
@@ -471,7 +469,7 @@ class ACISFPCheck(ACISThermalCheck):
         temps : NumPy array
             Temperatures in Celsius
         """
-        super(ACISFPCheck, self).write_temps(outdir, times, temps)
+        super().write_temps(outdir, times, temps)
         outfile = os.path.join(outdir, "earth_solid_angles.dat")
         mylog.info(f"Writing Earth solid angles to {outfile}")
         e = self.predict_model.comp["earthheat__fptemp"].dvals

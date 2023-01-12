@@ -437,7 +437,7 @@ def paint_perigee(perigee_passages, plots):
     exit (black) and perigee (red)
 
     Parameters
-    ==========
+    ----------
     perigee_passages : dict of lists
         Lists of times for radzone entry, exit, and perigee
     plots : dict of plots
@@ -488,7 +488,7 @@ def get_acis_limits(msid, model_spec, limits_map=None):
     if limits_map is None:
         limits_map = {}
     if not isinstance(model_spec, dict):
-        model_spec = json.load(open(model_spec, "r"))
+        model_spec = json.load(open(model_spec))
     json_limits = model_spec["limits"][msid]
     limits = {}
     for k, v in json_limits.items():

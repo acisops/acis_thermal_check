@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # acis_thermal_check documentation build configuration file, created by
 # sphinx-quickstart on Thu Oct 19 10:24:04 2017.

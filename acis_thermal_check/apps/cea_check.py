@@ -34,7 +34,7 @@ class CEACheck(ACISThermalCheck):
         hist_limit = [5.0]
         limits_map = {}
         other_telem = ["2imonst", "2sponst", "2s2onst", "1dahtbon"]
-        super(CEACheck, self).__init__(
+        super().__init__(
             "2ceahvpt",
             "cea",
             valid_limits,

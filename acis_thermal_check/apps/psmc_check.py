@@ -30,7 +30,7 @@ class PSMCCheck(ACISThermalCheck):
             "TSCPOS": [(1, 2.5), (99, 2.5)],
         }
         hist_limit = [30.0, 40.0]
-        super(PSMCCheck, self).__init__(
+        super().__init__(
             "1pdeaat",
             "psmc",
             valid_limits,

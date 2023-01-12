@@ -1,4 +1,4 @@
-name: Python flake8 check
+name: Python ruff check
 
 on: [push]
 
@@ -12,8 +12,11 @@ jobs:
     - name: Set up Python 3.8
       uses: actions/setup-python@v4
       with:
-        python-version: 3.8
-    - name: Lint with flake8
+        python-version: "3.11"
+    - name: Lint with ruff
       run: |
-        pip install flake8
-        flake8 . --exclude=docs --count --ignore=W503,W504,F541,E203 --max-line-length=100 --show-source --statistics
+        python -m pip install --upgrade pip
+        pip install ruff
+        # Include `--format=github` to enable automatic inline annotations.
+        - name: Run Ruff
+          run: ruff --format=github .

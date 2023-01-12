@@ -173,7 +173,7 @@ class ACISThermalCheck:
             model_spec = args.model_spec
 
         if not isinstance(model_spec, dict):
-            model_spec = json.load(open(model_spec, "r"))
+            model_spec = json.load(open(model_spec))
 
         proc = self._setup_proc_and_logger(args, model_spec)
 
@@ -300,7 +300,6 @@ class ACISThermalCheck:
         Calculated values: tbegin DOY string used throughout the model to
                            indicate when to stop backchaining as well
         """
-
         # --run_start not specified. Back off -5 from the last telemetry
         tbegin = CxoTime(tlm["date"][-5]).date
 
@@ -611,7 +610,6 @@ class ACISThermalCheck:
             violations for times later than this time for the model
             run.
         """
-        pass
 
     def write_states(self, outdir, states):
         """
@@ -843,7 +841,6 @@ class ACISThermalCheck:
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
         """
-        pass
 
     def get_histogram_mask(self, tlm, limits):
         """
@@ -957,7 +954,7 @@ class ACISThermalCheck:
         quant_table += quant_head + "\n"
         xmin, xmax = cxctime2plotdate(model.times)[[0, -1]]
         fig_id = 0
-        for msid in pred.keys():
+        for msid in pred:
             plot = {}
             fig = plt.figure(10 + fig_id, figsize=(12, 6))
             fig.clf()
@@ -1296,7 +1293,6 @@ class ACISThermalCheck:
             and can be used to customize plots before they are written,
             e.g. add limit lines, etc.
         """
-        pass
 
     def rst_to_html(self, outdir):
         """Render index.rst as HTML
@@ -1518,7 +1514,7 @@ class DPABoardTempCheck(ACISThermalCheck):
         other_map=None,
     ):
         hist_ops = ["greater_equal", "less_equal"]
-        super(DPABoardTempCheck, self).__init__(
+        super().__init__(
             msid,
             name,
             validation_limits,

@@ -483,7 +483,7 @@ class RegressionTester:
         """
         import json
 
-        with open(viol_json, "r") as f:
+        with open(viol_json) as f:
             viol_data = json.load(f)
         if answer_store:
             viol_data["datestarts"] = []
@@ -502,7 +502,7 @@ class RegressionTester:
         )
         out_dir = self.outdir / load_week / self.name
         index_rst = out_dir / "index.rst"
-        with open(index_rst, "r") as myfile:
+        with open(index_rst) as myfile:
             i = 0
             for line in myfile.readlines():
                 if line.startswith("Model status"):
@@ -544,9 +544,9 @@ class RegressionTester:
         out_dir = self.outdir / load_week / self.name
         index_rst = out_dir / "index.rst"
         hot_data = []
-        with open(index_rst, "r") as myfile:
+        with open(index_rst) as myfile:
             read_hot_data = False
-            for i, line in enumerate(myfile.readlines()):
+            for line in myfile.readlines():
                 words = line.strip().split()
                 if line.startswith("Obsid"):
                     read_hot_data = True
@@ -559,6 +559,6 @@ class RegressionTester:
             with open(hot_json, "w") as f:
                 json.dump(hot_data, f, indent=4)
         else:
-            with open(hot_json, "r") as f:
+            with open(hot_json) as f:
                 hot_data_stored = json.load(f)
                 assert_array_equal(hot_data, hot_data_stored)

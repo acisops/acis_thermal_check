@@ -31,9 +31,7 @@ class FEP1MongCheck(DPABoardTempCheck):
             "TSCPOS": [(1, 2.5), (99, 2.5)],
         }
         hist_limit = [25.0, 20.0]  # First limit is >=, second limit is <=
-        super(FEP1MongCheck, self).__init__(
-            "tmp_fep1_mong", "fep1_mong", valid_limits, hist_limit
-        )
+        super().__init__("tmp_fep1_mong", "fep1_mong", valid_limits, hist_limit)
 
 
 def main():
