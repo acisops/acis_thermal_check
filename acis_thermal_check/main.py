@@ -173,7 +173,8 @@ class ACISThermalCheck:
             model_spec = args.model_spec
 
         if not isinstance(model_spec, dict):
-            model_spec = json.load(open(model_spec))
+            with open(model_spec) as f:
+                model_spec = json.load(f)
 
         proc = self._setup_proc_and_logger(args, model_spec)
 
@@ -1328,8 +1329,10 @@ class ACISThermalCheck:
         # Remove the stupid <colgroup> field that docbook inserts.  This
         # <colgroup> prevents HTML table auto-sizing.
         del_colgroup = re.compile(r"<colgroup>.*?</colgroup>", re.DOTALL)
-        outtext = del_colgroup.sub("", open(outfile).read())
-        open(outfile, "w").write(outtext)
+        with open(outfile) as f:
+            outtext = del_colgroup.sub("", f.read())
+        with open(outfile, "w") as f:
+            f.write(outtext)
 
     def write_index_rst(self, outdir, context):
         """
@@ -1392,7 +1395,8 @@ class ACISThermalCheck:
         if isinstance(model_spec, dict):
             ms = json.dumps(model_spec, indent=4, sort_keys=True).encode()
         else:
-            ms = open(model_spec, "rb").read()
+            with open(model_spec, "rb") as f:
+                ms = f.read()
         # Figure out the MD5 sum of the model spec file
         md5sum = hashlib.md5(ms).hexdigest()
         mylog.info(

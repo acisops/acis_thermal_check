@@ -338,9 +338,11 @@ class RegressionTester:
         # First load the answers from the pickle files, both gold standard
         # and current
         new_answer_file = out_dir / filenames[0]
-        new_results = pickle.load(open(new_answer_file, "rb"))
+        with open(new_answer_file, "rb") as fn:
+            new_results = pickle.load(fn)
         old_answer_file = answer_dir / filenames[0]
-        old_results = pickle.load(open(old_answer_file, "rb"))
+        with open(old_answer_file, "rb") as fo:
+            old_results = pickle.load(fo)
         # Compare predictions
         new_pred = new_results["pred"]
         old_pred = old_results["pred"]

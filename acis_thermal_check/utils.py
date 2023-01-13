@@ -293,7 +293,7 @@ def get_options(opts=None, use_acis_opts=True):
         A (key, value) dictionary of additional options for the parser. These
         may be defined by the thermal model checking tool if necessary.
     use_acis_opts : boolean, optional
-        Whether or not to include ACIS-specific options. Default: True
+        Whether to include ACIS-specific options. Default: True
     """
     from argparse import ArgumentParser
 
@@ -492,7 +492,8 @@ def get_acis_limits(msid, model_spec, limits_map=None):
     if limits_map is None:
         limits_map = {}
     if not isinstance(model_spec, dict):
-        model_spec = json.load(open(model_spec))
+        with open(model_spec) as f:
+            model_spec = json.load(f)
     json_limits = model_spec["limits"][msid]
     limits = {}
     for k, v in json_limits.items():
