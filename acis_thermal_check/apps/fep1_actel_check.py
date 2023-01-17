@@ -25,9 +25,8 @@ matplotlib.use("Agg")
 class FEP1ActelCheck(DPABoardTempCheck):
     def __init__(self):
         valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
-        hist_limit = [25., 20.0] # First limit is >=, second limit is <=
-        super(FEP1ActelCheck, self).__init__("tmp_fep1_actel", "fep1_actel",
-                                             valid_limits, hist_limit)
+        hist_limit = [25.0, 20.0]  # First limit is >=, second limit is <=
+        super().__init__("tmp_fep1_actel", "fep1_actel", valid_limits, hist_limit)
 
 
 def main():

@@ -25,10 +25,15 @@ matplotlib.use("Agg")
 class PSMCCheck(ACISThermalCheck):
     def __init__(self):
         valid_limits = [(1, 2.5), (50, 1.0), (99, 5.5)]
-        hist_limit = [30., 40.]
-        super(PSMCCheck, self).__init__("1pdeaat", "psmc", valid_limits,
-                                        hist_limit, other_telem=['1dahtbon'],
-                                        other_map={'1dahtbon': 'dh_heater'})
+        hist_limit = [30.0, 40.0]
+        super().__init__(
+            "1pdeaat",
+            "psmc",
+            valid_limits,
+            hist_limit,
+            other_telem=["1dahtbon"],
+            other_map={"1dahtbon": "dh_heater"},
+        )
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         # 1PIN1AT is broken, so we set its initial condition

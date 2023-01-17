@@ -32,9 +32,8 @@ class BEPPCBCheck(DPABoardTempCheck):
         hist_limit = [20.0, 20.0]  # First limit is >=, second limit is <=
         super().__init__("tmp_bep_pcb", "bep_pcb", valid_limits, hist_limit)
         valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
-        hist_limit = [20.0, 20.0] # First limit is >=, second limit is <=
-        super(BEPPCBCheck, self).__init__("tmp_bep_pcb", "bep_pcb",
-                                          valid_limits, hist_limit)
+        hist_limit = [20.0, 20.0]  # First limit is >=, second limit is <=
+        super().__init__("tmp_bep_pcb", "bep_pcb", valid_limits, hist_limit)
 
 
 def main():
