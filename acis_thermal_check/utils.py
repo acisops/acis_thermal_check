@@ -270,10 +270,10 @@ class PlotDate:
             The line style for the limit line. Default: "-"
         """
         self.ax.axhline(
-            limit.value,
+            limit["value"],
             linestyle=ls,
             linewidth=2.0,
-            color=limit.color,
+            color=limit["color"],
             label=label,
             zorder=2.0,
         )
@@ -409,7 +409,7 @@ def make_state_builder(name, args, hrc_states=False):
     args : ArgumentParser arguments
         The arguments to pass to the StateBuilder subclass.
     hrc_states : boolean, optional
-        Whether or not to add HRC-specific states. Default: False
+        Whether to add HRC-specific states. Default: False
     """
     # Import the dictionary of possible state builders. This
     # dictionary is located in state_builder.py
@@ -467,52 +467,3 @@ def paint_perigee(perigee_passages, plots):
             for time in perigee_passages[key]:
                 xpos = cxctime2plotdate([time])[0]
                 plot.ax.axvline(xpos, linestyle=":", color=color, linewidth=2.0)
-
-
-class ChandraLimit:
-    def __init__(self, value, color):
-        self.value = value
-        self.color = color
-
-
-def get_acis_limits(msid, model_spec, limits_map=None):
-    """
-    Given a MSID and a model specification (JSON or dict),
-    return the values and line colors of the limits specified
-    in the file.
-
-    Parameters
-    ----------
-    msid : string
-        The MSID to get the limits for.
-    model_spec : string or dict
-        The xija model specification. If a string, it is
-        assumed to be a JSON file to be read in
-    limits_map : dict, optional
-        If supplied, this will change the keys of the output
-        dict, which are normally the limit names in the model
-        specification, with other names, e.g. replaces
-        "odb.caution.high" with "yellow_hi". Default: None
-
-    Returns
-    -------
-    A dict of dicts, with each dict corresponding to the value of the
-    limit and the color of the line on plots.
-    """
-    import json
-
-    if msid == "fptemp_11":
-        msid = "fptemp"
-    if limits_map is None:
-        limits_map = {}
-    if not isinstance(model_spec, dict):
-        with open(model_spec) as f:
-            model_spec = json.load(f)
-    json_limits = model_spec["limits"][msid]
-    limits = {}
-    for k, v in json_limits.items():
-        if k == "unit":
-            continue
-        key = limits_map.get(k, k)
-        limits[key] = ChandraLimit(v, get_limit_color(k))
-    return limits

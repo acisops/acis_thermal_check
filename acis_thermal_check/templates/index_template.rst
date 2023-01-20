@@ -47,14 +47,14 @@ Obsid  CCDs               # of counts in seq  Grating  Cycle   Spectra Max Count
 
 {% for key in viols.keys() %}
 
-{% if viols[key]["values"]|length > 0 %}
+{% if viols[key]|length > 0 %}
 {{proc.msid}} {{viols[key]["name"]}} Violations
 ---------------------------------------------------
 {% if proc.msid == "FPTEMP" %}
 =====================  =====================  =================  ==================  ==================
 Date start             Date stop              Duration (ks)      Max temperature     Obsids
 =====================  =====================  =================  ==================  ==================
-{% for viol in viols[key]["values"] %}
+{% for viol in viols[key] %}
 {{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}            {{"%.2f"|format(viol.extemp)}}             {{viol.obsid}}
 {% endfor %}
 =====================  =====================  =================  ==================  ==================
@@ -62,13 +62,13 @@ Date start             Date stop              Duration (ks)      Max temperature
 =====================  =====================  =================  ===================
 Date start             Date stop              Duration (ks)      {{viols[key]["type"]}} Temperature
 =====================  =====================  =================  ===================
-{% for viol in viols[key]["values"] %}
+{% for viol in viols[key] %}
 {{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}           {{"{:.2f}".format(viol.extemp)}}
 {% endfor %}
 =====================  =====================  =================  ===================
 {% endif %}
 {% else %}
-No {{proc.msid}} {{viols[key]["name"]}} Violations
+No {{proc.msid}} {{key}} Violations
 {% endif %}
 
 {% endfor %}

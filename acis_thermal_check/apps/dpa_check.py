@@ -13,6 +13,7 @@ weeks.
 import sys
 
 import matplotlib
+from chandra_limits import DPALimit
 
 from acis_thermal_check import ACISThermalCheck, get_options
 
@@ -22,18 +23,17 @@ matplotlib.use("Agg")
 
 
 class DPACheck(ACISThermalCheck):
+    _limit_class = DPALimit
+    _flag_cold_viols = True
+
     def __init__(self):
         valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [20.0]
-        limits_map = {"planning.caution.low": "zero_feps"}
-        hist_limit = [20.0]
-        limits_map = {"planning.caution.low": "zero_feps"}
         super().__init__(
             "1dpamzt",
             "dpa",
             valid_limits,
             hist_limit,
-            limits_map=limits_map,
         )
 
     def custom_prediction_viols(self, times, temp, viols, load_start):
@@ -110,7 +110,7 @@ class DPACheck(ACISThermalCheck):
         has an initial value (T_dpa) - which it does at
         prediction time (gets it from state0), then T_dpa0
         is set to that.  If we are running the validation,
-        T_dpa is set to None so we use the dvals in model.comp
+        T_dpa is set to None, so we use the dvals in model.comp
 
         NOTE: If you change the name of the dpa0 pseudo node you
               have to edit the new name into the if statement
