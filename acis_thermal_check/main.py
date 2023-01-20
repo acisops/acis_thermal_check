@@ -710,10 +710,6 @@ class ACISThermalCheck:
 
         plots["default"] = plots[self.name]
 
-        # This call allows the specific check tool
-        # to customize plots after the fact
-        self.custom_prediction_plots(plots)
-
         # Make the legend on the temperature plot
         # only now after we've allowed for
         # customizations
