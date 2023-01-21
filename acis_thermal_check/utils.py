@@ -255,7 +255,7 @@ class PlotDate:
         self.ax2 = ax2
         self.filename = None
 
-    def add_limit_line(self, limit, label, ls="-"):
+    def add_limit_line(self, limit, ls="-"):
         """
         Add a horizontal line for a given limit to the plot.
 
@@ -263,12 +263,17 @@ class PlotDate:
         ----------
         limit : ACISLimit object
             Contains information about the value of the limit
-            and the color it should be plotted with.
-        label : string
-            The label to give the line.
+            the color it should be plotted with, and its label.
         ls : string, optional
             The line style for the limit line. Default: "-"
         """
+        label = limit["display_name"]
+        # If the label already exists, we shouldn't need to repeat it
+        # in the legend
+        for line in self.ax.lines:
+            if label == line.get_label():
+                label = None
+                break
         self.ax.axhline(
             limit["value"],
             linestyle=ls,
@@ -281,6 +286,11 @@ class PlotDate:
 
 class PredictPlot(PlotDate):
     _color = thermal_blue
+    _color2 = thermal_blue
+
+
+class ValidatePlot(PlotDate):
+    _color = thermal_red
     _color2 = thermal_blue
 
 

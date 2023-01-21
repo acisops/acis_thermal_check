@@ -28,59 +28,15 @@ class CEACheck(ACISThermalCheck):
     def __init__(self):
         valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [5.0]
-        limits_map = {}
         other_telem = ["2imonst", "2sponst", "2s2onst", "1dahtbon"]
         super().__init__(
             "2ceahvpt",
             "cea",
             valid_limits,
             hist_limit,
-            limits_map=limits_map,
             other_telem=other_telem,
             other_map={"1dahtbon": "dh_heater"},
         )
-
-    def make_prediction_viols(self, temps, states, load_start):
-        """
-        Find limit violations where predicted temperature is above the
-        specified limits.
-
-        Parameters
-        ----------
-        temps : dict of NumPy arrays
-            NumPy arrays corresponding to the modeled temperatures
-        states : NumPy record array
-            Commanded states
-        load_start : float
-            The start time of the load, used so that we only report
-            violations for times later than this time for the model
-            run.
-        """
-        mylog.info("Checking for limit violations")
-
-        temp = temps[self.name]
-        times = self.predict_model.times
-
-        # Only check this violation when HRC is on
-        mask = self.predict_model.comp["2imonst_on"].dvals
-        mask |= self.predict_model.comp["2sponst_on"].dvals
-        hi_viols = self._make_prediction_viols(
-            times,
-            temp,
-            load_start,
-            self.limits["planning_hi"].value,
-            "planning",
-            "max",
-            mask=mask,
-        )
-        viols = {
-            "hi": {
-                "name": f"Hot ({self.limits['planning_hi'].value} C)",
-                "type": "Max",
-                "values": hi_viols,
-            },
-        }
-        return viols
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
