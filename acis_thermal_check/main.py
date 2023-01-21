@@ -507,11 +507,21 @@ class ACISThermalCheck:
         """
         mylog.info("Checking for limit violations")
 
-        upper_limit = self.limit_object.get_limit_line(states, which="high")
-        viols = {"hi": upper_limit.check_violations(self.predict_model)}
+        upper_limit = self.limit_object.get_limit_line(
+            states, which="high", times=self.predict_model.times
+        )
+        viols = {
+            "hi": upper_limit.check_violations(
+                self.predict_model, start_time=load_start
+            )
+        }
         if self._flag_cold_viols:
-            lower_limit = self.limit_object.get_limit_line(states, which="low")
-            viols["lo"] = lower_limit.check_violations(self.predict_model)
+            lower_limit = self.limit_object.get_limit_line(
+                states, which="low", times=self.predict_model.times
+            )
+            viols["lo"] = lower_limit.check_violations(
+                self.predict_model, start_time=load_start
+            )
         return viols
 
     def write_states(self, outdir, states):
