@@ -36,26 +36,6 @@ class DPACheck(ACISThermalCheck):
             hist_limit,
         )
 
-    def custom_validation_plots(self, plots):
-        """
-        Customization of validation plots.
-
-        Parameters
-        ----------
-        plots : dict of dicts
-            Contains the hooks to the plot figures, axes, and filenames
-            and can be used to customize plots before they are written,
-            e.g. add limit lines, etc.
-        """
-        plots["1dpamzt"]["lines"]["ax"].axhline(
-            self.limits["zero_feps"].value,
-            linestyle="--",
-            zorder=-8,
-            color=self.limits["zero_feps"].color,
-            linewidth=2,
-            label="Zero FEPs",
-        )
-
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
         Update to initialize the dpa0 pseudo-node. If 1dpamzt

@@ -23,6 +23,7 @@ import acis_thermal_check
 from acis_thermal_check.utils import (
     TASK_DATA,
     PredictPlot,
+    ValidatePlot,
     calc_pitch_roll,
     config_logging,
     make_state_builder,
@@ -157,7 +158,17 @@ class ACISThermalCheck:
 
         proc, model_spec = self._setup_proc_and_logger(args)
 
+        # This allows one to override the limits for a particular model
+        # run. THIS SHOULD ONLY BE USED FOR TESTING PURPOSES.
+        if override_limits is not None:
+            for k, v in override_limits.items():
+                if k in model_spec["limits"][self.msid]:
+                    limit = model_spec["limits"][self.msid][k]
+                    mylog.warning("Replacing %s %.2f with %.2f" % (k, limit, v))
+                    model_spec["limits"][self.msid][k] = v
+
         # Set up the limit object and limits
+
         self.limit_object = self._limit_class(model_spec=model_spec)
         self.limits = self.limit_object.limits
 
@@ -176,15 +187,6 @@ class ACISThermalCheck:
         # If args.run_start is not none, write validation and prediction
         # data to a pickle later
         self.write_pickle = args.run_start is not None
-
-        # This allows one to override the limits for a particular model
-        # run. THIS SHOULD ONLY BE USED FOR TESTING PURPOSES.
-        if override_limits is not None:
-            for k, v in override_limits.items():
-                if k in self.limits:
-                    limit = self.limits[k].value
-                    mylog.warning(f"Replacing {k} {limit:.2f} with {v:.2f}")
-                    self.limits[k].value = v
 
         # Determine the start and stop times either from whatever was
         # stored in state_builder or punt by using NOW and None for
@@ -689,16 +691,15 @@ class ACISThermalCheck:
             width=w1,
             load_start=load_start,
         )
-        # Add horizontal lines for the planning and caution limits
+        # Add horizontal lines for all relevant limits
         ymin, ymax = plots[self.name].ax.get_ylim()
-        ymax = max(self.limits["yellow_hi"]["value"] + 1, ymax)
+        for key in self.limit_object.alt_names.values():
+            if key.startswith("red"):
+                continue
+            plots[self.name].add_limit_line(self.limits[key])
+            ymax = max(self.limits[key]["value"] + 1, ymax)
+            ymin = min(self.limits[key]["value"] - 1, ymin)
         plots[self.name].ax.set_title(self.msid.upper(), loc="left", pad=10)
-        plots[self.name].add_limit_line(self.limits["yellow_hi"], "Yellow")
-        plots[self.name].add_limit_line(self.limits["planning_hi"], "Planning")
-        if "planning_lo" in self.limits:
-            ymin = min(self.limits["yellow_lo"]["value"] - 1, ymin)
-            plots[self.name].add_limit_line(self.limits["yellow_lo"], None)
-            plots[self.name].add_limit_line(self.limits["planning_lo"], None)
         plots[self.name].ax.set_ylim(ymin, ymax)
         plots[self.name].filename = self.msid.lower() + ".png"
 
@@ -1175,18 +1176,6 @@ class ACISThermalCheck:
                 pickle.dump({"pred": pred, "tlm": tlm}, f, protocol=2)
 
         return plots
-
-    def custom_validation_plots(self, plots):
-        """
-        Customization of prediction plots.
-
-        Parameters
-        ----------
-        plots : dict of dicts
-            Contains the hooks to the plot figures, axes, and filenames
-            and can be used to customize plots before they are written,
-            e.g. add limit lines, etc.
-        """
 
     def rst_to_html(self, outdir):
         """
