@@ -172,18 +172,8 @@ class ACISFPCheck(ACISThermalCheck):
                 load_start=load_start,
             )
             plots[name].ax.set_title(self.msid.upper(), loc="left", pad=10)
-            # Draw a horizontal line indicating cold ECS cutoff
-            plots[name].add_limit_line(self.limits["cold_ecs"], "Cold ECS", ls="--")
-            # Draw a horizontal line showing the ACIS-I cutoff
-            plots[name].add_limit_line(self.limits["acis_i"], "ACIS-I", ls="--")
-            # Draw a horizontal line showing the ACIS-S cutoff
-            plots[name].add_limit_line(self.limits["acis_s"], "ACIS-S", ls="--")
-            # Draw a horizontal line showing the hot ACIS-S cutoff
-            plots[name].add_limit_line(self.limits["acis_hot"], "Hot ACIS-S", ls="--")
-            # Draw a horizontal line showing the planning warning limit
-            plots[name].add_limit_line(self.limits["planning_hi"], "Planning", ls="-")
-            # Draw a horizontal line showing the safety caution limit
-            plots[name].add_limit_line(self.limits["yellow_hi"], "Yellow", ls="-")
+            for key in self.limit_object.alt_names.values():
+                plots[name].add_limit_line(self.limits[key], ls="--")
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
             if i == 0:
@@ -306,8 +296,9 @@ class ACISFPCheck(ACISThermalCheck):
         viols = super().make_prediction_viols(temps, states, load_start)
 
         # Store all obsids which can go to -109 C
-        for obs in acis_hot_obs:
-            self.acis_hot_obs.append(obs)
+        self.acis_and_ecs_obs = self.limit_object.acis_obs_info.as_table()
+        hot_acis = self.acis_and_ecs_obs["hot_acis"].data
+        self.acis_hot_obs = self.acis_and_ecs_obs[hot_acis]
 
         return viols
 
@@ -437,8 +428,10 @@ def draw_obsids(
             obsid_txt += " (ECS)"
 
         # Convert the start and stop times into the Ska-required format
-        obs_start = cxctime2plotdate([eachobservation["tstart"]])
-        obs_stop = cxctime2plotdate([eachobservation["tstop"]])
+        tstart, tstop = CxoTime(
+            [eachobservation["start_science"], eachobservation["stop_science"]]
+        )
+        obs_start, obs_stop = cxctime2plotdate([tstart, tstop])
 
         if in_fp.startswith("ACIS-") or obsid > 60000:
             # For each ACIS Obsid, draw a horizontal line to show
