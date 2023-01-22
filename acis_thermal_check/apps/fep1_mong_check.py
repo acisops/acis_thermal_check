@@ -14,6 +14,7 @@ weeks.
 import sys
 
 import matplotlib
+from chandra_limits import FEP1MongLimit
 
 from acis_thermal_check import DPABoardTempCheck, get_options
 
@@ -24,6 +25,8 @@ matplotlib.use("Agg")
 
 
 class FEP1MongCheck(DPABoardTempCheck):
+    _limit_class = FEP1MongLimit
+
     def __init__(self):
         valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [25.0, 20.0]  # First limit is >=, second limit is <=

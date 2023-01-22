@@ -13,6 +13,7 @@ weeks.
 import sys
 
 import matplotlib
+from chandra_limits import PSMCLimit
 
 from acis_thermal_check import ACISThermalCheck, get_options
 
@@ -23,6 +24,8 @@ matplotlib.use("Agg")
 
 
 class PSMCCheck(ACISThermalCheck):
+    _limit_class = PSMCLimit
+
     def __init__(self):
         valid_limits = [(1, 2.5), (50, 1.0), (99, 5.5)]
         hist_limit = [30.0, 40.0]
