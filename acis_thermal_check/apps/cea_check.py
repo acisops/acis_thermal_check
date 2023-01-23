@@ -14,9 +14,10 @@ weeks.
 import sys
 
 import matplotlib
+from chandra_limits import CEALimit
 from ska_matplotlib import pointpair
 
-from acis_thermal_check import ACISThermalCheck, get_options, mylog
+from acis_thermal_check import ACISThermalCheck, get_options
 from acis_thermal_check.utils import PredictPlot
 
 # Matplotlib setup
@@ -25,6 +26,8 @@ matplotlib.use("Agg")
 
 
 class CEACheck(ACISThermalCheck):
+    _limit_class = CEALimit
+
     def __init__(self):
         valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [5.0]

@@ -173,7 +173,11 @@ class ACISFPCheck(ACISThermalCheck):
             )
             plots[name].ax.set_title(self.msid.upper(), loc="left", pad=10)
             for key in self.limit_object.alt_names.values():
-                plots[name].add_limit_line(self.limits[key], ls="--")
+                if key.startswith("planning") or key.startswith("yellow"):
+                    ls = "-"
+                else:
+                    ls = "--"
+                plots[name].add_limit_line(self.limits[key], ls=ls)
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
             if i == 0:
@@ -301,48 +305,6 @@ class ACISFPCheck(ACISThermalCheck):
         self.acis_hot_obs = self.acis_and_ecs_obs[hot_acis]
 
         return viols
-
-    def search_obsids_for_viols(
-        self,
-        limit_name,
-        limit,
-        observations,
-        temp,
-        times,
-        load_start,
-    ):
-        """
-        Given a planning limit and a list of observations, find those time intervals
-        where the temp gets warmer than the planning limit and identify which
-        observations (if any) include part or all of those intervals.
-        """
-        viols_list = []
-
-        # Run through all observations
-        for eachobs in observations:
-            # Get the observation start science and stop science times, and obsid
-            obs_tstart = eachobs["start_science"]
-            obs_tstop = eachobs["tstop"]
-            # If the observation is in this load, let's look at it
-            if obs_tstart > load_start:
-                idxs = (times >= obs_tstart) & (times <= obs_tstop)
-                viols = self._make_prediction_viols(
-                    times[idxs],
-                    temp[idxs],
-                    load_start,
-                    limit,
-                    limit_name,
-                    "max",
-                )
-                # If we have flagged any violations, record the obsid for each
-                # and add them to the list
-                if len(viols) > 0:
-                    for viol in viols:
-                        viol["obsid"] = str(eachobs["obsid"])
-                    viols_list += viols
-
-        # Finished - return the violations list
-        return viols_list
 
     def write_temps(self, outdir, times, temps):
         """
