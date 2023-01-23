@@ -20,16 +20,6 @@ from cxotime import CxoTime
 from ska_matplotlib import cxctime2plotdate
 
 from acis_thermal_check import ACISThermalCheck, get_options, mylog
-
-#
-# Import ACIS-specific observation extraction, filtering
-# and attribute support routines.
-#
-from acis_thermal_check.acis_obs import (
-    acis_filter,
-    find_obsid_intervals,
-    hrc_science_obs_filter,
-)
 from acis_thermal_check.utils import PredictPlot, paint_perigee
 
 # Matplotlib setup
