@@ -1,54 +1,58 @@
-import numpy as np
-import Ska.Sun
 import logging
-import matplotlib.pyplot as plt
-from Ska.Matplotlib import cxctime2plotdate
-import Ska.Numpy
 from pathlib import Path, PurePath
+
+import matplotlib.pyplot as plt
+import numpy as np
+import Ska.Numpy
+import Ska.Sun
+from Ska.Matplotlib import cxctime2plotdate
 from xija.limits import get_limit_color
 
-TASK_DATA = Path(PurePath(__file__).parent / '..').resolve()
+TASK_DATA = Path(PurePath(__file__).parent / "..").resolve()
 
-mylog = logging.getLogger('acis_thermal_check')
+mylog = logging.getLogger("acis_thermal_check")
 
-thermal_blue = 'blue'
-thermal_red = 'red'
+thermal_blue = "blue"
+thermal_red = "red"
 
 
 def calc_pitch_roll(times, ephem, states):
-    """Calculate the normalized sun vector in body coordinates.
-    Shamelessly copied from Ska.engarchive.derived.pcad but 
+    """
+    Calculate the normalized sun vector in body coordinates.
+    Shamelessly copied from Ska.engarchive.derived.pcad but
     modified to use commanded states quaternions
 
     Parameters
     ----------
-    times : NumPy array of times in seconds
-    ephem : orbitephem and solarephem info 
-    states : commanded states NumPy recarray
+    times : array-like
+        NumPy array of times in seconds
+    ephem : array-like
+        orbitephem and solarephem info
+    states : array-like
+        commanded states NumPy recarray
 
     Returns
     -------
     3 NumPy arrays: time, pitch and roll
     """
     from Ska.engarchive.derived.pcad import arccos_clip, qrotate
-    idxs = Ska.Numpy.interpolate(np.arange(len(states)), states['tstart'],
-                                 times, method='nearest')
+
+    idxs = Ska.Numpy.interpolate(
+        np.arange(len(states)), states["tstart"], times, method="nearest"
+    )
     states = states[idxs]
 
-    chandra_eci = np.array([ephem['orbitephem0_x'],
-                            ephem['orbitephem0_y'],
-                            ephem['orbitephem0_z']])
-    sun_eci = np.array([ephem['solarephem0_x'],
-                        ephem['solarephem0_y'],
-                        ephem['solarephem0_z']])
+    chandra_eci = np.array(
+        [ephem["orbitephem0_x"], ephem["orbitephem0_y"], ephem["orbitephem0_z"]]
+    )
+    sun_eci = np.array(
+        [ephem["solarephem0_x"], ephem["solarephem0_y"], ephem["solarephem0_z"]]
+    )
     sun_vec = -chandra_eci + sun_eci
-    est_quat = np.array([states['q1'],
-                         states['q2'],
-                         states['q3'],
-                         states['q4']])
+    est_quat = np.array([states["q1"], states["q2"], states["q3"], states["q4"]])
 
     sun_vec_b = qrotate(est_quat, sun_vec)  # Rotate into body frame
-    magnitude = np.sqrt((sun_vec_b ** 2).sum(axis=0))
+    magnitude = np.sqrt((sun_vec_b**2).sum(axis=0))
     magnitude[magnitude == 0.0] = 1.0
     sun_vec_b = sun_vec_b / magnitude  # Normalize
 
@@ -79,27 +83,28 @@ def config_logging(outdir, verbose):
     class NullHandler(logging.Handler):
         def emit(self, record):
             pass
+
     rootlogger = logging.getLogger()
     rootlogger.addHandler(NullHandler())
 
-    logger = logging.getLogger('acis_thermal_check')
+    logger = logging.getLogger("acis_thermal_check")
     logger.setLevel(logging.DEBUG)
 
     # Set numerical values for the different log levels
-    loglevel = {0: logging.CRITICAL,
-                1: logging.INFO,
-                2: logging.DEBUG}.get(verbose, logging.INFO)
+    loglevel = {0: logging.CRITICAL, 1: logging.INFO, 2: logging.DEBUG}.get(
+        verbose, logging.INFO
+    )
 
-    formatter = logging.Formatter('%(name)-3s: [%(levelname)-9s] %(message)s')
+    formatter = logging.Formatter("%(name)-3s: [%(levelname)-9s] %(message)s")
 
     console = logging.StreamHandler()
     console.setFormatter(formatter)
     console.setLevel(loglevel)
     logger.addHandler(console)
 
-    logfile = outdir / 'run.dat'
+    logfile = outdir / "run.dat"
 
-    filehandler = logging.FileHandler(filename=logfile, mode='w')
+    filehandler = logging.FileHandler(filename=logfile, mode="w")
     filehandler.setFormatter(formatter)
     # Set the file loglevel to be at least INFO,
     # but override to DEBUG if that is requested at the
@@ -132,7 +137,7 @@ class PlotDate:
     y2 : NumPy array
         Quantity to plot against the times on the right y-axis.
     yy : NumPy array, optional
-        A second quantity to plot against the times on the 
+        A second quantity to plot against the times on the
         left x-axis. Default: None
     xmin : float, optional
         The left-most value of the x-axis.
@@ -157,22 +162,38 @@ class PlotDate:
     figsize : 2-tuple of floats
         Size of plot in width and height in inches.
     """
-    def __init__(self, fig_id, x, y, x2=None, y2=None, yy=None,
-                 xmin=None, xmax=None, ylim=None, ylim2=None,
-                 xlabel='', ylabel='', ylabel2='', linewidth=2,
-                 linewidth2=2, title='', figsize=(12, 6),
-                 load_start=None, width=None):
+
+    def __init__(
+        self,
+        fig_id,
+        x,
+        y,
+        x2=None,
+        y2=None,
+        yy=None,
+        xmin=None,
+        xmax=None,
+        ylim=None,
+        ylim2=None,
+        xlabel="",
+        ylabel="",
+        ylabel2="",
+        linewidth=2,
+        linewidth2=2,
+        title="",
+        figsize=(12, 6),
+        load_start=None,
+        width=None,
+    ):
         # Convert times to dates
         xt = cxctime2plotdate(x)
         fig = plt.figure(fig_id, figsize=figsize)
         fig.clf()
         ax = fig.add_subplot(1, 1, 1)
         # Plot left y-axis
-        ax.plot(xt, y, linestyle='-', linewidth=linewidth,
-                color=self._color, zorder=10)
+        ax.plot(xt, y, linestyle="-", linewidth=linewidth, color=self._color, zorder=10)
         if yy is not None:
-            ax.plot(xt, yy, linestyle='--', linewidth=linewidth,
-                    color=self._color2)
+            ax.plot(xt, yy, linestyle="--", linewidth=linewidth, color=self._color2)
         if xmin is None:
             xmin = min(xt)
         if xmax is None:
@@ -192,8 +213,7 @@ class PlotDate:
         if x2 is not None and y2 is not None:
             ax2 = ax.twinx()
             xt2 = cxctime2plotdate(x2)
-            ax2.plot(xt2, y2, linestyle='-',
-                     linewidth=linewidth2, color="magenta")
+            ax2.plot(xt2, y2, linestyle="-", linewidth=linewidth2, color="magenta")
             ax2.set_xlim(xmin, xmax)
             if ylim2:
                 ax2.set_ylim(*ylim2)
@@ -204,18 +224,17 @@ class PlotDate:
 
         if load_start is not None:
             # Add a vertical line to mark the start time of the load
-            ax.axvline(load_start, linestyle='-', color='g', 
-                       zorder=2, linewidth=2.0)
+            ax.axvline(load_start, linestyle="-", color="g", zorder=2, linewidth=2.0)
 
         Ska.Matplotlib.set_time_ticks(ax)
         for label in ax.xaxis.get_ticklabels():
             label.set_rotation_mode("anchor")
             label.set_rotation(30)
-            label.set_horizontalalignment('right')
+            label.set_horizontalalignment("right")
         if ax2 is not None:
             [label.set_color("magenta") for label in ax2.yaxis.get_ticklabels()]
-        ax.tick_params(which='major', axis='x', length=6)
-        ax.tick_params(which='minor', axis='x', length=3)
+        ax.tick_params(which="major", axis="x", length=6)
+        ax.tick_params(which="minor", axis="x", length=3)
         fig.subplots_adjust(bottom=0.22, right=0.87)
         # The next several lines ensure that the width of the axes
         # of all the weekly prediction plots are the same
@@ -232,7 +251,7 @@ class PlotDate:
         self.ax2 = ax2
         self.filename = None
 
-    def add_limit_line(self, limit, label, ls='-'):
+    def add_limit_line(self, limit, label, ls="-"):
         """
         Add a horizontal line for a given limit to the plot.
 
@@ -246,8 +265,14 @@ class PlotDate:
         ls : string, optional
             The line style for the limit line. Default: "-"
         """
-        self.ax.axhline(limit.value, linestyle=ls, linewidth=2.0,
-                        color=limit.color, label=label, zorder=2.0)
+        self.ax.axhline(
+            limit.value,
+            linestyle=ls,
+            linewidth=2.0,
+            color=limit.color,
+            label=label,
+            zorder=2.0,
+        )
 
 
 class PredictPlot(PlotDate):
@@ -258,8 +283,8 @@ class PredictPlot(PlotDate):
 def get_options(opts=None, use_acis_opts=True):
     """
     Construct the argument parser for command-line options for running
-    predictions and validations for a load. Sets up the parser and 
-    defines default options. This function should be used by the specific 
+    predictions and validations for a load. Sets up the parser and
+    defines default options. This function should be used by the specific
     thermal model checking tools.
 
     Parameters
@@ -268,45 +293,77 @@ def get_options(opts=None, use_acis_opts=True):
         A (key, value) dictionary of additional options for the parser. These
         may be defined by the thermal model checking tool if necessary.
     use_acis_opts : boolean, optional
-        Whether or not to include ACIS-specific options. Default: True
+        Whether to include ACIS-specific options. Default: True
     """
     from argparse import ArgumentParser
+
     parser = ArgumentParser()
     parser.set_defaults()
-    parser.add_argument("--outdir", default="out",
-                        help="Output directory. If it does not "
-                             "exist it will be created. Default: 'out'")
-    parser.add_argument("--backstop_file", help="Path to the backstop file. If a directory, "
-                                                "the backstop file will be searched for within "
-                                                "this directory. Default: None")
-    parser.add_argument("--oflsdir", help="Path to the directory containing the backstop "
-                                          "file (legacy argument). If specified, it will "
-                                          "override the value of the backstop_file "
-                                          "argument. Default: None")
-    parser.add_argument("--model-spec", 
-                        help="Model specification file. Defaults to the one included with "
-                             "the model package.")
-    parser.add_argument("--days", type=float, default=21.0,
-                        help="Days of validation data. Default: 21")
-    parser.add_argument("--run-start", help="Reference time to replace run start time "
-                                            "for regression testing. The default is to "
-                                            "use the current time. Default: None")
-    parser.add_argument("--interrupt", help="Set this flag if this is an interrupt load.",
-                        action='store_true')
-    parser.add_argument("--traceback", action='store_false', help='Enable tracebacks. Default: True')
-    parser.add_argument("--pred-only", action='store_true', help='Only make predictions. Default: False')
-    parser.add_argument("--verbose", type=int, default=1,
-                        help="Verbosity (0=quiet, 1=normal, 2=debug)")
-    parser.add_argument("--T-init", type=float,
-                        help="Starting temperature (degC). Default is to compute it from telemetry.")
+    parser.add_argument(
+        "--outdir",
+        default="out",
+        help="Output directory. If it does not "
+        "exist it will be created. Default: 'out'",
+    )
+    parser.add_argument(
+        "--backstop_file",
+        help="Path to the backstop file. If a directory, "
+        "the backstop file will be searched for within "
+        "this directory. Default: None",
+    )
+    parser.add_argument(
+        "--oflsdir",
+        help="Path to the directory containing the backstop "
+        "file (legacy argument). If specified, it will "
+        "override the value of the backstop_file "
+        "argument. Default: None",
+    )
+    parser.add_argument(
+        "--model-spec",
+        help="Model specification file. Defaults to the one included with "
+        "the model package.",
+    )
+    parser.add_argument(
+        "--days", type=float, default=21.0, help="Days of validation data. Default: 21"
+    )
+    parser.add_argument(
+        "--run-start",
+        help="Reference time to replace run start time "
+        "for regression testing. The default is to "
+        "use the current time. Default: None",
+    )
+    parser.add_argument(
+        "--interrupt",
+        help="Set this flag if this is an interrupt load.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--traceback", action="store_false", help="Enable tracebacks. Default: True"
+    )
+    parser.add_argument(
+        "--pred-only", action="store_true", help="Only make predictions. Default: False"
+    )
+    parser.add_argument(
+        "--verbose", type=int, default=1, help="Verbosity (0=quiet, 1=normal, 2=debug)"
+    )
+    parser.add_argument(
+        "--T-init",
+        type=float,
+        help="Starting temperature (degC). Default is to compute it from telemetry.",
+    )
     if use_acis_opts:
-        parser.add_argument("--state-builder", default="acis",
-                            help="StateBuilder to use (kadi|acis). Default: acis")
-        parser.add_argument("--nlet_file",
-                            default='/data/acis/LoadReviews/NonLoadTrackedEvents.txt',
-                            help="Full path to the Non-Load Event Tracking file that should be "
-                                 "used for this model run.")
-    parser.add_argument("--version", action='store_true', help="Print version")
+        parser.add_argument(
+            "--state-builder",
+            default="acis",
+            help="StateBuilder to use (kadi|acis). Default: acis",
+        )
+        parser.add_argument(
+            "--nlet_file",
+            default="/data/acis/LoadReviews/NonLoadTrackedEvents.txt",
+            help="Full path to the Non-Load Event Tracking file that should be "
+            "used for this model run.",
+        )
+    parser.add_argument("--version", action="store_true", help="Print version")
 
     if opts is not None:
         for opt_name, opt in opts:
@@ -352,21 +409,26 @@ def make_state_builder(name, args, hrc_states=False):
     #
     # Instantiate the Kadi History Builder: KadiStateBuilder
     if name == "kadi":
-        state_builder = builder_class(interrupt=args.interrupt,
-                                      backstop_file=args.backstop_file,
-                                      logger=mylog, hrc_states=hrc_states)
+        state_builder = builder_class(
+            interrupt=args.interrupt,
+            backstop_file=args.backstop_file,
+            logger=mylog,
+            hrc_states=hrc_states,
+        )
 
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
     elif name == "acis":
         # Create a state builder using the ACIS Ops backstop history
         # modules and send in some of the switches from the model invocation
         # argument list.  Also send the value of --run-start
-        state_builder = builder_class(interrupt=args.interrupt,
-                                      backstop_file=args.backstop_file,
-                                      nlet_file=args.nlet_file,
-                                      outdir=args.outdir,
-                                      verbose=args.verbose,
-                                      logger=mylog)
+        state_builder = builder_class(
+            interrupt=args.interrupt,
+            backstop_file=args.backstop_file,
+            nlet_file=args.nlet_file,
+            outdir=args.outdir,
+            verbose=args.verbose,
+            logger=mylog,
+        )
     else:
         raise RuntimeError(f"No such state builder with name {name}!")
 
@@ -379,7 +441,7 @@ def paint_perigee(perigee_passages, plots):
     exit (black) and perigee (red)
 
     Parameters
-    ==========
+    ----------
     perigee_passages : dict of lists
         Lists of times for radzone entry, exit, and perigee
     plots : dict of plots
@@ -390,9 +452,7 @@ def paint_perigee(perigee_passages, plots):
             color = "black" if key == "perigee" else "red"
             for time in perigee_passages[key]:
                 xpos = cxctime2plotdate([time])[0]
-                plot.ax.axvline(xpos, linestyle=':', color=color,
-                                linewidth=2.0)
-
+                plot.ax.axvline(xpos, linestyle=":", color=color, linewidth=2.0)
 
 
 class ChandraLimit:
@@ -426,12 +486,14 @@ def get_acis_limits(msid, model_spec, limits_map=None):
     limit and the color of the line on plots.
     """
     import json
+
     if msid == "fptemp_11":
         msid = "fptemp"
     if limits_map is None:
         limits_map = {}
     if not isinstance(model_spec, dict):
-        model_spec = json.load(open(model_spec, 'r'))
+        with open(model_spec) as f:
+            model_spec = json.load(f)
     json_limits = model_spec["limits"][msid]
     limits = {}
     for k, v in json_limits.items():
