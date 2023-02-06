@@ -168,8 +168,7 @@ class ACISThermalCheck:
                     model_spec["limits"][self.msid][k] = v
 
         # Set up the limit object and limits
-
-        self.limit_object = self._limit_class(model_spec=model_spec)
+        self.limit_object = self._limit_class(model_spec=model_spec, margin=0.0)
         self.limits = self.limit_object.limits
 
         # Record the selected state builder in the class attributes
