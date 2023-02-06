@@ -79,7 +79,11 @@ def fetch_ocat_data(obsid_list):
         got_table = True
         try:
             resp = retry_call(
-                requests.get, [urlbase], {"params": params}, tries=4, delay=1
+                requests.get,
+                [urlbase],
+                {"params": params},
+                tries=4,
+                delay=1,
             )
         except (requests.ConnectionError, RetryError):
             got_table = False
@@ -95,7 +99,7 @@ def fetch_ocat_data(obsid_list):
         # Now we have to find all of the obsids in each sequence and then
         # compute the complete exposure for each sequence
         seq_nums = np.unique(
-            [str(sn) for sn in tab["SEQ_NUM"].data.astype("str") if sn != " "]
+            [str(sn) for sn in tab["SEQ_NUM"].data.astype("str") if sn != " "],
         )
         seq_num_list = ",".join(seq_nums)
         obsids = tab["OBSID"].data.astype("int")
@@ -104,7 +108,11 @@ def fetch_ocat_data(obsid_list):
         got_seq_table = True
         try:
             resp = retry_call(
-                requests.get, [urlbase], {"params": params}, tries=4, delay=1
+                requests.get,
+                [urlbase],
+                {"params": params},
+                tries=4,
+                delay=1,
             )
         except (requests.ConnectionError, RetryError):
             got_seq_table = False
@@ -197,7 +205,6 @@ def find_obsid_intervals(cmd_states, load_start):
     obsid_interval_list = []
 
     for eachstate in cmd_states:
-
         # Make sure we skip maneuver obsids explicitly
         if 60000 > eachstate["obsid"] >= 38001:
             continue
@@ -233,7 +240,6 @@ def find_obsid_intervals(cmd_states, load_start):
 
             # now calculate the exposure time
             if xtztime is not None:
-
                 # Having found the startScience and stopScience, you have an
                 # OBSID interval. Now form the element and append it to
                 # the Master List. We add the text version of who is in

@@ -77,6 +77,7 @@ def config_logging(outdir, verbose):
         Indicate how verbose we want the logger to be.
         (0=quiet, 1=normal, 2=debug)
     """
+
     # Disable auto-configuration of root logger by adding a null handler.
     # This prevents other modules (e.g. Chandra.cmd_states) from generating
     # a streamhandler by just calling logging.info(..).
