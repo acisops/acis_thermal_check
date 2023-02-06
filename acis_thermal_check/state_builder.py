@@ -2,6 +2,7 @@ import logging
 import os
 from pprint import pformat
 
+import astropy.units as u
 import kadi.commands
 import kadi.commands.states as kadi_states
 import numpy as np
@@ -86,7 +87,7 @@ class StateBuilder:
         # to date and back to secs.  (The reference tstop could be just over the
         # 0.001 precision of date and thus cause an out-of-bounds error when
         # interpolating state values).
-        dt = 0.01 / 86400
+        dt = 0.01 * u.second
         states["tstart"][0] = (start - dt).secs
         states["datestart"][0] = (start - dt).date
         states["tstop"][-1] = (stop + dt).secs
