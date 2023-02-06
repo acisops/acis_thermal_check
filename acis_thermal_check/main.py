@@ -233,7 +233,6 @@ class ACISThermalCheck:
 
         # Validation
         if not args.pred_only:
-
             # Make the validation plots
             plots_validation = self.make_validation_plots(tlm, model_spec, args.outdir)
 
@@ -1207,7 +1206,6 @@ class ACISThermalCheck:
                 fig_id += 1
 
         if "earthheat__fptemp" in model.comp:
-
             fig = plt.figure(10 + fig_id, figsize=(12, 6))
             fig.clf()
             ticklocs, fig, ax = plot_cxctime(

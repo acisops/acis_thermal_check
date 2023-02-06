@@ -28,6 +28,7 @@ ignore = [
     "S101",
     "D1",
     "D400",
+    "D401",
     "D415",
     "D203",
     "SIM105",
@@ -50,6 +51,8 @@ ignore = [
     "FBT003",
     "ARG002",
     "B904",
+    "PLR2004",
+    "PLR0915",
 ]
 extend-exclude = [
     "doc",
