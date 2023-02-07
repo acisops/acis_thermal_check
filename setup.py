@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import glob
 
 from setuptools import setup
@@ -21,7 +20,7 @@ entry_points = {
         "fep1_actel_check = acis_thermal_check.apps.fep1_actel_check:main",
         "bep_pcb_check = acis_thermal_check.apps.bep_pcb_check:main",
         "cea_check = acis_thermal_check.apps.cea_check:main",
-    ]
+    ],
 }
 
 setup(

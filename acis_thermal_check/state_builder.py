@@ -1,5 +1,5 @@
 import logging
-import os
+from pathlib import Path
 from pprint import pformat
 
 import astropy.units as u
@@ -7,7 +7,6 @@ import kadi.commands
 import kadi.commands.states as kadi_states
 import numpy as np
 from cxotime import CxoTime
-from Ska.File import get_globfiles
 
 # Define state keys for states
 STATE_KEYS = [
@@ -74,12 +73,17 @@ class StateBuilder:
         start = CxoTime(datestart)
         stop = CxoTime(datestop)
         self.logger.info(
-            "Getting commanded states between %s - %s" % (start.date, stop.date)
+            "Getting commanded states between %s - %s",
+            start.date,
+            stop.date,
         )
 
         with kadi_states.disable_grating_move_duration():
             states = kadi_states.get_states(
-                start, stop, state_keys=self.state_keys, merge_identical=True
+                start,
+                stop,
+                state_keys=self.state_keys,
+                merge_identical=True,
             )
 
         # Set start and end state date/times to match telemetry span.  Extend the
@@ -105,7 +109,11 @@ class KadiStateBuilder(StateBuilder):
     """
 
     def __init__(
-        self, interrupt=False, backstop_file=None, logger=None, hrc_states=False
+        self,
+        interrupt=False,
+        backstop_file=None,
+        logger=None,
+        hrc_states=False,
     ):
         """
         Give the KadiStateBuilder arguments that were passed in
@@ -133,7 +141,7 @@ class KadiStateBuilder(StateBuilder):
         # (RLTT) that can be reliably used to remove scheduled commands that
         # will not be run.
         self.interrupt = interrupt
-        self.backstop_file = backstop_file
+        self.backstop_file = Path(backstop_file)
         self._get_bs_cmds()
 
     def _get_bs_cmds(self):
@@ -141,14 +149,12 @@ class KadiStateBuilder(StateBuilder):
         Internal method used to obtain commands from the backstop
         file and store them.
         """
-        if os.path.isdir(self.backstop_file):
+        if self.backstop_file.is_dir():
             # Returns a list but requires exactly 1 match
-            backstop_file = get_globfiles(
-                os.path.join(self.backstop_file, "CR[0-9]*.backstop")
-            )[0]
+            backstop_file = list(self.backstop_file.glob("CR[0-9]*.backstop"))[0]
             self.backstop_file = backstop_file
 
-        self.logger.info("Using backstop file %s" % self.backstop_file)
+        self.logger.info("Using backstop file %s", self.backstop_file)
 
         # Read the backstop commands and add a `time` column
         bs_cmds = kadi.commands.get_cmds_from_backstop(self.backstop_file)
@@ -198,8 +204,8 @@ class KadiStateBuilder(StateBuilder):
         ok = bs_cmds["event_type"] == "SCHEDULED_STOP_TIME"
         sched_stop = CxoTime(bs_dates[ok][0] if np.any(ok) else bs_dates[-1])
 
-        self.logger.info(f"RLTT = {rltt.date}")
-        self.logger.info(f"sched_stop = {sched_stop.date}")
+        self.logger.info("RLTT = %s", rltt.date)
+        self.logger.info("sched_stop = %s", sched_stop.date)
 
         # Get currently running (or approved) commands from tbegin up to and
         # including commands at RLTT
@@ -273,7 +279,10 @@ class ACISStateBuilder(StateBuilder):
 
         # Create an instance of the Backstop command History Class
         self.BSC = BackstopHistory.Backstop_History_Class(
-            "ACIS-Continuity.txt", self.nlet_file, outdir, verbose
+            "ACIS-Continuity.txt",
+            self.nlet_file,
+            outdir,
+            verbose,
         )
         super().__init__()
 
@@ -328,7 +337,7 @@ class ACISStateBuilder(StateBuilder):
 
         # Read in the assembled history file as kadi commands
         bs_cmds = kadi.commands.get_cmds_from_backstop(
-            self.BSC.assembled_hist_file_path
+            self.BSC.assembled_hist_file_path,
         )
 
         bs_cmds["time"] = CxoTime(bs_cmds["date"]).secs
@@ -352,7 +361,10 @@ class ACISStateBuilder(StateBuilder):
 
         with kadi_states.disable_grating_move_duration():
             states = kadi_states.get_states(
-                cmds=bs_cmds, start=tbegin, stop=sched_stop, state_keys=self.state_keys
+                cmds=bs_cmds,
+                start=tbegin,
+                stop=sched_stop,
+                state_keys=self.state_keys,
             )
 
         # Make the column order match legacy Chandra.cmd_states.
@@ -362,7 +374,9 @@ class ACISStateBuilder(StateBuilder):
         state0 = {key: states[0][key] for key in states.colnames}
 
         self.logger.debug(
-            f"state0 at {CxoTime(state0['tstart']).date} is\n{pformat(state0)}"
+            "state0 at %s is\n%s",
+            CxoTime(state0["tstart"]).date,
+            pformat(state0),
         )
 
         return states, state0

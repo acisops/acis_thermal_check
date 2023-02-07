@@ -155,12 +155,17 @@ def exception_catcher(test, old, new, data_type, **kwargs):
     try:
         test(old, new, **kwargs)
     except AssertionError:
-        raise AssertionError("%s are not the same!" % data_type)
+        raise AssertionError(f"{data_type} are not the same!")
 
 
 class RegressionTester:
     def __init__(
-        self, atc_class, atc_args=None, atc_kwargs=None, test_root=None, sub_dir=None
+        self,
+        atc_class,
+        atc_args=None,
+        atc_kwargs=None,
+        test_root=None,
+        sub_dir=None,
     ):
         if atc_args is None:
             atc_args = ()
@@ -269,7 +274,9 @@ class RegressionTester:
         if normal and "normal" in loads:
             for load in loads["normal"]:
                 self.run_model(
-                    load_week=load, run_start=run_start, state_builder=state_builder
+                    load_week=load,
+                    run_start=run_start,
+                    state_builder=state_builder,
                 )
         if interrupt and "interrupt" in loads:
             for load in loads["interrupt"]:
@@ -311,7 +318,7 @@ class RegressionTester:
             filenames = ["validation_data.pkl"]
         else:
             raise RuntimeError(
-                "Invalid test specification! Test name = %s." % test_name
+                "Invalid test specification! Test name = %s." % test_name,
             )
         answer_dir = self._set_answer_dir(load_week)
         if not answer_store:
@@ -448,7 +455,11 @@ class RegressionTester:
             shutil.copyfile(fromfile, tofile)
 
     def check_violation_reporting(
-        self, load_week, viol_json, answer_store=False, state_builder="acis"
+        self,
+        load_week,
+        viol_json,
+        answer_store=False,
+        state_builder="acis",
     ):
         """
         This method runs loads which report violations of
@@ -501,7 +512,7 @@ class RegressionTester:
             for line in myfile.readlines():
                 if line.startswith("Model status"):
                     assert "NOT OK" in line
-                if line.startswith(load_year) or line.startswith(next_year):
+                if line.startswith((load_year, next_year)):
                     if answer_store:
                         words = line.strip().split()
                         viol_data["datestarts"].append(words[0])
@@ -524,7 +535,7 @@ class RegressionTester:
                                 assert viol_data["obsids"][i] in line
                         except AssertionError:
                             raise AssertionError(
-                                "Comparison failed. Check file at %s." % index_rst
+                                "Comparison failed. Check file at %s." % index_rst,
                             )
                     i += 1
         if answer_store:

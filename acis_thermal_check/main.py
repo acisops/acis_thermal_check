@@ -185,7 +185,9 @@ class ACISThermalCheck:
         state_builder = getattr(args, "state_builder", "kadi")
         mylog.info(f"ACISThermalCheck is using the '{state_builder}' state builder.")
         self.state_builder = make_state_builder(
-            state_builder, args, hrc_states=hrc_states
+            state_builder,
+            args,
+            hrc_states=hrc_states,
         )
 
         # If args.run_start is not none, write validation and prediction
@@ -200,7 +202,7 @@ class ACISThermalCheck:
             for k, v in override_limits.items():
                 if k in self.limits:
                     limit = self.limits[k].value
-                    mylog.warning("Replacing %s %.2f with %.2f" % (k, limit, v))
+                    mylog.warning(f"Replacing {k} {limit:.2f} with {v:.2f}")
                     self.limits[k].value = v
 
         # Determine the start and stop times either from whatever was
@@ -208,7 +210,8 @@ class ACISThermalCheck:
         # tstart and tstop.
         is_weekly_load = args.backstop_file is not None
         tstart, tstop, t_run_start = self._determine_times(
-            args.run_start, is_weekly_load
+            args.run_start,
+            is_weekly_load,
         )
 
         # Store off the start date, and, if you have it, the
@@ -226,7 +229,12 @@ class ACISThermalCheck:
         # make predictions on a backstop file if defined
         if args.backstop_file is not None:
             pred = self.make_week_predict(
-                tstart, tstop, tlm, args.T_init, model_spec, args.outdir
+                tstart,
+                tstop,
+                tlm,
+                args.T_init,
+                model_spec,
+                args.outdir,
             )
         else:
             pred = defaultdict(lambda: None)
@@ -276,8 +284,8 @@ class ACISThermalCheck:
         return
 
     def get_ephemeris(self, start, stop, times):
-        msids = ["orbitephem0_{}".format(axis) for axis in "xyz"]
-        msids += ["solarephem0_{}".format(axis) for axis in "xyz"]
+        msids = [f"orbitephem0_{axis}" for axis in "xyz"]
+        msids += [f"solarephem0_{axis}" for axis in "xyz"]
         e = fetch.MSIDset(msids, start - 2000.0, stop + 2000.0)
         ephem = {}
         for msid in msids:
@@ -350,7 +358,11 @@ class ACISThermalCheck:
         # calc_model actually does the model calculation by running
         # model-specific code.
         model = self.calc_model(
-            model_spec, states, state0["tstart"], tstop, state0=state0
+            model_spec,
+            states,
+            state0["tstart"],
+            tstop,
+            state0=state0,
         )
 
         self.predict_model = model
@@ -380,7 +392,11 @@ class ACISThermalCheck:
         self.write_temps(outdir, model.times, temps)
 
         return dict(
-            states=states, times=model.times, temps=temps, plots=plots, viols=viols
+            states=states,
+            times=model.times,
+            temps=temps,
+            plots=plots,
+            viols=viols,
         )
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
@@ -409,7 +425,10 @@ class ACISThermalCheck:
         import xija
 
         model = xija.ThermalModel(
-            self.name, start=tstart, stop=tstop, model_spec=model_spec
+            self.name,
+            start=tstart,
+            stop=tstop,
+            model_spec=model_spec,
         )
         ephem = self.get_ephemeris(tstart, tstop, model.times)
         state_times = np.array([states["tstart"], states["tstop"]])
@@ -482,13 +501,20 @@ class ACISThermalCheck:
                     viols.append(viol)
                     mylog.warning(
                         "%s %d%% quantile value of %s exceeds "
-                        "limit of %.2f" % (msid, quantile, msid_quantile_value, limit)
+                        "limit of %.2f" % (msid, quantile, msid_quantile_value, limit),
                     )
 
         return viols
 
     def _make_prediction_viols(
-        self, times, temp, load_start, limit, lim_name, lim_type, mask=None
+        self,
+        times,
+        temp,
+        load_start,
+        limit,
+        lim_name,
+        lim_type,
+        mask=None,
     ):
         if mask is None:
             mask = np.ones_like(temp, dtype="bool")
@@ -531,9 +557,9 @@ class ACISThermalCheck:
                     "extemp": op(temp[change[0] : change[1]]),
                 }
                 mylog.info(
-                    "WARNING: %s violates %s limit " % (self.msid, lim_name)
+                    f"WARNING: {self.msid} violates {lim_name} limit "
                     + "of %.2f degC from %s to %s"
-                    % (limit, viol["datestart"], viol["datestop"])
+                    % (limit, viol["datestart"], viol["datestop"]),
                 )
                 viols.append(viol)
 
@@ -561,14 +587,19 @@ class ACISThermalCheck:
         times = self.predict_model.times
 
         hi_viols = self._make_prediction_viols(
-            times, temp, load_start, self.limits["planning_hi"].value, "planning", "max"
+            times,
+            temp,
+            load_start,
+            self.limits["planning_hi"].value,
+            "planning",
+            "max",
         )
         viols = {
             "hi": {
                 "name": f"Hot ({self.limits['planning_hi'].value} C)",
                 "type": "Max",
                 "values": hi_viols,
-            }
+            },
         }
 
         if self.flag_cold_viols:
@@ -629,7 +660,11 @@ class ACISThermalCheck:
         states_table["tstart"].format = "%.2f"
         states_table["tstop"].format = "%.2f"
         states_table.write(
-            outfile, format="ascii", delimiter="\t", overwrite=True, fast_writer=False
+            outfile,
+            format="ascii",
+            delimiter="\t",
+            overwrite=True,
+            fast_writer=False,
         )
 
     def write_temps(self, outdir, times, temps):
@@ -813,7 +848,10 @@ class ACISThermalCheck:
         # only now after we've allowed for
         # customizations
         plots["default"].ax.legend(
-            bbox_to_anchor=(0.25, 0.99), loc="lower left", ncol=4, fontsize=14
+            bbox_to_anchor=(0.25, 0.99),
+            loc="lower left",
+            ncol=4,
+            fontsize=14,
         )
 
         # Now plot any perigee passages that occur between xmin and xmax
@@ -905,14 +943,17 @@ class ACISThermalCheck:
                 (self.msid, model.comp[self.msid].mvals),
                 ("pitch", model.comp["pitch"].mvals),
                 ("tscpos", model.comp["sim_z"].mvals),
-            ]
+            ],
         )
         if "roll" in model.comp:
             pred["roll"] = model.comp["roll"].mvals
 
         # Interpolate the model and data to a consistent set of times
         idxs = Ska.Numpy.interpolate(
-            np.arange(len(tlm)), tlm["date"], model.times, method="nearest"
+            np.arange(len(tlm)),
+            tlm["date"],
+            model.times,
+            method="nearest",
         )
         tlm = tlm[idxs]
 
@@ -945,7 +986,8 @@ class ACISThermalCheck:
 
         plots = {}
         mylog.info(
-            "Making %s model validation plots and quantile table", self.name.upper()
+            "Making %s model validation plots and quantile table",
+            self.name.upper(),
         )
         quantiles = (1, 5, 16, 50, 84, 95, 99)
         # store lines of quantile table in a string and write out later
@@ -1158,7 +1200,7 @@ class ACISThermalCheck:
                 ax.axvline(ptime, ls="--", color="C2", linewidth=2, zorder=2)
         ax.legend(fancybox=True, framealpha=0.5, loc=2)
         plots["ccd_count"] = {
-            "lines": {"fig": fig, "ax": ax, "filename": "ccd_count_valid.png"}
+            "lines": {"fig": fig, "ax": ax, "filename": "ccd_count_valid.png"},
         }
 
         fig_id += 1
@@ -1201,7 +1243,7 @@ class ACISThermalCheck:
                         ax.axvline(ptime, ls="--", color="C2", linewidth=2, zorder=2)
                 ax.legend(fancybox=True, framealpha=0.5, loc=2)
                 plots[msid] = {
-                    "lines": {"fig": fig, "ax": ax, "filename": f"{msid}_valid.png"}
+                    "lines": {"fig": fig, "ax": ax, "filename": f"{msid}_valid.png"},
                 }
                 fig_id += 1
 
@@ -1235,7 +1277,7 @@ class ACISThermalCheck:
                     "fig": fig,
                     "ax": ax,
                     "filename": "earth_solid_angle_valid.png",
-                }
+                },
             }
 
             fig_id += 1
@@ -1249,7 +1291,10 @@ class ACISThermalCheck:
         else:
             anchor = (0.4, 0.99)
         plots[self.msid]["lines"]["ax"].legend(
-            bbox_to_anchor=anchor, loc="lower left", ncol=3, fontsize=14
+            bbox_to_anchor=anchor,
+            loc="lower left",
+            ncol=3,
+            fontsize=14,
         )
 
         # Now write all of the plots after possible
@@ -1311,7 +1356,8 @@ class ACISThermalCheck:
         shutil.copy2(dirname / "html4css1.css", outdir)
 
         shutil.copy2(
-            TASK_DATA / "acis_thermal_check/templates/acis_thermal_check.css", outdir
+            TASK_DATA / "acis_thermal_check/templates/acis_thermal_check.css",
+            outdir,
         )
 
         stylesheet_path = str(outdir / "acis_thermal_check.css")
@@ -1399,7 +1445,7 @@ class ACISThermalCheck:
         md5sum = hashlib.md5(ms).hexdigest()
         mylog.info(
             "# %s_check run at %s by %s"
-            % (self.name, proc["run_time"], proc["run_user"])
+            % (self.name, proc["run_time"], proc["run_user"]),
         )
         mylog.info("# acis_thermal_check version = %s" % version)
         mylog.info("# model_spec file MD5sum = %s" % md5sum)
@@ -1480,7 +1526,7 @@ class ACISThermalCheck:
         tstart = CxoTime(tstart).secs
         start = CxoTime(tstart - days * 86400).date
         stop = CxoTime(tstart).date
-        mylog.info("Fetching telemetry between %s and %s" % (start, stop))
+        mylog.info("Fetching telemetry between %s and %s", start, stop)
         msidset = fetch.MSIDset(telem_msids, start, stop, stat="5min")
         start = max(x.times[0] for x in msidset.values())
         stop = min(x.times[-1] for x in msidset.values())
@@ -1490,7 +1536,7 @@ class ACISThermalCheck:
         # Finished when we found at least 4 good records (20 mins)
         if len(msidset.times) < 4:
             raise ValueError(
-                "Found no telemetry within %d days of %s" % (days, str(tstart))
+                "Found no telemetry within %d days of %s" % (days, str(tstart)),
             )
 
         # Construct the NumPy record array of telemetry values

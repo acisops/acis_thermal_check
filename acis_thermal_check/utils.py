@@ -38,15 +38,18 @@ def calc_pitch_roll(times, ephem, states):
     from Ska.engarchive.derived.pcad import arccos_clip, qrotate
 
     idxs = Ska.Numpy.interpolate(
-        np.arange(len(states)), states["tstart"], times, method="nearest"
+        np.arange(len(states)),
+        states["tstart"],
+        times,
+        method="nearest",
     )
     states = states[idxs]
 
     chandra_eci = np.array(
-        [ephem["orbitephem0_x"], ephem["orbitephem0_y"], ephem["orbitephem0_z"]]
+        [ephem["orbitephem0_x"], ephem["orbitephem0_y"], ephem["orbitephem0_z"]],
     )
     sun_eci = np.array(
-        [ephem["solarephem0_x"], ephem["solarephem0_y"], ephem["solarephem0_z"]]
+        [ephem["solarephem0_x"], ephem["solarephem0_y"], ephem["solarephem0_z"]],
     )
     sun_vec = -chandra_eci + sun_eci
     est_quat = np.array([states["q1"], states["q2"], states["q3"], states["q4"]])
@@ -93,7 +96,8 @@ def config_logging(outdir, verbose):
 
     # Set numerical values for the different log levels
     loglevel = {0: logging.CRITICAL, 1: logging.INFO, 2: logging.DEBUG}.get(
-        verbose, logging.INFO
+        verbose,
+        logging.INFO,
     )
 
     formatter = logging.Formatter("%(name)-3s: [%(levelname)-9s] %(message)s")
@@ -325,7 +329,10 @@ def get_options(opts=None, use_acis_opts=True):
         "the model package.",
     )
     parser.add_argument(
-        "--days", type=float, default=21.0, help="Days of validation data. Default: 21"
+        "--days",
+        type=float,
+        default=21.0,
+        help="Days of validation data. Default: 21",
     )
     parser.add_argument(
         "--run-start",
@@ -339,13 +346,20 @@ def get_options(opts=None, use_acis_opts=True):
         action="store_true",
     )
     parser.add_argument(
-        "--traceback", action="store_false", help="Enable tracebacks. Default: True"
+        "--traceback",
+        action="store_false",
+        help="Enable tracebacks. Default: True",
     )
     parser.add_argument(
-        "--pred-only", action="store_true", help="Only make predictions. Default: False"
+        "--pred-only",
+        action="store_true",
+        help="Only make predictions. Default: False",
     )
     parser.add_argument(
-        "--verbose", type=int, default=1, help="Verbosity (0=quiet, 1=normal, 2=debug)"
+        "--verbose",
+        type=int,
+        default=1,
+        help="Verbosity (0=quiet, 1=normal, 2=debug)",
     )
     parser.add_argument(
         "--T-init",
@@ -420,8 +434,8 @@ def make_state_builder(name, args, hrc_states=False):
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
     elif name == "acis":
         # Create a state builder using the ACIS Ops backstop history
-        # modules and send in some of the switches from the model invocation
-        # argument list.  Also send the value of --run-start
+        # modules and send in some switches from the model invocation
+        # argument list. Also send the value of --run-start
         state_builder = builder_class(
             interrupt=args.interrupt,
             backstop_file=args.backstop_file,
