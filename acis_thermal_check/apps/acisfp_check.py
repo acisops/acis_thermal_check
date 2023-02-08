@@ -163,7 +163,7 @@ class ACISFPCheck(ACISThermalCheck):
             )
             plots[name].ax.set_title(self.msid.upper(), loc="left", pad=10)
             for key in self.limit_object.alt_names.values():
-                if key.startswith("planning") or key.startswith("yellow"):
+                if key.startswith(("planning", "yellow")):
                     ls = "-"
                 else:
                     ls = "--"
@@ -381,7 +381,7 @@ def draw_obsids(
 
         # Convert the start and stop times into the Ska-required format
         tstart, tstop = CxoTime(
-            [eachobservation["start_science"], eachobservation["stop_science"]]
+            [eachobservation["start_science"], eachobservation["stop_science"]],
         )
         obs_start, obs_stop = cxctime2plotdate([tstart, tstop])
 
