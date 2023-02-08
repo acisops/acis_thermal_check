@@ -164,7 +164,7 @@ class ACISThermalCheck:
             for k, v in override_limits.items():
                 if k in model_spec["limits"][self.msid]:
                     limit = model_spec["limits"][self.msid][k]
-                    mylog.warning("Replacing %s %.2f with %.2f" % (k, limit, v))
+                    mylog.warning("Replacing %s %.2f with %.2f", k, limit, v)
                     model_spec["limits"][self.msid][k] = v
 
         # Set up the limit object and limits
@@ -507,19 +507,25 @@ class ACISThermalCheck:
         mylog.info("Checking for limit violations")
 
         upper_limit = self.limit_object.get_limit_line(
-            states, which="high", times=self.predict_model.times
+            states,
+            which="high",
+            times=self.predict_model.times,
         )
         viols = {
             "hi": upper_limit.check_violations(
-                self.predict_model, start_time=load_start
-            )
+                self.predict_model,
+                start_time=load_start,
+            ),
         }
         if self._flag_cold_viols:
             lower_limit = self.limit_object.get_limit_line(
-                states, which="low", times=self.predict_model.times
+                states,
+                which="low",
+                times=self.predict_model.times,
             )
             viols["lo"] = lower_limit.check_violations(
-                self.predict_model, start_time=load_start
+                self.predict_model,
+                start_time=load_start,
             )
         return viols
 
