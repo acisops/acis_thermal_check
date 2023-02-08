@@ -31,7 +31,11 @@ class DPACheck(ACISThermalCheck):
         hist_limit = [20.0]
         limits_map = {"planning.caution.low": "zero_feps"}
         super().__init__(
-            "1dpamzt", "dpa", valid_limits, hist_limit, limits_map=limits_map
+            "1dpamzt",
+            "dpa",
+            valid_limits,
+            hist_limit,
+            limits_map=limits_map,
         )
 
     def custom_prediction_viols(self, times, temp, viols, load_start):

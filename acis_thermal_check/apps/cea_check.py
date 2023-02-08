@@ -82,7 +82,7 @@ class CEACheck(ACISThermalCheck):
                 "name": f"Hot ({self.limits['planning_hi'].value} C)",
                 "type": "Max",
                 "values": hi_viols,
-            }
+            },
         }
         return viols
 

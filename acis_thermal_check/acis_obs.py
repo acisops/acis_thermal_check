@@ -331,7 +331,7 @@ def acis_filter(obsid_interval_list):
                 f"{eachobs['obsid']}\t{eachobs['cnt_rate']}\t"
                 f"{eachobs['app_exp']*1.0e-3}\t{eachobs['num_counts']}\t"
                 f"{eachobs['grating']}\t{eachobs['ccds']}\t"
-                f"{eachobs['spectra_max_count']}\t{eachobs['obs_cycle']}"
+                f"{eachobs['spectra_max_count']}\t{eachobs['obs_cycle']}",
             )
             low_ct = False
             # "New" hot ACIS category:
@@ -366,6 +366,6 @@ def acis_filter(obsid_interval_list):
             else:
                 raise RuntimeError(
                     f"Cannot determine what kind of thermal "
-                    f"limit {eachobs['obsid']} should have!"
+                    f"limit {eachobs['obsid']} should have!",
                 )
     return acis_i, acis_s, acis_hot, cold_ecs

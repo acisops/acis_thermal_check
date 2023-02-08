@@ -11,7 +11,6 @@ validation plots comparing predicted values to telemetry for the
 previous three weeks.
 """
 
-import os
 import sys
 
 import matplotlib
@@ -97,8 +96,8 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Input quaternions explicitly for calculating Earth heating
         for i in range(1, 5):
-            name = "aoattqt{}".format(i)
-            state_name = "q{}".format(i)
+            name = f"aoattqt{i}"
+            state_name = f"q{i}"
             model.comp[name].set_data(states[state_name], state_times)
 
         # Input ephemeris explicitly for calculating Earth heating
@@ -122,7 +121,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             The path to the output directory.
         states : NumPy record array
             Commanded states
@@ -258,7 +257,10 @@ class ACISFPCheck(ACISThermalCheck):
 
             # Make the legend on the temperature plot
             plots[name].ax.legend(
-                bbox_to_anchor=(0.15, 0.99), loc="lower left", ncol=4, fontsize=12
+                bbox_to_anchor=(0.15, 0.99),
+                loc="lower left",
+                ncol=4,
+                fontsize=12,
             )
 
             # Build the file name
@@ -279,7 +281,7 @@ class ACISFPCheck(ACISThermalCheck):
         # customizations have been made
         for key in plots:
             if key != self.msid:
-                outfile = os.path.join(outdir, plots[key].filename)
+                outfile = outdir / plots[key].filename
                 mylog.info("Writing plot file %s", outfile)
                 plots[key].fig.savefig(outfile)
 
@@ -318,7 +320,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         mylog.info(
             f"MAKE VIOLS Checking for limit violations in "
-            f"{len(self.acis_and_ecs_obs)} total science observations"
+            f"{len(self.acis_and_ecs_obs)} total science observations",
         )
 
         viols = {}
@@ -328,7 +330,7 @@ class ACISFPCheck(ACISThermalCheck):
         # ------------------------------------------------------
         # Now divide out observations by ACIS-S and ACIS-I
         ACIS_I_obs, ACIS_S_obs, ACIS_hot_obs, sci_ecs_obs = acis_filter(
-            self.acis_and_ecs_obs
+            self.acis_and_ecs_obs,
         )
 
         temp = temps[self.name]
@@ -338,14 +340,19 @@ class ACISFPCheck(ACISThermalCheck):
         # ---------------------------------------------------------------
 
         hi_viols = self._make_prediction_viols(
-            times, temp, load_start, self.limits["planning_hi"].value, "planning", "max"
+            times,
+            temp,
+            load_start,
+            self.limits["planning_hi"].value,
+            "planning",
+            "max",
         )
         viols = {
             "hi": {
                 "name": f"Planning High ({self.limits['planning_hi'].value} C)",
                 "type": "Max",
                 "values": hi_viols,
-            }
+            },
         }
 
         acis_i_limit = self.limits["acis_i"].value
@@ -362,7 +369,12 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Create the violation data structure.
         acis_i_viols = self.search_obsids_for_viols(
-            "ACIS-I", acis_i_limit, ACIS_I_obs, temp, times, load_start
+            "ACIS-I",
+            acis_i_limit,
+            ACIS_I_obs,
+            temp,
+            times,
+            load_start,
         )
 
         viols["ACIS_I"] = {
@@ -379,7 +391,12 @@ class ACISFPCheck(ACISThermalCheck):
         mylog.info(f"ACIS-S Science ({acis_s_limit} C) violations")
 
         acis_s_viols = self.search_obsids_for_viols(
-            "ACIS-S", acis_s_limit, ACIS_S_obs, temp, times, load_start
+            "ACIS-S",
+            acis_s_limit,
+            ACIS_S_obs,
+            temp,
+            times,
+            load_start,
         )
         viols["ACIS_S"] = {
             "name": f"ACIS-S ({acis_s_limit} C)",
@@ -395,7 +412,12 @@ class ACISFPCheck(ACISThermalCheck):
         mylog.info(f"ACIS-S Science ({acis_hot_limit} C) violations")
 
         acis_hot_viols = self.search_obsids_for_viols(
-            "Hot ACIS-S", acis_hot_limit, ACIS_hot_obs, temp, times, load_start
+            "Hot ACIS-S",
+            acis_hot_limit,
+            ACIS_hot_obs,
+            temp,
+            times,
+            load_start,
         )
         viols["ACIS_S_hot"] = {
             "name": f"ACIS-S Hot ({acis_hot_limit} C)",
@@ -409,7 +431,12 @@ class ACISFPCheck(ACISThermalCheck):
         mylog.info(f"Science Orbit ECS ({cold_ecs_limit} C) violations")
 
         ecs_viols = self.search_obsids_for_viols(
-            "Science Orbit ECS", cold_ecs_limit, sci_ecs_obs, temp, times, load_start
+            "Science Orbit ECS",
+            cold_ecs_limit,
+            sci_ecs_obs,
+            temp,
+            times,
+            load_start,
         )
 
         viols["ecs"] = {
@@ -425,7 +452,13 @@ class ACISFPCheck(ACISThermalCheck):
         return viols
 
     def search_obsids_for_viols(
-        self, limit_name, limit, observations, temp, times, load_start
+        self,
+        limit_name,
+        limit,
+        observations,
+        temp,
+        times,
+        load_start,
     ):
         """
         Given a planning limit and a list of observations, find those time intervals
@@ -443,7 +476,12 @@ class ACISFPCheck(ACISThermalCheck):
             if obs_tstart > load_start:
                 idxs = (times >= obs_tstart) & (times <= obs_tstop)
                 viols = self._make_prediction_viols(
-                    times[idxs], temp[idxs], load_start, limit, limit_name, "max"
+                    times[idxs],
+                    temp[idxs],
+                    load_start,
+                    limit,
+                    limit_name,
+                    "max",
                 )
                 # If we have flagged any violations, record the obsid for each
                 # and add them to the list
@@ -462,7 +500,7 @@ class ACISFPCheck(ACISThermalCheck):
 
         Parameters
         ----------
-        outdir : string
+        outdir : Path
             The directory the file will be written to.
         times : NumPy array
             Times in seconds from the start of the mission
@@ -470,7 +508,7 @@ class ACISFPCheck(ACISThermalCheck):
             Temperatures in Celsius
         """
         super().write_temps(outdir, times, temps)
-        outfile = os.path.join(outdir, "earth_solid_angles.dat")
+        outfile = outdir / "earth_solid_angles.dat"
         mylog.info(f"Writing Earth solid angles to {outfile}")
         e = self.predict_model.comp["earthheat__fptemp"].dvals
         efov_table = Table(
@@ -484,7 +522,15 @@ class ACISFPCheck(ACISThermalCheck):
 
 
 def draw_obsids(
-    obs_list, plots, msid, ypos, endcapstart, endcapstop, textypos, fontsize, plot_start
+    obs_list,
+    plots,
+    msid,
+    ypos,
+    endcapstart,
+    endcapstop,
+    textypos,
+    fontsize,
+    plot_start,
 ):
     """
     This function draws visual indicators across the top of the plot showing
@@ -549,10 +595,20 @@ def draw_obsids(
 
             # Plot vertical end caps for each obsid to visually show start/stop
             plots[msid].ax.vlines(
-                obs_start, endcapstart, endcapstop, color=color, zorder=2, linewidth=2.0
+                obs_start,
+                endcapstart,
+                endcapstop,
+                color=color,
+                zorder=2,
+                linewidth=2.0,
             )
             plots[msid].ax.vlines(
-                obs_stop, endcapstart, endcapstop, color=color, zorder=2, linewidth=2.0
+                obs_stop,
+                endcapstart,
+                endcapstop,
+                color=color,
+                zorder=2,
+                linewidth=2.0,
             )
 
             # Now print the obsid in the middle of the time span,

@@ -6,5 +6,8 @@ def test_SEP1922A_viols(answer_store, test_root):
     answer_data = tests_path / "cea/answers/SEP1922A_viol.json"
     cea_rt = RegressionTester(CEACheck, test_root=test_root, sub_dir="viols")
     cea_rt.check_violation_reporting(
-        "SEP1922A", answer_data, answer_store=answer_store, state_builder="kadi"
+        "SEP1922A",
+        answer_data,
+        answer_store=answer_store,
+        state_builder="kadi",
     )
