@@ -134,7 +134,7 @@ class KadiStateBuilder(StateBuilder):
         """
         super().__init__(logger=logger)
         if hrc_states:
-            self.state_keys += ["hrc_15v", "hrc_i", "hrc_s"]
+            self.state_keys += ["hrc_15v", "hrc_24v", "hrc_i", "hrc_s"]
 
         # Note: `interrupt` is ignored in this class. This concept is not needed
         # since backstop 6.9, which provides the RUNNING_LOAD_TERMINATION_TIME
