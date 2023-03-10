@@ -105,7 +105,7 @@ class CEACheck(ACISThermalCheck):
         model.comp["2imonst_on"].set_data(states["hrc_i"] == "ON", state_times)
         model.comp["2sponst_on"].set_data(states["hrc_s"] == "ON", state_times)
         model.comp["2s2onst_on"].set_data(states["hrc_15v"] == "ON", state_times)
-        model.comp["224pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
+        model.comp["224pcast_off"].set_data(states["hrc_24v"] == "ON", state_times)
         model.comp["215pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
 
     def _make_state_plots(self, plots, num_figs, w1, plot_start, states, load_start):
