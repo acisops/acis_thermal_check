@@ -44,7 +44,6 @@ class ACISFPCheck(ACISThermalCheck):
         # Create an empty observation list which will hold the results. This
         # list contains all ACIS and all ECS observations.
         self.acis_and_ecs_obs = []
-        self.acis_hot_obs = []
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
@@ -221,17 +220,6 @@ class ACISFPCheck(ACISThermalCheck):
                 capthick=2,
                 label="ACIS-S",
             )
-            plots[name].ax.errorbar(
-                [0.0, 0.0],
-                [1.0, 1.0],
-                xerr=1.0,
-                lw=2,
-                xlolims=True,
-                color="saddlebrown",
-                capsize=4,
-                capthick=2,
-                label="Hot ACIS-S",
-            )
 
             # Make the legend on the temperature plot
             plots[name].ax.legend(
@@ -289,10 +277,8 @@ class ACISFPCheck(ACISThermalCheck):
         """
         viols = super().make_prediction_viols(temps, states, load_start)
 
-        # Store all obsids which can go to -109 C
+        # Store the obsid table
         self.acis_and_ecs_obs = self.limit_object.acis_obs_info.as_table()
-        hot_acis = self.acis_and_ecs_obs["hot_acis"].data
-        self.acis_hot_obs = self.acis_and_ecs_obs[hot_acis]
 
         return viols
 
@@ -360,7 +346,6 @@ def draw_obsids(
 
         obsid = eachobservation["obsid"]
         in_fp = eachobservation["instrument"]
-        hot_acis = eachobservation["hot_acis"]
 
         if obsid > 60000:
             # ECS observations during the science orbit are colored blue
@@ -371,7 +356,7 @@ def draw_obsids(
             if in_fp == "ACIS-I":
                 color = "red"
             else:
-                color = "saddlebrown" if hot_acis else "green"
+                color = "green"
 
         obsid_txt = str(obsid)
         # If this is an ECS measurement in the science orbit mark
