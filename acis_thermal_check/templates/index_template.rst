@@ -1,5 +1,5 @@
 ================================
-{{proc.name}} temperatures check
+{{proc.name}} Temperatures Check
 ================================
 .. role:: red
 
@@ -32,17 +32,7 @@ States                 `<states.dat>`_
 =====================  =============================================
 
 {% if proc.msid == "FPTEMP" %}
-"Hot" ACIS Observations (-109 C limit)
---------------------------------------
-{% if acis_hot_obs|length > 0 %}
-=====  ==================  =======  =================
-Obsid  # of counts in seq  Grating  Spectra Max Count
-=====  ==================  =======  =================
-{% for eachobs in acis_hot_obs %}
-{{ eachobs.obsid }}  {{"{0: <18}".format(eachobs.num_counts)}}  {{eachobs.grating}}     {{"{0: <10}".format(eachobs.spectra_max_count)}}
-{% endfor %}
-=====  ==================  =======  =================
-{% endif %}
+`ACIS Observations Table <obsid_table.html>`_
 {% endif %}
 
 {% for key in viols.keys() %}
@@ -59,21 +49,21 @@ Obsid  # of counts in seq  Grating  Spectra Max Count
 {{proc.msid}} {{viol_type}} Violations
 ---------------------------------------------------
 {% if proc.msid == "FPTEMP" %}
-=====================  =====================  =================  ==================  ==================
-Date start             Date stop              Duration (ks)      Max temperature     Obsids
-=====================  =====================  =================  ==================  ==================
+=====================  =====================  =================  =======================  ==================
+Date start             Date stop              Duration (ks)      Max Temperature / Limit  Obsid
+=====================  =====================  =================  =======================  ==================
 {% for viol in viols[key] %}
-{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}            {{"%.2f"|format(viol.extemp)}}             {{viol.obsid}}
+{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}            {{"%.2f"|format(viol.extemp)}} / {{"%.2f"|format(viol.limit[0])}}             {{viol.obsid}}
 {% endfor %}
-=====================  =====================  =================  ==================  ==================
+=====================  =====================  =================  =======================  ==================
 {% else %}
-=====================  =====================  =================  ===================
-Date start             Date stop              Duration (ks)      {{extreme}} Temperature
-=====================  =====================  =================  ===================
+=====================  =====================  =================  ===============================
+Date start             Date stop              Duration (ks)      {{extreme}} Temperature / Limit
+=====================  =====================  =================  ===============================
 {% for viol in viols[key] %}
-{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}           {{"{:.2f}".format(viol.extemp)}}
+{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}           {{"{:.2f}".format(viol.extemp)}} / {{"{:.2f}".format(viol.limit[0])}}
 {% endfor %}
-=====================  =====================  =================  ===================
+=====================  =====================  =================  ===============================
 {% endif %}
 {% else %}
 No {{proc.msid}} {{viol_type}} Violations

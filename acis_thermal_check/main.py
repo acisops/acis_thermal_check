@@ -255,8 +255,6 @@ class ACISThermalCheck:
             "pred_only": args.pred_only,
             "plots_validation": plots_validation,
         }
-        if self.msid == "fptemp":
-            context["acis_hot_obs"] = self.acis_hot_obs
 
         self.write_index_rst(args.outdir, context)
 
@@ -1215,22 +1213,26 @@ class ACISThermalCheck:
         )
 
         stylesheet_path = str(outdir / "acis_thermal_check.css")
-        infile = str(outdir / "index.rst")
-        outfile = str(outdir / "index.html")
-        publish_file(
-            source_path=infile,
-            destination_path=outfile,
-            writer_name="html",
-            settings_overrides={"stylesheet_path": stylesheet_path},
-        )
+        prefixes = ["index"]
+        if self.msid == "fptemp":
+            prefixes.append("obsid_table")
+        for prefix in prefixes:
+            infile = str(outdir / f"{prefix}.rst")
+            outfile = str(outdir / f"{prefix}.html")
+            publish_file(
+                source_path=infile,
+                destination_path=outfile,
+                writer_name="html",
+                settings_overrides={"stylesheet_path": stylesheet_path},
+            )
 
-        # Remove the stupid <colgroup> field that docbook inserts.  This
-        # <colgroup> prevents HTML table auto-sizing.
-        del_colgroup = re.compile(r"<colgroup>.*?</colgroup>", re.DOTALL)
-        with open(outfile) as f:
-            outtext = del_colgroup.sub("", f.read())
-        with open(outfile, "w") as f:
-            f.write(outtext)
+            # Remove the stupid <colgroup> field that docbook inserts.  This
+            # <colgroup> prevents HTML table auto-sizing.
+            del_colgroup = re.compile(r"<colgroup>.*?</colgroup>", re.DOTALL)
+            with open(outfile) as f:
+                outtext = del_colgroup.sub("", f.read())
+            with open(outfile, "w") as f:
+                f.write(outtext)
 
     def write_index_rst(self, outdir, context):
         """
@@ -1257,6 +1259,22 @@ class ACISThermalCheck:
         # Render the template and write it to a file
         with open(outfile, "w") as fout:
             fout.write(template.render(**context))
+        if self.msid == "fptemp":
+            context["acis_obs"] = self.acis_and_ecs_obs
+            template_path = (
+                TASK_DATA / "acis_thermal_check/templates/obsid_template.rst"
+            )
+            outfile = outdir / "obsid_table.rst"
+            # Open up the reST template and send the context to it using jinja2
+            with open(template_path) as fin:
+                index_template = fin.read()
+                index_template = re.sub(r" %}\n", " %}", index_template)
+                template = jinja2.Template(index_template)
+            # Render the template and write it to a file
+            with open(outfile, "w") as fout:
+                fout.write(
+                    template.render(acis_obs=self.acis_and_ecs_obs, bsdir=self.bsdir)
+                )
 
     def _setup_proc_and_logger(self, args):
         """
