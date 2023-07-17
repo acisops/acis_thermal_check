@@ -167,16 +167,7 @@ class ACISThermalCheck:
 
         # First, do some initial setup and log important information.
 
-        if args.model_spec is None:
-            model_spec = get_xija_model_spec(self.name)[0]
-        else:
-            model_spec = args.model_spec
-
-        if not isinstance(model_spec, dict):
-            with open(model_spec) as f:
-                model_spec = json.load(f)
-
-        proc = self._setup_proc_and_logger(args, model_spec)
+        proc, model_spec = self._setup_proc_and_logger(args)
 
         # Record the selected state builder in the class attributes
         # If there is no "state_builder" command line argument assume
@@ -1404,7 +1395,7 @@ class ACISThermalCheck:
         with open(outfile, "w") as fout:
             fout.write(template.render(**context))
 
-    def _setup_proc_and_logger(self, args, model_spec):
+    def _setup_proc_and_logger(self, args):
         """
         This method does some initial setup and logs important
         information.
@@ -1417,6 +1408,17 @@ class ACISThermalCheck:
         model_spec : string
             The path to the thermal model specification.
         """
+
+        if args.model_spec is None:
+            model_spec, cm_version = get_xija_model_spec(self.name)
+            ms_out = f"chandra_models v{cm_version}"
+        else:
+            model_spec = args.model_spec
+            cm_version = None
+            if not isinstance(model_spec, dict):
+                ms_out = str(Path(model_spec).resolve())
+                with open(model_spec) as f:
+                    model_spec = json.load(f)
 
         if not args.outdir.exists():
             args.outdir.mkdir(parents=True)
@@ -1439,8 +1441,13 @@ class ACISThermalCheck:
             "# %s_check run at %s by %s"
             % (self.name, proc["run_time"], proc["run_user"]),
         )
-        mylog.info("# acis_thermal_check version = %s" % version)
-        mylog.info("Command line options:\n%s\n" % pformat(args.__dict__))
+        mylog.info("# acis_thermal_check version = %s", version)
+        if cm_version is not None:
+            mylog.info("# chandra_models version = %s", cm_version)
+        args_out = args.__dict__.copy()
+        args_out["outdir"] = str(args.outdir.resolve())
+        args_out["model_spec"] = ms_out
+        mylog.info("Command line options:\n%s\n", pformat(args_out))
 
         if args.backstop_file is None:
             self.bsdir = None
@@ -1450,7 +1457,7 @@ class ACISThermalCheck:
                 self.bsdir = bf
             else:
                 self.bsdir = PurePath(bf).parent
-        return proc
+        return proc, model_spec
 
     def _determine_times(self, run_start, is_weekly_load):
         """
