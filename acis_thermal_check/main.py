@@ -1417,7 +1417,6 @@ class ACISThermalCheck:
         model_spec : string
             The path to the thermal model specification.
         """
-        import hashlib
 
         if not args.outdir.exists():
             args.outdir.mkdir(parents=True)
@@ -1436,19 +1435,11 @@ class ACISThermalCheck:
             hist_limit=self.hist_limit,
         )
 
-        if isinstance(model_spec, dict):
-            ms = json.dumps(model_spec, indent=4, sort_keys=True).encode()
-        else:
-            with open(model_spec, "rb") as f:
-                ms = f.read()
-        # Figure out the MD5 sum of the model spec file
-        md5sum = hashlib.md5(ms).hexdigest()
         mylog.info(
             "# %s_check run at %s by %s"
             % (self.name, proc["run_time"], proc["run_user"]),
         )
         mylog.info("# acis_thermal_check version = %s" % version)
-        mylog.info("# model_spec file MD5sum = %s" % md5sum)
         mylog.info("Command line options:\n%s\n" % pformat(args.__dict__))
 
         if args.backstop_file is None:
