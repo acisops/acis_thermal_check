@@ -1442,8 +1442,7 @@ class ACISThermalCheck:
             % (self.name, proc["run_time"], proc["run_user"]),
         )
         mylog.info("# acis_thermal_check version = %s", version)
-        if cm_version is not None:
-            mylog.info("# chandra_models version = %s", cm_version)
+        mylog.info("# chandra_models version = %s", cm_version)
         args_out = args.__dict__.copy()
         args_out["outdir"] = str(args.outdir.resolve())
         args_out["model_spec"] = ms_out
