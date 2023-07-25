@@ -1405,8 +1405,6 @@ class ACISThermalCheck:
         args : ArgumentParser arguments
             The command-line options object, which has the options
             attached to it as attributes
-        model_spec : string
-            The path to the thermal model specification.
         """
 
         if args.model_spec is None:
