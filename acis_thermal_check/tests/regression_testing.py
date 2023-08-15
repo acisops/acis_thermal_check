@@ -542,28 +542,28 @@ class RegressionTester:
             with open(viol_json, "w") as f:
                 json.dump(viol_data, f, indent=4)
 
-    def check_hot_acis_reporting(self, load_week, hot_json, answer_store=False):
+    def check_acis_obsids(self, load_week, obsid_json, answer_store=False):
         import json
 
         self.run_model(load_week)
         out_dir = self.outdir / load_week / self.name
-        index_rst = out_dir / "index.rst"
-        hot_data = []
+        index_rst = out_dir / "obsid_table.rst"
+        obsid_data = []
         with open(index_rst) as myfile:
-            read_hot_data = False
+            read_obsid_data = False
             for line in myfile.readlines():
                 words = line.strip().split()
                 if line.startswith("Obsid"):
-                    read_hot_data = True
-                elif read_hot_data:
+                    read_obsid_data = True
+                elif read_obsid_data:
                     if len(words) == 6 and not line.startswith("=="):
-                        hot_data.append(words)
+                        obsid_data.append(words)
                     elif len(words) == 0:
-                        read_hot_data = False
+                        read_obsid_data = False
         if answer_store:
-            with open(hot_json, "w") as f:
-                json.dump(hot_data, f, indent=4)
+            with open(obsid_json, "w") as f:
+                json.dump(obsid_data, f, indent=4)
         else:
-            with open(hot_json) as f:
-                hot_data_stored = json.load(f)
-                assert_array_equal(hot_data, hot_data_stored)
+            with open(obsid_json) as f:
+                obsid_data_stored = json.load(f)
+                assert_array_equal(obsid_data, obsid_data_stored)
