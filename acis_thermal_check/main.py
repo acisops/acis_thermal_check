@@ -382,13 +382,13 @@ class ACISThermalCheck:
         # write_temps writes the temperatures to temperatures.dat
         self.write_temps(outdir, model.times, temps)
 
-        return dict(
-            states=states,
-            times=model.times,
-            temps=temps,
-            plots=plots,
-            viols=viols,
-        )
+        return {
+            "states": states,
+            "times": model.times,
+            "temps": temps,
+            "plots": plots,
+            "viols": viols,
+        }
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         pass
@@ -1426,14 +1426,14 @@ class ACISThermalCheck:
         config_logging(args.outdir, args.verbose)
 
         # Store info relevant to processing for use in outputs
-        proc = dict(
-            run_user=getpass.getuser(),
-            run_time=time.ctime(),
-            errors=[],
-            msid=self.msid.upper(),
-            name=self.name.upper(),
-            hist_limit=self.hist_limit,
-        )
+        proc = {
+            "run_user": getpass.getuser(),
+            "run_time": time.ctime(),
+            "errors": [],
+            "msid": self.msid.upper(),
+            "name": self.name.upper(),
+            "hist_limit": self.hist_limit,
+        }
 
         mylog.info(
             "# %s_check run at %s by %s"
