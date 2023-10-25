@@ -1,4 +1,4 @@
-name: Check black formatting
+name: Check Python formatting using Black and Ruff
 
 on: [push]
 
@@ -8,3 +8,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: psf/black@stable
+      - uses: chartboost/ruff-action@v1
