@@ -4,6 +4,7 @@ import shutil
 import tempfile
 from pathlib import Path, PurePath
 
+import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 
 months = [
@@ -566,4 +567,11 @@ class RegressionTester:
         else:
             with open(obsid_json) as f:
                 obsid_data_stored = json.load(f)
-                assert_array_equal(obsid_data, obsid_data_stored)
+                try:
+                    assert_array_equal(obsid_data, obsid_data_stored)
+                except AssertionError:
+                    outlines = "Some entries did not match:\n"
+                    for o1, o2 in zip(obsid_data, obsid_data_stored):
+                        if not np.all(o1 == o2):
+                            outlines += f"{o1} != {o2}\n"
+                    raise AssertionError(outlines)
