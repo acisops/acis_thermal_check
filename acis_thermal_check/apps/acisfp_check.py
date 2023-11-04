@@ -14,6 +14,7 @@ previous three weeks.
 import sys
 
 import matplotlib
+import numpy as np
 from astropy.table import Table
 from chandra_limits import ACISFPLimit
 from cxotime import CxoTime
@@ -278,7 +279,9 @@ class ACISFPCheck(ACISThermalCheck):
         viols = super().make_prediction_viols(temps, states, load_start)
 
         # Store the obsid table
-        self.acis_and_ecs_obs = self.limit_object.acis_obs_info.as_table()
+        obs_table = self.limit_object.acis_obs_info.as_table()
+        idxs = np.where(CxoTime(obs_table["start_science"]).secs > load_start)[0]
+        self.acis_and_ecs_obs = obs_table[idxs]
 
         return viols
 
