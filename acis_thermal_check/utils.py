@@ -256,7 +256,7 @@ class PlotDate:
         self.ax2 = ax2
         self.filename = None
 
-    def add_limit_line(self, limit, ls="-"):
+    def add_limit_line(self, limit, ls="-", lw=2):
         """
         Add a horizontal line for a given limit to the plot.
 
@@ -267,6 +267,8 @@ class PlotDate:
             the color it should be plotted with, and its label.
         ls : string, optional
             The line style for the limit line. Default: "-"
+        lw : float, optional
+            The line width for the limit line. Default: 2.0
         """
         label = limit["display_name"]
         # If the label already exists, we shouldn't need to repeat it
@@ -278,7 +280,7 @@ class PlotDate:
         self.ax.axhline(
             limit["value"],
             linestyle=ls,
-            linewidth=2.0,
+            linewidth=lw,
             color=limit["color"],
             label=label,
             zorder=2.0,
