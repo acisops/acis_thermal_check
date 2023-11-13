@@ -288,7 +288,14 @@ class ACISFPCheck(ACISThermalCheck):
         obs_table = self.limit_object.acis_obs_info.as_table()
         idxs = np.where(CxoTime(obs_table["start_science"]).secs > load_start)[0]
         self.acis_and_ecs_obs = obs_table[idxs]
-
+        for v in viols["hi"]:
+            idx = np.where(self.acis_and_ecs_obs["obsid"] == v["obsid"])[0]
+            if idx.size == 0:
+                continue
+            row = self.acis_and_ecs_obs[idx[0]]
+            start_science = CxoTime(row["start_science"]).secs
+            stop_science = CxoTime(row["stop_science"]).secs
+            v["exp_time"] = (stop_science - start_science) * 1.0e-3
         return viols, upper_limit, lower_limit
 
     def write_temps(self, outdir, times, temps):
