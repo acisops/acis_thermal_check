@@ -49,13 +49,17 @@ States                 `<states.dat>`_
 {{proc.msid}} {{viol_type}} Violations
 ---------------------------------------------------
 {% if proc.msid == "FPTEMP" %}
-=====================  =====================  =================  =======================  ==================
-Date start             Date stop              Duration (ks)      Max Temperature / Limit  Obsid
-=====================  =====================  =================  =======================  ==================
+=====================  =====================  ========================  =======================  ==================
+Date start             Date stop              Duration / Exposure (ks)  Max Temperature / Limit  Obsid
+=====================  =====================  ========================  =======================  ==================
 {% for viol in viols[key] %}
-{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}            {{"%.2f"|format(viol.extemp)}} / {{"%.2f"|format(viol.limit[0])}}             {{viol.obsid}}
+{% if viol.obsid == -1 %} 
+{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration)}} / N/A                   {{"%.2f"|format(viol.extemp)}} / {{"%.2f"|format(viol.limit[0])}}             N/A
+{% else %}
+{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration)}} / {{"{:3.2f}".format(viol.exp_time)}}                   {{"%.2f"|format(viol.extemp)}} / {{"%.2f"|format(viol.limit[0])}}             {{viol.obsid}}
+{% endif %}
 {% endfor %}
-=====================  =====================  =================  =======================  ==================
+=====================  =====================  ========================  =======================  ==================
 {% else %}
 =====================  =====================  =================  ===============================
 Date start             Date stop              Duration (ks)      {{extreme}} Temperature / Limit
