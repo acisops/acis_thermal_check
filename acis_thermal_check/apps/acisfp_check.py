@@ -98,7 +98,9 @@ class ACISFPCheck(ACISThermalCheck):
         model.comp["1cbat"].set_data(-53.0)
         model.comp["sim_px"].set_data(-120.0)
 
-    def make_prediction_plots(self, outdir, states, temps, load_start):
+    def make_prediction_plots(
+        self, outdir, states, temps, load_start, upper_limit, lower_limit
+    ):
         """
         Make plots of the thermal prediction as well as associated
         commanded states.
@@ -162,12 +164,14 @@ class ACISFPCheck(ACISThermalCheck):
                 load_start=load_start,
             )
             plots[name].ax.set_title(self.msid.upper(), loc="left", pad=10)
-            for key in self.limit_object.alt_names.values():
-                if key.startswith(("planning", "yellow")):
-                    ls = "-"
-                else:
-                    ls = "--"
-                plots[name].add_limit_line(self.limits[key], ls=ls)
+            plots[name].add_limit_line(self.limits["yellow_hi"], lw=3)
+            upper_limit.plot(
+                fig_ax=(plots[name].fig, plots[name].ax),
+                lw=3,
+                zorder=2,
+                use_colors=True,
+                show_changes=False,
+            )
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
             if i == 0:
@@ -276,14 +280,16 @@ class ACISFPCheck(ACISThermalCheck):
                  - science_viols
 
         """
-        viols = super().make_prediction_viols(temps, states, load_start)
+        viols, upper_limit, lower_limit = super().make_prediction_viols(
+            temps, states, load_start
+        )
 
         # Store the obsid table
         obs_table = self.limit_object.acis_obs_info.as_table()
         idxs = np.where(CxoTime(obs_table["start_science"]).secs > load_start)[0]
         self.acis_and_ecs_obs = obs_table[idxs]
 
-        return viols
+        return viols, upper_limit, lower_limit
 
     def write_temps(self, outdir, times, temps):
         """

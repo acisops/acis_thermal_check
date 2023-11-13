@@ -366,11 +366,15 @@ class ACISThermalCheck:
         temps = {self.name: model.comp[self.msid].mvals}
 
         # make_prediction_viols determines the violations and prints them out
-        viols = self.make_prediction_viols(temps, states, tstart)
+        viols, upper_limit, lower_limit = self.make_prediction_viols(
+            temps, states, tstart
+        )
 
         # make_prediction_plots runs the validation of the model
         # against previous telemetry
-        plots = self.make_prediction_plots(outdir, states, temps, tstart)
+        plots = self.make_prediction_plots(
+            outdir, states, temps, tstart, upper_limit, lower_limit
+        )
 
         # write_states writes the commanded states to states.dat
         self.write_states(outdir, states)
@@ -532,7 +536,10 @@ class ACISThermalCheck:
                 self.predict_model,
                 start_time=load_start,
             )
-        return viols
+        else:
+            lower_limit = None
+
+        return viols, upper_limit, lower_limit
 
     def write_states(self, outdir, states):
         """
@@ -667,7 +674,9 @@ class ACISThermalCheck:
             )
         plots[plt_name].filename = f"{plt_name}.png"
 
-    def make_prediction_plots(self, outdir, states, temps, load_start):
+    def make_prediction_plots(
+        self, outdir, states, temps, load_start, upper_limit, lower_limit
+    ):
         """
         Make plots of the thermal prediction as well as associated
         commanded states.
@@ -818,6 +827,12 @@ class ACISThermalCheck:
 
         self.validate_model = model
 
+        upper_limit = self.limit_object.get_limit_line(
+            states,
+            which="high",
+            times=self.validate_model.times,
+        )
+
         # Use an OrderedDict here because we want the plots on the validation
         # page to appear in this order
         pred = OrderedDict(
@@ -927,37 +942,12 @@ class ACISThermalCheck:
             if self.msid == msid:
                 ymin, ymax = ax.get_ylim()
                 if msid == "fptemp":
-                    ax.axhline(
-                        self.limits["cold_ecs"]["value"],
-                        linestyle="--",
-                        label="Cold ECS",
-                        color=self.limits["cold_ecs"]["color"],
+                    upper_limit.plot(
+                        fig_ax=(fig, ax),
+                        lw=3,
                         zorder=2,
-                        linewidth=2,
-                    )
-                    ax.axhline(
-                        self.limits["acis_i"]["value"],
-                        linestyle="--",
-                        label="ACIS-I",
-                        color=self.limits["acis_i"]["color"],
-                        zorder=2,
-                        linewidth=2,
-                    )
-                    ax.axhline(
-                        self.limits["acis_s"]["value"],
-                        linestyle="--",
-                        label="ACIS-S",
-                        color=self.limits["acis_s"]["color"],
-                        zorder=2,
-                        linewidth=2,
-                    )
-                    ax.axhline(
-                        self.limits["acis_hot"]["value"],
-                        linestyle="--",
-                        label="Hot ACIS",
-                        color=self.limits["acis_hot"]["color"],
-                        zorder=2,
-                        linewidth=2,
+                        use_colors=True,
+                        show_changes=False,
                     )
                     ymax = max(self.limits["acis_hot"]["value"] + 1, ymax)
                 else:
