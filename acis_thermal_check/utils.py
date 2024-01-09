@@ -3,9 +3,8 @@ from pathlib import Path, PurePath
 
 import matplotlib.pyplot as plt
 import numpy as np
-import Ska.Numpy
-import Ska.Sun
-from Ska.Matplotlib import cxctime2plotdate
+import ska_numpy
+from ska_matplotlib import cxctime2plotdate, set_time_ticks
 from xija.limits import get_limit_color
 
 TASK_DATA = Path(PurePath(__file__).parent / "..").resolve()
@@ -19,7 +18,7 @@ thermal_red = "red"
 def calc_pitch_roll(times, ephem, states):
     """
     Calculate the normalized sun vector in body coordinates.
-    Shamelessly copied from Ska.engarchive.derived.pcad but
+    Shamelessly copied from cheta.derived.pcad but
     modified to use commanded states quaternions
 
     Parameters
@@ -35,9 +34,9 @@ def calc_pitch_roll(times, ephem, states):
     -------
     3 NumPy arrays: time, pitch and roll
     """
-    from Ska.engarchive.derived.pcad import arccos_clip, qrotate
+    from cheta.derived.pcad import arccos_clip, qrotate
 
-    idxs = Ska.Numpy.interpolate(
+    idxs = ska_numpy.interpolate(
         np.arange(len(states)),
         states["tstart"],
         times,
@@ -231,7 +230,7 @@ class PlotDate:
             # Add a vertical line to mark the start time of the load
             ax.axvline(load_start, linestyle="-", color="g", zorder=2, linewidth=2.0)
 
-        Ska.Matplotlib.set_time_ticks(ax)
+        set_time_ticks(ax)
         for label in ax.xaxis.get_ticklabels():
             label.set_rotation_mode("anchor")
             label.set_rotation(30)
