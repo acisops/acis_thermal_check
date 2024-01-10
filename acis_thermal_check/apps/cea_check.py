@@ -14,7 +14,7 @@ weeks.
 import sys
 
 import matplotlib
-from Ska.Matplotlib import pointpair
+from ska_matplotlib import pointpair
 
 from acis_thermal_check import ACISThermalCheck, get_options, mylog
 from acis_thermal_check.utils import PredictPlot

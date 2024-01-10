@@ -7,17 +7,16 @@ from collections import OrderedDict, defaultdict
 from pathlib import Path, PurePath
 from pprint import pformat
 
+import cheta.fetch_sci as fetch
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import Ska.DBI
-import Ska.engarchive.fetch_sci as fetch
-import Ska.Numpy
+import ska_numpy
 from astropy.io import ascii
 from astropy.table import Table
 from cxotime import CxoTime
 from kadi import events
-from Ska.Matplotlib import cxctime2plotdate, plot_cxctime, pointpair
+from ska_matplotlib import cxctime2plotdate, plot_cxctime, pointpair
 from xija.get_model_spec import get_xija_model_spec
 
 import acis_thermal_check
@@ -280,7 +279,7 @@ class ACISThermalCheck:
         e = fetch.MSIDset(msids, start - 2000.0, stop + 2000.0)
         ephem = {}
         for msid in msids:
-            ephem[msid] = Ska.Numpy.interpolate(e[msid].vals, e[msid].times, times)
+            ephem[msid] = ska_numpy.interpolate(e[msid].vals, e[msid].times, times)
         return ephem
 
     def get_states(self, tlm, T_init):
@@ -940,7 +939,7 @@ class ACISThermalCheck:
             pred["roll"] = model.comp["roll"].mvals
 
         # Interpolate the model and data to a consistent set of times
-        idxs = Ska.Numpy.interpolate(
+        idxs = ska_numpy.interpolate(
             np.arange(len(tlm)),
             tlm["date"],
             model.times,
@@ -1541,7 +1540,7 @@ class ACISThermalCheck:
         outnames = ["date"] + [name_map.get(x, x) for x in telem_msids]
         vals = {name_map.get(x, x): msidset[x].vals for x in telem_msids}
         vals["date"] = msidset.times
-        out = Ska.Numpy.structured_array(vals, colnames=outnames)
+        out = ska_numpy.structured_array(vals, colnames=outnames)
 
         # tscpos needs to be converted to steps and must be in the right direction
         out["tscpos"] *= -397.7225924607

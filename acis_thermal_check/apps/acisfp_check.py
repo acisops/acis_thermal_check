@@ -16,7 +16,7 @@ import sys
 import matplotlib
 from astropy.table import Table
 from cxotime import CxoTime
-from Ska.Matplotlib import cxctime2plotdate
+from ska_matplotlib import cxctime2plotdate
 
 from acis_thermal_check import ACISThermalCheck, get_options, mylog
 
