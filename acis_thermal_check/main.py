@@ -14,7 +14,7 @@ import numpy as np
 import ska_numpy
 from astropy.io import ascii
 from astropy.table import Table
-from chandra_limits import determine_times
+from chandra_limits import determine_obsid_info
 from cxotime import CxoTime
 from kadi import events
 from ska_matplotlib import cxctime2plotdate, plot_cxctime, pointpair
@@ -339,7 +339,7 @@ class ACISThermalCheck:
         # needs to know the times of the observations to construct
         # the limit later.
         if self.msid == "fptemp":
-            obs_list = determine_times(states)
+            obs_list = determine_obsid_info(states)
             self.limit_object.set_obs_info(obs_list)
 
         # calc_model actually does the model calculation by running
@@ -816,7 +816,7 @@ class ACISThermalCheck:
         # needs to know the times of the observations to construct
         # the limit later.
         if self.msid == "fptemp":
-            obs_list = determine_times(states)
+            obs_list = determine_obsid_info(states)
             self.limit_object.set_obs_info(obs_list)
 
         mylog.info("Calculating %s thermal model for validation", self.name.upper())
