@@ -518,7 +518,6 @@ class ACISThermalCheck:
         upper_limit = self.limit_object.get_limit_line(
             states,
             which="high",
-            times=self.predict_model.times,
         )
         viols = {
             "hi": upper_limit.check_violations(
@@ -530,7 +529,6 @@ class ACISThermalCheck:
             lower_limit = self.limit_object.get_limit_line(
                 states,
                 which="low",
-                times=self.predict_model.times,
             )
             viols["lo"] = lower_limit.check_violations(
                 self.predict_model,
@@ -830,7 +828,6 @@ class ACISThermalCheck:
         upper_limit = self.limit_object.get_limit_line(
             states,
             which="high",
-            times=self.validate_model.times,
         )
 
         # Use an OrderedDict here because we want the plots on the validation
