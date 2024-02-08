@@ -946,7 +946,7 @@ class ACISThermalCheck:
                         use_colors=True,
                         show_changes=False,
                     )
-                    ymax = max(self.limits["acis_hot"]["value"] + 1, ymax)
+                    ymax = max(self.limits["acis_hot_b"]["value"] + 1, ymax)
                 else:
                     ax.axhline(
                         self.limits["yellow_hi"]["value"],
