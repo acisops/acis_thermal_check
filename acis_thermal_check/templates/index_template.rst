@@ -35,8 +35,9 @@ States                 `<states.dat>`_
 `ACIS Observations Table <obsid_table.html>`_
 {% endif %}
 
-{% for key in viols.keys() %}
+{% for key in viols %}
 
+{% set key = "hi" %}
 {% if key == "hi" %}
 {% set viol_type = "Upper Limit" %}
 {% set extreme = "Max" %}
@@ -54,9 +55,9 @@ Date start             Date stop              Duration / Exposure (ks)  Max Temp
 =====================  =====================  ========================  =======================  ==================
 {% for viol in viols[key] %}
 {% if viol.obsid == -1 %} 
-{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration)}} / N/A                   {{"%.2f"|format(viol.extemp)}} / {{"%.2f"|format(viol.limit[0])}}             N/A
+{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration)}} / N/A                   {{"%.2f"|format(viol.extemp)}} / {{"%.2f"|format(viol.limit)}}             N/A
 {% else %}
-{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration)}} / {{"{:3.2f}".format(viol.exp_time)}}                   {{"%.2f"|format(viol.extemp)}} / {{"%.2f"|format(viol.limit[0])}}             {{viol.obsid}}
+{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration)}} / {{"{:3.2f}".format(viol.exp_time)}}                   {{"%.2f"|format(viol.extemp)}} / {{"%.2f"|format(viol.limit)}}             {{viol.obsid}}
 {% endif %}
 {% endfor %}
 =====================  =====================  ========================  =======================  ==================
@@ -65,7 +66,7 @@ Date start             Date stop              Duration / Exposure (ks)  Max Temp
 Date start             Date stop              Duration (ks)      {{extreme}} Temperature / Limit
 =====================  =====================  =================  ===============================
 {% for viol in viols[key] %}
-{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}           {{"{:.2f}".format(viol.extemp)}} / {{"{:.2f}".format(viol.limit[0])}}
+{{viol.datestart}}  {{viol.datestop}}  {{"{:3.2f}".format(viol.duration).rjust(8)}}           {{"{:.2f}".format(viol.extemp)}} / {{"{:.2f}".format(viol.limit)}}
 {% endfor %}
 =====================  =====================  =================  ===============================
 {% endif %}
