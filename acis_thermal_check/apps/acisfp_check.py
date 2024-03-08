@@ -293,7 +293,7 @@ class ACISFPCheck(ACISThermalCheck):
             if idx.size == 0:
                 continue
             row = self.acis_and_ecs_obs[idx[0]]
-            start_science = CxoTime(row["start_science"]).secs
+            start_science = CxoTime(row["start_science"]).secs + row["bias_time"]
             stop_science = CxoTime(row["stop_science"]).secs
             v["exp_time"] = (stop_science - start_science) * 1.0e-3
         return viols, upper_limit, lower_limit
