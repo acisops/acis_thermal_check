@@ -37,7 +37,6 @@ States                 `<states.dat>`_
 
 {% for key in viols %}
 
-{% set key = "hi" %}
 {% if key == "hi" %}
 {% set viol_type = "Upper Limit" %}
 {% set extreme = "Max" %}
