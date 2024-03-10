@@ -164,7 +164,6 @@ class ACISFPCheck(ACISThermalCheck):
                 load_start=load_start,
             )
             plots[name].ax.set_title(self.msid.upper(), loc="left", pad=10)
-            plots[name].add_limit_line(self.limits["yellow_hi"], lw=3)
             upper_limit.plot(
                 fig_ax=(plots[name].fig, plots[name].ax),
                 lw=3,
@@ -172,6 +171,7 @@ class ACISFPCheck(ACISThermalCheck):
                 use_colors=True,
                 show_changes=False,
             )
+            plots[name].add_limit_line(self.limits["yellow_hi"], lw=3)
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
             if i == 0:
