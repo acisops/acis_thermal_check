@@ -923,7 +923,7 @@ class ACISThermalCheck:
                     fmt=".c",
                     zorder=10,
                 )
-            ax.set_title(msid.upper() + " validation", loc="left", pad=10)
+            ax.set_title(msid.upper() + " validation", loc="left", pad=10, fontsize=15)
             ax.set_xlabel("Date")
             ax.set_ylabel(labels[msid])
             ax.grid()
@@ -938,6 +938,13 @@ class ACISThermalCheck:
             # see all of the limits.
             if self.msid == msid:
                 ymin, ymax = ax.get_ylim()
+                ax.axhline(
+                    self.limits["yellow_hi"]["value"],
+                    linestyle="-",
+                    linewidth=2,
+                    zorder=2,
+                    color=self.limits["yellow_hi"]["color"],
+                )
                 if msid == "fptemp":
                     upper_limit.plot(
                         fig_ax=(fig, ax),
@@ -946,15 +953,7 @@ class ACISThermalCheck:
                         use_colors=True,
                         show_changes=False,
                     )
-                    ymax = max(self.limits["acis_hot_b"]["value"] + 1, ymax)
                 else:
-                    ax.axhline(
-                        self.limits["yellow_hi"]["value"],
-                        linestyle="-",
-                        linewidth=2,
-                        zorder=2,
-                        color=self.limits["yellow_hi"]["color"],
-                    )
                     ax.axhline(
                         self.limits["planning_hi"]["value"],
                         linestyle="-",
@@ -962,7 +961,6 @@ class ACISThermalCheck:
                         zorder=2,
                         color=self.limits["planning_hi"]["color"],
                     )
-                    ymax = max(self.limits["yellow_hi"]["value"] + 1, ymax)
                     if "planning_lo" in self.limits:
                         ax.axhline(
                             self.limits["yellow_lo"]["value"],
@@ -979,6 +977,7 @@ class ACISThermalCheck:
                             color=self.limits["planning_lo"]["color"],
                         )
                         ymin = min(self.limits["yellow_lo"]["value"] - 1, ymin)
+                ymax = max(self.limits["yellow_hi"]["value"] + 1, ymax)
                 ax.set_ylim(ymin, ymax)
             ax.set_xlim(xmin, xmax)
 
@@ -1152,14 +1151,15 @@ class ACISThermalCheck:
             fig_id += 1
 
         if self.msid == "fptemp":
-            anchor = (0.295, 0.99)
+            anchor = (0.21, 0.99)
         else:
             anchor = (0.4, 0.99)
         plots[self.msid]["lines"]["ax"].legend(
             bbox_to_anchor=anchor,
             loc="lower left",
-            ncol=3,
-            fontsize=14,
+            ncol=5 if self.msid == "fptemp" else 3,
+            fontsize=12 if self.msid == "fptemp" else 14,
+            columnspacing=1.5,
         )
 
         # Now write all of the plots after possible
