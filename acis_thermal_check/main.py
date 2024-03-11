@@ -718,14 +718,30 @@ class ACISThermalCheck:
             width=w1,
             load_start=load_start,
         )
-        # Add horizontal lines for all relevant limits
         ymin, ymax = plots[self.name].ax.get_ylim()
+        # Add horizontal lines for yellow limits, if necessary
         for key in self.limit_object.alt_names.values():
-            if key.startswith("red"):
-                continue
-            plots[self.name].add_limit_line(self.limits[key])
-            ymax = max(self.limits[key]["value"] + 1, ymax)
-            ymin = min(self.limits[key]["value"] - 1, ymin)
+            if key.startswith("yellow"):
+                plots[self.name].add_limit_line(self.limits[key])
+                ymax = max(self.limits[key]["value"] + 1, ymax)
+                ymin = min(self.limits[key]["value"] - 1, ymin)
+        # Plot lines for upper and lower planning limits
+        upper_limit.plot(
+            fig_ax=(plots[self.name].fig, plots[self.name].ax),
+            lw=3,
+            zorder=2,
+            use_colors=True,
+            show_changes=False,
+        )
+        if lower_limit is not None:
+            lower_limit.plot(
+                fig_ax=(plots[self.name].fig, plots[self.name].ax),
+                lw=3,
+                zorder=2,
+                use_colors=True,
+                show_changes=False,
+                no_label=self.msid != "1dpamzt",
+            )
         plots[self.name].ax.set_title(self.msid.upper(), loc="left", pad=10)
         plots[self.name].ax.set_ylim(ymin, ymax)
         plots[self.name].filename = self.msid.lower() + ".png"
@@ -829,6 +845,13 @@ class ACISThermalCheck:
             states,
             which="high",
         )
+        if self._flag_cold_viols:
+            lower_limit = self.limit_object.get_limit_line(
+                states,
+                which="low",
+            )
+        else:
+            lower_limit = None
 
         # Use an OrderedDict here because we want the plots on the validation
         # page to appear in this order
@@ -933,51 +956,42 @@ class ACISThermalCheck:
                 ptimes = cxctime2plotdate([rz.tstart, rz.tstop])
                 for ptime in ptimes:
                     ax.axvline(ptime, ls="--", color="C2", linewidth=2, zorder=2)
-            # Add horizontal lines for the planning and caution limits
-            # or the limits for the focal plane model. Make sure we can
-            # see all of the limits.
+            # Add lines for all the limits and make sure we can see the
+            # lines by adjusting ymin/ymax accordingly.
             if self.msid == msid:
                 ymin, ymax = ax.get_ylim()
-                ax.axhline(
-                    self.limits["yellow_hi"]["value"],
-                    linestyle="-",
-                    linewidth=2,
+                upper_limit.plot(
+                    fig_ax=(fig, ax),
+                    lw=3,
                     zorder=2,
-                    color=self.limits["yellow_hi"]["color"],
+                    use_colors=True,
+                    show_changes=False,
                 )
-                if msid == "fptemp":
-                    upper_limit.plot(
+                if lower_limit is not None:
+                    lower_limit.plot(
                         fig_ax=(fig, ax),
                         lw=3,
                         zorder=2,
                         use_colors=True,
                         show_changes=False,
+                        no_label=self.msid != "1dpamzt",
                     )
-                else:
-                    ax.axhline(
-                        self.limits["planning_hi"]["value"],
-                        linestyle="-",
-                        linewidth=2,
-                        zorder=2,
-                        color=self.limits["planning_hi"]["color"],
-                    )
-                    if "planning_lo" in self.limits:
+                # Add horizontal lines for yellow limits, if necessary
+                label = "Yellow"
+                for key in self.limit_object.alt_names.values():
+                    if key.startswith("yellow"):
                         ax.axhline(
-                            self.limits["yellow_lo"]["value"],
+                            self.limits[key]["value"],
                             linestyle="-",
                             linewidth=2,
                             zorder=2,
-                            color=self.limits["yellow_lo"]["color"],
+                            color=self.limits[key]["color"],
+                            label=label,
                         )
-                        ax.axhline(
-                            self.limits["planning_lo"]["value"],
-                            linestyle="-",
-                            linewidth=2,
-                            zorder=2,
-                            color=self.limits["planning_lo"]["color"],
-                        )
-                        ymin = min(self.limits["yellow_lo"]["value"] - 1, ymin)
-                ymax = max(self.limits["yellow_hi"]["value"] + 1, ymax)
+                        # Set label to None so we don't repeat it
+                        label = None
+                        ymax = max(self.limits[key]["value"] + 1, ymax)
+                        ymin = min(self.limits[key]["value"] - 1, ymin)
                 ax.set_ylim(ymin, ymax)
             ax.set_xlim(xmin, xmax)
 
