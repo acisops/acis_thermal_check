@@ -4,9 +4,7 @@ from pathlib import Path, PurePath
 import matplotlib.pyplot as plt
 import numpy as np
 import ska_numpy
-import ska_sun
 from ska_matplotlib import cxctime2plotdate, set_time_ticks
-from xija.limits import get_limit_color
 
 TASK_DATA = Path(PurePath(__file__).parent / "..").resolve()
 
