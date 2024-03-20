@@ -10,6 +10,7 @@ DPA temperature 1DPAMYT.  It also generates 1DPAMYT model validation
 plots comparing predicted values to telemetry for the previous three
 weeks.
 """
+
 import sys
 import matplotlib
 
@@ -22,9 +23,11 @@ matplotlib.use("Agg")
 
 class DPAMYTCheck(ACISThermalCheck):
     def __init__(self):
-        valid_limits = { "1DPAMYT": [(1, 2.0), (50, 1.0), (99, 2.0)],
-                                   "PITCH": [(1, 3.0), (99, 3.0)],
-                                   "TSCPOS": [(1, 2.5), (99, 2.5)], }
+        valid_limits = {
+            "1DPAMYT": [(1, 2.0), (50, 1.0), (99, 2.0)],
+            "PITCH": [(1, 3.0), (99, 3.0)],
+            "TSCPOS": [(1, 2.5), (99, 2.5)],
+        }
         # Specify the temperature where only those temps greater
         # than this temperature will be displaye donthe histogram.
         hist_limit = [20.0]
