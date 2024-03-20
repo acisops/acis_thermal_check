@@ -3,7 +3,7 @@
 Change Description
 ==================
 
- The  1PIN1AT and 1CRBT transducer failures had minimal mission impact. 
+The  1PIN1AT and 1CRBT transducer failures had minimal mission impact. 
 
 1DPAMZT is used as a proxy for the internal BEP and FEP PC board temperatures.
 As such, it is an important value in determining the health and performance
