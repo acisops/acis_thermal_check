@@ -11,8 +11,8 @@ plots comparing predicted values to telemetry for the previous three
 weeks.
 """
 
-import sys
 import matplotlib
+import sys
 
 from acis_thermal_check import ACISThermalCheck, get_options
 
