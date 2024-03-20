@@ -489,6 +489,7 @@ class RegressionTester:
         """
         import json
 
+        tidx = 5 if self.msid == "fptemp" else 3
         with open(viol_json) as f:
             viol_data = json.load(f)
         if answer_store:
@@ -497,6 +498,8 @@ class RegressionTester:
             viol_data["duration"] = []
             viol_data["temps"] = []
             if self.msid == "fptemp":
+                viol_data["exposure"] = []
+                viol_data["limit"] = []
                 viol_data["obsids"] = []
         load_year = "20%s" % load_week[-3:-1]
         next_year = f"{int(load_year)+1}"
@@ -519,12 +522,18 @@ class RegressionTester:
                         viol_data["datestarts"].append(words[0])
                         viol_data["datestops"].append(words[1])
                         viol_data["duration"].append(words[2])
-                        viol_data["temps"].append(words[3])
+                        viol_data["temps"].append(words[tidx])
                         if self.msid == "fptemp":
                             if len(words) > 4:
-                                obsid = words[4]
+                                exposure = words[4]
+                                limit = words[7]
+                                obsid = words[8]
                             else:
+                                exposure = ""
+                                limit = ""
                                 obsid = ""
+                            viol_data["exposure"].append(exposure)
+                            viol_data["limit"].append(limit)
                             viol_data["obsids"].append(obsid)
                     else:
                         try:
