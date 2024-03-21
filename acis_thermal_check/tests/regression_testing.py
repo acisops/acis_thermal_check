@@ -568,7 +568,7 @@ class RegressionTester:
                 if line.startswith("Obsid"):
                     read_obsid_data = True
                 elif read_obsid_data:
-                    if len(words) == 6 and not line.startswith("=="):
+                    if len(words) == 7 and not line.startswith("=="):
                         obsid_data.append(words)
                     elif len(words) == 0:
                         read_obsid_data = False
