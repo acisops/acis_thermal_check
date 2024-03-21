@@ -543,6 +543,8 @@ class RegressionTester:
                             assert viol_data["temps"][i] in line
                             if self.msid == "fptemp":
                                 assert viol_data["obsids"][i] in line
+                                assert viol_data["exposure"][i] in line
+                                assert viol_data["limit"][i] in line
                         except AssertionError:
                             raise AssertionError(
                                 "Comparison failed. Check file at %s." % index_rst,
