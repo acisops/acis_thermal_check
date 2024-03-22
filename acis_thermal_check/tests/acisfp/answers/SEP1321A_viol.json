@@ -1,7 +1,7 @@
 {
     "run_start": "2021:251:23:10:06.816",
     "limits": {
-        "planning.data_quality.high.acis_hot": -110.0
+        "planning.data_quality.high.aciss_hot": -110.0
     },
     "datestarts": [
         "2021:256:16:41:34.816"
