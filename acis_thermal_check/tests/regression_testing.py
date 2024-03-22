@@ -4,6 +4,7 @@ import shutil
 import tempfile
 from pathlib import Path, PurePath
 
+import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 
 months = [
@@ -488,6 +489,7 @@ class RegressionTester:
         """
         import json
 
+        tidx = 5 if self.msid == "fptemp" else 3
         with open(viol_json) as f:
             viol_data = json.load(f)
         if answer_store:
@@ -496,6 +498,8 @@ class RegressionTester:
             viol_data["duration"] = []
             viol_data["temps"] = []
             if self.msid == "fptemp":
+                viol_data["exposure"] = []
+                viol_data["limit"] = []
                 viol_data["obsids"] = []
         load_year = "20%s" % load_week[-3:-1]
         next_year = f"{int(load_year)+1}"
@@ -518,12 +522,18 @@ class RegressionTester:
                         viol_data["datestarts"].append(words[0])
                         viol_data["datestops"].append(words[1])
                         viol_data["duration"].append(words[2])
-                        viol_data["temps"].append(words[3])
+                        viol_data["temps"].append(words[tidx])
                         if self.msid == "fptemp":
                             if len(words) > 4:
-                                obsid = words[4]
+                                exposure = words[4]
+                                limit = words[7]
+                                obsid = words[8]
                             else:
+                                exposure = ""
+                                limit = ""
                                 obsid = ""
+                            viol_data["exposure"].append(exposure)
+                            viol_data["limit"].append(limit)
                             viol_data["obsids"].append(obsid)
                     else:
                         try:
@@ -533,6 +543,8 @@ class RegressionTester:
                             assert viol_data["temps"][i] in line
                             if self.msid == "fptemp":
                                 assert viol_data["obsids"][i] in line
+                                assert viol_data["exposure"][i] in line
+                                assert viol_data["limit"][i] in line
                         except AssertionError:
                             raise AssertionError(
                                 "Comparison failed. Check file at %s." % index_rst,
@@ -542,28 +554,35 @@ class RegressionTester:
             with open(viol_json, "w") as f:
                 json.dump(viol_data, f, indent=4)
 
-    def check_hot_acis_reporting(self, load_week, hot_json, answer_store=False):
+    def check_acis_obsids(self, load_week, obsid_json, answer_store=False):
         import json
 
         self.run_model(load_week)
         out_dir = self.outdir / load_week / self.name
-        index_rst = out_dir / "index.rst"
-        hot_data = []
+        index_rst = out_dir / "obsid_table.rst"
+        obsid_data = []
         with open(index_rst) as myfile:
-            read_hot_data = False
+            read_obsid_data = False
             for line in myfile.readlines():
                 words = line.strip().split()
                 if line.startswith("Obsid"):
-                    read_hot_data = True
-                elif read_hot_data:
-                    if len(words) == 6 and not line.startswith("=="):
-                        hot_data.append(words)
+                    read_obsid_data = True
+                elif read_obsid_data:
+                    if len(words) == 7 and not line.startswith("=="):
+                        obsid_data.append(words)
                     elif len(words) == 0:
-                        read_hot_data = False
+                        read_obsid_data = False
         if answer_store:
-            with open(hot_json, "w") as f:
-                json.dump(hot_data, f, indent=4)
+            with open(obsid_json, "w") as f:
+                json.dump(obsid_data, f, indent=4)
         else:
-            with open(hot_json) as f:
-                hot_data_stored = json.load(f)
-                assert_array_equal(hot_data, hot_data_stored)
+            with open(obsid_json) as f:
+                obsid_data_stored = json.load(f)
+                try:
+                    assert_array_equal(obsid_data, obsid_data_stored)
+                except AssertionError:
+                    outlines = "Some entries did not match:\n"
+                    for o1, o2 in zip(obsid_data, obsid_data_stored):
+                        if not np.all(o1 == o2):
+                            outlines += f"{o1} != {o2}\n"
+                    raise AssertionError(outlines)
