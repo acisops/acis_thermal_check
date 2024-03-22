@@ -164,6 +164,8 @@ class ACISFPCheck(ACISThermalCheck):
                 load_start=load_start,
             )
             plots[name].ax.set_title(self.msid.upper(), loc="left", pad=10)
+            # Draw the planning limit line on the plot (broken up
+            # according to condition)
             upper_limit.plot(
                 fig_ax=(plots[name].fig, plots[name].ax),
                 lw=3,
@@ -171,6 +173,7 @@ class ACISFPCheck(ACISThermalCheck):
                 use_colors=True,
                 show_changes=False,
             )
+            # Draw the yellow limit line on the plot
             plots[name].add_limit_line(self.limits["yellow_hi"], lw=3)
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
@@ -280,14 +283,18 @@ class ACISFPCheck(ACISThermalCheck):
                  - science_viols
 
         """
+        # Extract the prediction violations and the limit objects
         viols, upper_limit, lower_limit = super().make_prediction_viols(
             temps, states, load_start
         )
 
         # Store the obsid table
         obs_table = self.limit_object.acis_obs_info.as_table()
+        # use only the obsids after the load start
         idxs = np.where(CxoTime(obs_table["start_science"]).secs > load_start)[0]
         self.acis_and_ecs_obs = obs_table[idxs]
+        # for each violation, add the exposure time to the violation
+        # so we can record it on the page
         for v in viols["hi"]:
             idx = np.where(self.acis_and_ecs_obs["obsid"] == v["obsid"])[0]
             if idx.size == 0:

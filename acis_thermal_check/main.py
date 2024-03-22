@@ -515,10 +515,12 @@ class ACISThermalCheck:
         """
         mylog.info("Checking for limit violations")
 
+        # Get the upper planning limit line
         upper_limit = self.limit_object.get_limit_line(
             states,
             which="high",
         )
+        # Check the violations for the upper planning limit
         viols = {
             "hi": upper_limit.check_violations(
                 self.predict_model,
@@ -526,10 +528,12 @@ class ACISThermalCheck:
             ),
         }
         if self._flag_cold_viols:
+            # Get the lower planning limit line
             lower_limit = self.limit_object.get_limit_line(
                 states,
                 which="low",
             )
+            # Check the violations for the lower planning limit
             viols["lo"] = lower_limit.check_violations(
                 self.predict_model,
                 start_time=load_start,
@@ -841,11 +845,13 @@ class ACISThermalCheck:
 
         self.validate_model = model
 
+        # get the upper planning limit
         upper_limit = self.limit_object.get_limit_line(
             states,
             which="high",
         )
         if self._flag_cold_viols:
+            # get the lower planning limit
             lower_limit = self.limit_object.get_limit_line(
                 states,
                 which="low",
@@ -960,6 +966,7 @@ class ACISThermalCheck:
             # lines by adjusting ymin/ymax accordingly.
             if self.msid == msid:
                 ymin, ymax = ax.get_ylim()
+                # Plot the upper planning limit
                 upper_limit.plot(
                     fig_ax=(fig, ax),
                     lw=3,
@@ -968,6 +975,7 @@ class ACISThermalCheck:
                     show_changes=False,
                 )
                 if lower_limit is not None:
+                    # Plot the lower planning limit
                     lower_limit.plot(
                         fig_ax=(fig, ax),
                         lw=3,
@@ -990,6 +998,9 @@ class ACISThermalCheck:
                         )
                         # Set label to None so we don't repeat it
                         label = None
+                        # ymin and ymax for plots have to be at least
+                        # above/below their yellow limits or the data
+                        # extremes
                         ymax = max(self.limits[key]["value"] + 1, ymax)
                         ymin = min(self.limits[key]["value"] - 1, ymin)
                 ax.set_ylim(ymin, ymax)
@@ -1230,6 +1241,7 @@ class ACISThermalCheck:
         stylesheet_path = str(outdir / "acis_thermal_check.css")
         prefixes = ["index"]
         if self.msid == "fptemp":
+            # For the ACIS FP limit we write out an obsid table
             prefixes.append("obsid_table")
         for prefix in prefixes:
             infile = str(outdir / f"{prefix}.rst")
@@ -1275,6 +1287,7 @@ class ACISThermalCheck:
         with open(outfile, "w") as fout:
             fout.write(template.render(**context))
         if self.msid == "fptemp":
+            # For the ACIS FP limit we write out an obsid table
             context["acis_obs"] = self.acis_and_ecs_obs
             template_path = (
                 TASK_DATA / "acis_thermal_check/templates/obsid_template.rst"
