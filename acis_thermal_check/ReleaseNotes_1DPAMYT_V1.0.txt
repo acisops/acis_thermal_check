@@ -38,6 +38,7 @@ FEB2624
 MAR0424
 MAR1124
 MAR1824
+APR0824
 
 The predicted vs actual temperatures were compared and found to agree within acceptable limits.
 
