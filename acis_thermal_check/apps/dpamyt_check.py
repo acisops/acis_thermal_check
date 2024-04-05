@@ -26,88 +26,15 @@ class DPAMYTCheck(ACISThermalCheck):
                                    "PITCH": [(1, 3.0), (99, 3.0)],
                                    "TSCPOS": [(1, 2.5), (99, 2.5)], }
         # Specify the temperature where only those temps greater
-        # than this temperature will be displaye donthe histogram.
+        # than this temperature will be displayed on the histogram.
         hist_limit = [20.0]
-
-        # Specify the lower planning limit for the zero FEP case.
-        limits_map = {"planning.caution.low": "zero_feps"}
-
+        
         # Call the superclass' __init__ with the arguments
         super().__init__(
             "1dpamyt",
             "dpamyt",
             valid_limits,
-            hist_limit,
-            limits_map=limits_map,
-        )
-
-    def custom_prediction_viols(self, times, temp, viols, load_start):
-        """
-        Custom handling of limit violations. This is for checking the
-        +10 degC violation if all FEPs are off.
-
-        Parameters
-        ----------
-        times : NumPy array
-            The times for the predicted temperatures
-        temp : NumPy array
-            The predicted temperatures
-        viols : dict
-            Dictionary of violations information to add to
-        load_start : float
-            The start time of the load, used so that we only report
-            violations for times later than this time for the model
-            run.
-        """
-        # Only check this violation when all FEPs are off
-        mask = self.predict_model.comp["fep_count"].dvals == 0
-        zf_viols = self._make_prediction_viols(
-            times,
-            temp,
-            load_start,
-            self.limits["zero_feps"].value,
-            "zero-feps",
-            "min",
-            mask=mask,
-        )
-        viols["zero_feps"] = {
-            "name": f"Zero FEPs ({self.limits['zero_feps'].value} C)",
-            "type": "Min",
-            "values": zf_viols,
-        }
-
-    def custom_prediction_plots(self, plots):
-        """
-        Customization of prediction plots.
-
-        Parameters
-        ----------
-        plots : dict of dicts
-            Contains the hooks to the plot figures, axes, and filenames
-            and can be used to customize plots before they are written,
-            e.g. add limit lines, etc.
-        """
-        plots[self.name].add_limit_line(self.limits["zero_feps"], "Zero FEPs", ls="--")
-
-    def custom_validation_plots(self, plots):
-        """
-        Customization of validation plots.
-
-        Parameters
-        ----------
-        plots : dict of dicts
-            Contains the hooks to the plot figures, axes, and filenames
-            and can be used to customize plots before they are written,
-            e.g. add limit lines, etc.
-        """
-        plots["1dpamyt"]["lines"]["ax"].axhline(
-            self.limits["zero_feps"].value,
-            linestyle="--",
-            zorder=-8,
-            color=self.limits["zero_feps"].color,
-            linewidth=2,
-            label="Zero FEPs",
-        )
+            hist_limit)
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
