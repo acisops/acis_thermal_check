@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import ska_numpy
 from ska_matplotlib import cxctime2plotdate, set_time_ticks
-from xija.limits import get_limit_color
 
 TASK_DATA = Path(PurePath(__file__).parent / "..").resolve()
 
@@ -255,7 +254,7 @@ class PlotDate:
         self.ax2 = ax2
         self.filename = None
 
-    def add_limit_line(self, limit, label, ls="-"):
+    def add_limit_line(self, limit, ls="-", lw=2):
         """
         Add a horizontal line for a given limit to the plot.
 
@@ -263,17 +262,24 @@ class PlotDate:
         ----------
         limit : ACISLimit object
             Contains information about the value of the limit
-            and the color it should be plotted with.
-        label : string
-            The label to give the line.
+            the color it should be plotted with, and its label.
         ls : string, optional
             The line style for the limit line. Default: "-"
+        lw : float, optional
+            The line width for the limit line. Default: 2.0
         """
+        label = limit["display_name"]
+        # If the label already exists, we shouldn't need to repeat it
+        # in the legend
+        for line in self.ax.lines:
+            if label == line.get_label():
+                label = None
+                break
         self.ax.axhline(
-            limit.value,
+            limit["value"],
             linestyle=ls,
-            linewidth=2.0,
-            color=limit.color,
+            linewidth=lw,
+            color=limit["color"],
             label=label,
             zorder=2.0,
         )
@@ -281,6 +287,11 @@ class PlotDate:
 
 class PredictPlot(PlotDate):
     _color = thermal_blue
+    _color2 = thermal_blue
+
+
+class ValidatePlot(PlotDate):
+    _color = thermal_red
     _color2 = thermal_blue
 
 
@@ -409,7 +420,7 @@ def make_state_builder(name, args, hrc_states=False):
     args : ArgumentParser arguments
         The arguments to pass to the StateBuilder subclass.
     hrc_states : boolean, optional
-        Whether or not to add HRC-specific states. Default: False
+        Whether to add HRC-specific states. Default: False
     """
     # Import the dictionary of possible state builders. This
     # dictionary is located in state_builder.py
@@ -467,52 +478,3 @@ def paint_perigee(perigee_passages, plots):
             for time in perigee_passages[key]:
                 xpos = cxctime2plotdate([time])[0]
                 plot.ax.axvline(xpos, linestyle=":", color=color, linewidth=2.0)
-
-
-class ChandraLimit:
-    def __init__(self, value, color):
-        self.value = value
-        self.color = color
-
-
-def get_acis_limits(msid, model_spec, limits_map=None):
-    """
-    Given a MSID and a model specification (JSON or dict),
-    return the values and line colors of the limits specified
-    in the file.
-
-    Parameters
-    ----------
-    msid : string
-        The MSID to get the limits for.
-    model_spec : string or dict
-        The xija model specification. If a string, it is
-        assumed to be a JSON file to be read in
-    limits_map : dict, optional
-        If supplied, this will change the keys of the output
-        dict, which are normally the limit names in the model
-        specification, with other names, e.g. replaces
-        "odb.caution.high" with "yellow_hi". Default: None
-
-    Returns
-    -------
-    A dict of dicts, with each dict corresponding to the value of the
-    limit and the color of the line on plots.
-    """
-    import json
-
-    if msid == "fptemp_11":
-        msid = "fptemp"
-    if limits_map is None:
-        limits_map = {}
-    if not isinstance(model_spec, dict):
-        with open(model_spec) as f:
-            model_spec = json.load(f)
-    json_limits = model_spec["limits"][msid]
-    limits = {}
-    for k, v in json_limits.items():
-        if k == "unit":
-            continue
-        key = limits_map.get(k, k)
-        limits[key] = ChandraLimit(v, get_limit_color(k))
-    return limits

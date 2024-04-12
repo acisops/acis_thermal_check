@@ -14,21 +14,13 @@ previous three weeks.
 import sys
 
 import matplotlib
+import numpy as np
 from astropy.table import Table
+from chandra_limits import ACISFPLimit
 from cxotime import CxoTime
 from ska_matplotlib import cxctime2plotdate
 
 from acis_thermal_check import ACISThermalCheck, get_options, mylog
-
-#
-# Import ACIS-specific observation extraction, filtering
-# and attribute support routines.
-#
-from acis_thermal_check.acis_obs import (
-    acis_filter,
-    find_obsid_intervals,
-    hrc_science_obs_filter,
-)
 from acis_thermal_check.utils import PredictPlot, paint_perigee
 
 # Matplotlib setup
@@ -37,17 +29,11 @@ matplotlib.use("Agg")
 
 
 class ACISFPCheck(ACISThermalCheck):
+    _limit_class = ACISFPLimit
+
     def __init__(self):
-        valid_limits = {"PITCH": [(1, 3.0), (99, 3.0)], "TSCPOS": [(1, 2.5), (99, 2.5)]}
+        valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [(-120.0, -100.0)]
-        limits_map = {
-            "planning.data_quality.high.acisi": "acis_i",
-            "planning.data_quality.high.aciss": "acis_s",
-            "planning.data_quality.high.aciss_hot": "acis_hot",
-            "planning.data_quality.high.cold_ecs": "cold_ecs",
-            "planning.warning.high": "planning_hi",
-            "safety.caution.high": "yellow_hi",
-        }
         super().__init__(
             "fptemp",
             "acisfp",
@@ -55,12 +41,10 @@ class ACISFPCheck(ACISThermalCheck):
             hist_limit,
             other_telem=["1dahtbon"],
             other_map={"1dahtbon": "dh_heater", "fptemp_11": "fptemp"},
-            limits_map=limits_map,
         )
         # Create an empty observation list which will hold the results. This
         # list contains all ACIS and all ECS observations.
         self.acis_and_ecs_obs = []
-        self.acis_hot_obs = []
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
@@ -114,7 +98,9 @@ class ACISFPCheck(ACISThermalCheck):
         model.comp["1cbat"].set_data(-53.0)
         model.comp["sim_px"].set_data(-120.0)
 
-    def make_prediction_plots(self, outdir, states, temps, load_start):
+    def make_prediction_plots(
+        self, outdir, states, temps, load_start, upper_limit, lower_limit
+    ):
         """
         Make plots of the thermal prediction as well as associated
         commanded states.
@@ -154,7 +140,7 @@ class ACISFPCheck(ACISThermalCheck):
         w1 = None
         # Make plots of FPTEMP and pitch vs time, looping over
         # three different temperature ranges
-        ylim = [(-120, -79), (-120, -119), (-120.0, -107.5)]
+        ylim = [(-120, -79), (-120, -119), (-120.0, -103.5)]
         ypos = [-110.0, -119.35, -116]
         capwidth = [2.0, 0.1, 0.4]
         textypos = [-108.0, -119.3, -115.7]
@@ -178,18 +164,17 @@ class ACISFPCheck(ACISThermalCheck):
                 load_start=load_start,
             )
             plots[name].ax.set_title(self.msid.upper(), loc="left", pad=10)
-            # Draw a horizontal line indicating cold ECS cutoff
-            plots[name].add_limit_line(self.limits["cold_ecs"], "Cold ECS", ls="--")
-            # Draw a horizontal line showing the ACIS-I cutoff
-            plots[name].add_limit_line(self.limits["acis_i"], "ACIS-I", ls="--")
-            # Draw a horizontal line showing the ACIS-S cutoff
-            plots[name].add_limit_line(self.limits["acis_s"], "ACIS-S", ls="--")
-            # Draw a horizontal line showing the hot ACIS-S cutoff
-            plots[name].add_limit_line(self.limits["acis_hot"], "Hot ACIS-S", ls="--")
-            # Draw a horizontal line showing the planning warning limit
-            plots[name].add_limit_line(self.limits["planning_hi"], "Planning", ls="-")
-            # Draw a horizontal line showing the safety caution limit
-            plots[name].add_limit_line(self.limits["yellow_hi"], "Yellow", ls="-")
+            # Draw the planning limit line on the plot (broken up
+            # according to condition)
+            upper_limit.plot(
+                fig_ax=(plots[name].fig, plots[name].ax),
+                lw=3,
+                zorder=2,
+                use_colors=True,
+                show_changes=False,
+            )
+            # Draw the yellow limit line on the plot
+            plots[name].add_limit_line(self.limits["yellow_hi"], lw=3)
             # Get the width of this plot to make the widths of all the
             # prediction plots the same
             if i == 0:
@@ -242,17 +227,6 @@ class ACISFPCheck(ACISThermalCheck):
                 capsize=4,
                 capthick=2,
                 label="ACIS-S",
-            )
-            plots[name].ax.errorbar(
-                [0.0, 0.0],
-                [1.0, 1.0],
-                xerr=1.0,
-                lw=2,
-                xlolims=True,
-                color="saddlebrown",
-                capsize=4,
-                capthick=2,
-                label="Hot ACIS-S",
             )
 
             # Make the legend on the temperature plot
@@ -309,189 +283,27 @@ class ACISFPCheck(ACISThermalCheck):
                  - science_viols
 
         """
-        # extract the OBSID's from the commanded states. NOTE: this contains all
-        # observations including ECS runs and HRC observations
-        observation_intervals = find_obsid_intervals(states, load_start)
-
-        # Filter out any HRC science observations BUT keep ACIS ECS observations
-        self.acis_and_ecs_obs = hrc_science_obs_filter(observation_intervals)
-
-        times = self.predict_model.times
-
-        mylog.info(
-            f"MAKE VIOLS Checking for limit violations in "
-            f"{len(self.acis_and_ecs_obs)} total science observations",
+        # Extract the prediction violations and the limit objects
+        viols, upper_limit, lower_limit = super().make_prediction_viols(
+            temps, states, load_start
         )
 
-        viols = {}
-
-        # ------------------------------------------------------
-        #   Create subsets of all the observations
-        # ------------------------------------------------------
-        # Now divide out observations by ACIS-S and ACIS-I
-        ACIS_I_obs, ACIS_S_obs, ACIS_hot_obs, sci_ecs_obs = acis_filter(
-            self.acis_and_ecs_obs,
-        )
-
-        temp = temps[self.name]
-
-        # ---------------------------------------------------------------
-        # Planning - Collect any -84 C violations. These are load killers
-        # ---------------------------------------------------------------
-
-        hi_viols = self._make_prediction_viols(
-            times,
-            temp,
-            load_start,
-            self.limits["planning_hi"].value,
-            "planning",
-            "max",
-        )
-        viols = {
-            "hi": {
-                "name": f"Planning High ({self.limits['planning_hi'].value} C)",
-                "type": "Max",
-                "values": hi_viols,
-            },
-        }
-
-        acis_i_limit = self.limits["acis_i"].value
-        acis_s_limit = self.limits["acis_s"].value
-        acis_hot_limit = self.limits["acis_hot"].value
-        cold_ecs_limit = self.limits["cold_ecs"].value
-
-        # ------------------------------------------------------------
-        # ACIS-I - Collect any -112 C violations of any non-ECS ACIS-I
-        # science run. These are load killers
-        # ------------------------------------------------------------
-
-        mylog.info(f"ACIS-I Science ({acis_i_limit} C) violations")
-
-        # Create the violation data structure.
-        acis_i_viols = self.search_obsids_for_viols(
-            "ACIS-I",
-            acis_i_limit,
-            ACIS_I_obs,
-            temp,
-            times,
-            load_start,
-        )
-
-        viols["ACIS_I"] = {
-            "name": f"ACIS-I ({acis_i_limit} C)",
-            "type": "Max",
-            "values": acis_i_viols,
-        }
-
-        # ------------------------------------------------------------
-        # ACIS-S - Collect any -111 C violations of any non-ECS ACIS-S
-        # science run. These are load killers
-        # ------------------------------------------------------------
-
-        mylog.info(f"ACIS-S Science ({acis_s_limit} C) violations")
-
-        acis_s_viols = self.search_obsids_for_viols(
-            "ACIS-S",
-            acis_s_limit,
-            ACIS_S_obs,
-            temp,
-            times,
-            load_start,
-        )
-        viols["ACIS_S"] = {
-            "name": f"ACIS-S ({acis_s_limit} C)",
-            "type": "Max",
-            "values": acis_s_viols,
-        }
-
-        # ------------------------------------------------------------
-        # ACIS-S Hot - Collect any -109 C violations of any non-ECS ACIS-S
-        # science run which can run hot. These are load killers
-        # ------------------------------------------------------------
-        #
-        mylog.info(f"ACIS-S Science ({acis_hot_limit} C) violations")
-
-        acis_hot_viols = self.search_obsids_for_viols(
-            "Hot ACIS-S",
-            acis_hot_limit,
-            ACIS_hot_obs,
-            temp,
-            times,
-            load_start,
-        )
-        viols["ACIS_S_hot"] = {
-            "name": f"ACIS-S Hot ({acis_hot_limit} C)",
-            "type": "Max",
-            "values": acis_hot_viols,
-        }
-
-        # ------------------------------------------------------------
-        # Science Orbit ECS -119.5 violations; -119.5 violation check
-        # ------------------------------------------------------------
-        mylog.info(f"Science Orbit ECS ({cold_ecs_limit} C) violations")
-
-        ecs_viols = self.search_obsids_for_viols(
-            "Science Orbit ECS",
-            cold_ecs_limit,
-            sci_ecs_obs,
-            temp,
-            times,
-            load_start,
-        )
-
-        viols["ecs"] = {
-            "name": f"Science Orbit ECS ({cold_ecs_limit} C)",
-            "type": "Min",
-            "values": ecs_viols,
-        }
-
-        # Store all obsids which can go to -109 C
-        for obs in ACIS_hot_obs:
-            self.acis_hot_obs.append(obs)
-
-        return viols
-
-    def search_obsids_for_viols(
-        self,
-        limit_name,
-        limit,
-        observations,
-        temp,
-        times,
-        load_start,
-    ):
-        """
-        Given a planning limit and a list of observations, find those time intervals
-        where the temp gets warmer than the planning limit and identify which
-        observations (if any) include part or all of those intervals.
-        """
-        viols_list = []
-
-        # Run through all observations
-        for eachobs in observations:
-            # Get the observation start science and stop science times, and obsid
-            obs_tstart = eachobs["start_science"]
-            obs_tstop = eachobs["tstop"]
-            # If the observation is in this load, let's look at it
-            if obs_tstart > load_start:
-                idxs = (times >= obs_tstart) & (times <= obs_tstop)
-                viols = self._make_prediction_viols(
-                    times[idxs],
-                    temp[idxs],
-                    load_start,
-                    limit,
-                    limit_name,
-                    "max",
-                )
-                # If we have flagged any violations, record the obsid for each
-                # and add them to the list
-                if len(viols) > 0:
-                    for viol in viols:
-                        viol["obsid"] = str(eachobs["obsid"])
-                    viols_list += viols
-
-        # Finished - return the violations list
-        return viols_list
+        # Store the obsid table
+        obs_table = self.limit_object.acis_obs_info.as_table()
+        # use only the obsids after the load start
+        idxs = np.where(CxoTime(obs_table["start_science"]).secs > load_start)[0]
+        self.acis_and_ecs_obs = obs_table[idxs]
+        # for each violation, add the exposure time to the violation
+        # so we can record it on the page
+        for v in viols["hi"]:
+            idx = np.where(self.acis_and_ecs_obs["obsid"] == v["obsid"])[0]
+            if idx.size == 0:
+                continue
+            row = self.acis_and_ecs_obs[idx[0]]
+            start_science = CxoTime(row["start_science"]).secs + row["bias_time"]
+            stop_science = CxoTime(row["stop_science"]).secs
+            v["exp_time"] = (stop_science - start_science) * 1.0e-3
+        return viols, upper_limit, lower_limit
 
     def write_temps(self, outdir, times, temps):
         """
@@ -557,7 +369,6 @@ def draw_obsids(
 
         obsid = eachobservation["obsid"]
         in_fp = eachobservation["instrument"]
-        hot_acis = eachobservation["hot_acis"]
 
         if obsid > 60000:
             # ECS observations during the science orbit are colored blue
@@ -568,7 +379,7 @@ def draw_obsids(
             if in_fp == "ACIS-I":
                 color = "red"
             else:
-                color = "saddlebrown" if hot_acis else "green"
+                color = "green"
 
         obsid_txt = str(obsid)
         # If this is an ECS measurement in the science orbit mark
@@ -577,8 +388,10 @@ def draw_obsids(
             obsid_txt += " (ECS)"
 
         # Convert the start and stop times into the Ska-required format
-        obs_start = cxctime2plotdate([eachobservation["tstart"]])
-        obs_stop = cxctime2plotdate([eachobservation["tstop"]])
+        tstart, tstop = CxoTime(
+            [eachobservation["start_science"], eachobservation["stop_science"]],
+        )
+        obs_start, obs_stop = cxctime2plotdate([tstart, tstop])
 
         if in_fp.startswith("ACIS-") or obsid > 60000:
             # For each ACIS Obsid, draw a horizontal line to show

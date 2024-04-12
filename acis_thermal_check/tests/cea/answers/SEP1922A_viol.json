@@ -10,8 +10,8 @@
     ],
     "run_start": "2022:261:23:34:46.816",
     "limits": {
-        "yellow_hi": 11.0,
-        "planning_hi": 7.5
+        "odb.caution.high": 11.0,
+        "planning.warning.high": 7.5
     },
     "duration": [
         "0.66"

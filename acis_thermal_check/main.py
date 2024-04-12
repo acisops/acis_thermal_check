@@ -14,6 +14,7 @@ import numpy as np
 import ska_numpy
 from astropy.io import ascii
 from astropy.table import Table
+from chandra_limits import determine_obsid_info
 from cxotime import CxoTime
 from kadi import events
 from ska_matplotlib import cxctime2plotdate, plot_cxctime, pointpair
@@ -25,7 +26,6 @@ from acis_thermal_check.utils import (
     PredictPlot,
     calc_pitch_roll,
     config_logging,
-    get_acis_limits,
     make_state_builder,
     mylog,
     paint_perigee,
@@ -43,6 +43,8 @@ op_map = {"greater": ">", "greater_equal": ">=", "less": "<", "less_equal": "<="
 
 
 class ACISThermalCheck:
+    _limit_class = None
+    _flag_cold_viols = False
     r"""
     ACISThermalCheck class for making thermal model predictions
     and validating past model data against telemetry
@@ -90,9 +92,6 @@ class ACISThermalCheck:
         internally, so this dict is for "extra" ones such as the 0-FEPs
         +12 C limit for 1DPAMZT. Default: None, meaning no extra
         limits are specified.
-    flag_cold_viols : boolean, optional
-        If set, violations for the lower planning limit will be
-        checked for and flagged, and
     hist_ops : list of strings, optional
         This sets the operations which will be used to create the
         error histograms, e.g., including only temperatures above
@@ -112,30 +111,21 @@ class ACISThermalCheck:
         hist_limit,
         other_telem=None,
         other_map=None,
-        limits_map=None,
-        flag_cold_viols=False,
         hist_ops=None,
     ):
         self.msid = msid
         self.name = name
-        self.validation_limits = validation_limits
+        self.validation_limits = {
+            msid.upper(): validation_limits,
+            "PITCH": [(1, 3.0), (99, 3.0)],
+            "TSCPOS": [(1, 2.5), (99, 2.5)],
+        }
         self.hist_limit = hist_limit
         self.other_telem = other_telem
         self.other_map = other_map
-        self.limits_map = {
-            "odb.caution.high": "yellow_hi",
-            "odb.caution.low": "yellow_lo",
-            "safety.caution.high": "yellow_hi",
-            "safety.caution.low": "yellow_lo",
-            "planning.warning.high": "planning_hi",
-            "planning.warning.low": "planning_lo",
-        }
-        if limits_map is not None:
-            self.limits_map.update(limits_map)
         # Initially, the state_builder is set to None, as it will get
         # set up later
         self.state_builder = None
-        self.flag_cold_viols = flag_cold_viols
         if hist_ops is None:
             hist_ops = ["greater_equal"] * len(hist_limit)
         self.hist_ops = hist_ops
@@ -168,6 +158,19 @@ class ACISThermalCheck:
 
         proc, model_spec = self._setup_proc_and_logger(args)
 
+        # This allows one to override the limits for a particular model
+        # run. THIS SHOULD ONLY BE USED FOR TESTING PURPOSES.
+        if override_limits is not None:
+            for k, v in override_limits.items():
+                if k in model_spec["limits"][self.msid]:
+                    limit = model_spec["limits"][self.msid][k]
+                    mylog.warning("Replacing %s %.2f with %.2f", k, limit, v)
+                    model_spec["limits"][self.msid][k] = v
+
+        # Set up the limit object and limits
+        self.limit_object = self._limit_class(model_spec=model_spec, margin=0.0)
+        self.limits = self.limit_object.limits
+
         # Record the selected state builder in the class attributes
         # If there is no "state_builder" command line argument assume
         # kadi
@@ -183,17 +186,6 @@ class ACISThermalCheck:
         # If args.run_start is not none, write validation and prediction
         # data to a pickle later
         self.write_pickle = args.run_start is not None
-
-        self.limits = get_acis_limits(self.msid, model_spec, limits_map=self.limits_map)
-
-        # This allows one to override the limits for a particular model
-        # run. THIS SHOULD ONLY BE USED FOR TESTING PURPOSES.
-        if override_limits is not None:
-            for k, v in override_limits.items():
-                if k in self.limits:
-                    limit = self.limits[k].value
-                    mylog.warning(f"Replacing {k} {limit:.2f} with {v:.2f}")
-                    self.limits[k].value = v
 
         # Determine the start and stop times either from whatever was
         # stored in state_builder or punt by using NOW and None for
@@ -245,7 +237,7 @@ class ACISThermalCheck:
             plots_validation = defaultdict(lambda: None)
 
         if pred["viols"] is not None:
-            any_viols = sum(len(viol["values"]) for viol in pred["viols"].values())
+            any_viols = sum(len(viol) for viol in pred["viols"].values())
         else:
             any_viols = 0
 
@@ -263,8 +255,6 @@ class ACISThermalCheck:
             "pred_only": args.pred_only,
             "plots_validation": plots_validation,
         }
-        if self.msid == "fptemp":
-            context["acis_hot_obs"] = self.acis_hot_obs
 
         self.write_index_rst(args.outdir, context)
 
@@ -345,6 +335,13 @@ class ACISThermalCheck:
         # Get commanded states and set initial temperature
         states, state0 = self.get_states(tlm, T_init)
 
+        # We have the states, and at this point the ACIS FP model
+        # needs to know the times of the observations to construct
+        # the limit later.
+        if self.msid == "fptemp":
+            obs_list = determine_obsid_info(states)
+            self.limit_object.set_obs_info(obs_list)
+
         # calc_model actually does the model calculation by running
         # model-specific code.
         model = self.calc_model(
@@ -369,11 +366,15 @@ class ACISThermalCheck:
         temps = {self.name: model.comp[self.msid].mvals}
 
         # make_prediction_viols determines the violations and prints them out
-        viols = self.make_prediction_viols(temps, states, tstart)
+        viols, upper_limit, lower_limit = self.make_prediction_viols(
+            temps, states, tstart
+        )
 
         # make_prediction_plots runs the validation of the model
         # against previous telemetry
-        plots = self.make_prediction_plots(outdir, states, temps, tstart)
+        plots = self.make_prediction_plots(
+            outdir, states, temps, tstart, upper_limit, lower_limit
+        )
 
         # write_states writes the commanded states to states.dat
         self.write_states(outdir, states)
@@ -496,65 +497,6 @@ class ACISThermalCheck:
 
         return viols
 
-    def _make_prediction_viols(
-        self,
-        times,
-        temp,
-        load_start,
-        limit,
-        lim_name,
-        lim_type,
-        mask=None,
-    ):
-        if mask is None:
-            mask = np.ones_like(temp, dtype="bool")
-        viols = []
-        if lim_type == "min":
-            bad = (temp <= limit) & mask
-        elif lim_type == "max":
-            bad = (temp >= limit) & mask
-        op = getattr(np, lim_type)
-        # The NumPy black magic of the next two lines is to figure
-        # out which time periods have planning limit violations and
-        # to find the bounding indexes of these times. This will also
-        # find violations which happen for one discrete time value also.
-        bad = np.concatenate(([False], bad, [False]))
-        changes = np.flatnonzero(bad[1:] != bad[:-1]).reshape(-1, 2)
-        # Now go through the periods where the temperature violates
-        # the planning limit and flag the duration and maximum of
-        # the violation
-        for change in changes:
-            # Only report violations which occur after the load being
-            # reviewed starts.
-            in_load = times[change[0]] > load_start or (
-                times[change[0]] < load_start < times[change[1]]
-            )
-            if times[change[0]] > load_start:
-                tstart = times[change[0]]
-            else:
-                tstart = load_start
-            tstop = times[change[1] - 1]
-            datestart = CxoTime(tstart).date
-            datestop = CxoTime(tstop).date
-            duration = tstop - tstart
-            # Only count the violation if it's in the load
-            # and if the duration is more than 10s
-            if in_load and duration >= 10.0:
-                viol = {
-                    "datestart": datestart,
-                    "datestop": datestop,
-                    "duration": duration * 1.0e-3,
-                    "extemp": op(temp[change[0] : change[1]]),
-                }
-                mylog.info(
-                    f"WARNING: {self.msid} violates {lim_name} limit "
-                    + "of %.2f degC from %s to %s"
-                    % (limit, viol["datestart"], viol["datestop"]),
-                )
-                viols.append(viol)
-
-        return viols
-
     def make_prediction_viols(self, temps, states, load_start):
         """
         Find limit violations where predicted temperature is above the
@@ -573,64 +515,33 @@ class ACISThermalCheck:
         """
         mylog.info("Checking for limit violations")
 
-        temp = temps[self.name]
-        times = self.predict_model.times
-
-        hi_viols = self._make_prediction_viols(
-            times,
-            temp,
-            load_start,
-            self.limits["planning_hi"].value,
-            "planning",
-            "max",
+        # Get the upper planning limit line
+        upper_limit = self.limit_object.get_limit_line(
+            states,
+            which="high",
         )
+        # Check the violations for the upper planning limit
         viols = {
-            "hi": {
-                "name": f"Hot ({self.limits['planning_hi'].value} C)",
-                "type": "Max",
-                "values": hi_viols,
-            },
+            "hi": upper_limit.check_violations(
+                self.predict_model,
+                start_time=load_start,
+            ),
         }
-
-        if self.flag_cold_viols:
-            lo_viols = self._make_prediction_viols(
-                times,
-                temp,
-                load_start,
-                self.limits["planning_lo"].value,
-                "planning",
-                "min",
+        if self._flag_cold_viols:
+            # Get the lower planning limit line
+            lower_limit = self.limit_object.get_limit_line(
+                states,
+                which="low",
             )
-            viols["lo"] = {
-                "name": f"Cold ({self.limits['planning_lo'].value} C)",
-                "type": "Min",
-                "values": lo_viols,
-            }
+            # Check the violations for the lower planning limit
+            viols["lo"] = lower_limit.check_violations(
+                self.predict_model,
+                start_time=load_start,
+            )
+        else:
+            lower_limit = None
 
-        # Handle any additional violations one wants to check,
-        # can be overridden by a subclass
-        self.custom_prediction_viols(times, temp, viols, load_start)
-
-        return viols
-
-    def custom_prediction_viols(self, times, temp, viols, load_start):
-        """
-        This method is here to allow a subclass
-        to handle its own violations.
-
-        Parameters
-        ----------
-        times : NumPy array
-            The times for the predicted temperatures
-        temp : NumPy array
-            The predicted temperatures
-        viols : dict
-            Dictionary of violations information to add to
-        load_start : float
-            The start time of the load, used so that we only report
-            violations for times later than this time for the model
-            run.
-        """
+        return viols, upper_limit, lower_limit
 
     def write_states(self, outdir, states):
         """
@@ -765,7 +676,9 @@ class ACISThermalCheck:
             )
         plots[plt_name].filename = f"{plt_name}.png"
 
-    def make_prediction_plots(self, outdir, states, temps, load_start):
+    def make_prediction_plots(
+        self, outdir, states, temps, load_start, upper_limit, lower_limit
+    ):
         """
         Make plots of the thermal prediction as well as associated
         commanded states.
@@ -809,16 +722,31 @@ class ACISThermalCheck:
             width=w1,
             load_start=load_start,
         )
-        # Add horizontal lines for the planning and caution limits
         ymin, ymax = plots[self.name].ax.get_ylim()
-        ymax = max(self.limits["yellow_hi"].value + 1, ymax)
+        # Add horizontal lines for yellow limits, if necessary
+        for key in self.limit_object.alt_names.values():
+            if key.startswith("yellow"):
+                plots[self.name].add_limit_line(self.limits[key])
+                ymax = max(self.limits[key]["value"] + 1, ymax)
+                ymin = min(self.limits[key]["value"] - 1, ymin)
+        # Plot lines for upper and lower planning limits
+        upper_limit.plot(
+            fig_ax=(plots[self.name].fig, plots[self.name].ax),
+            lw=3,
+            zorder=2,
+            use_colors=True,
+            show_changes=False,
+        )
+        if lower_limit is not None:
+            lower_limit.plot(
+                fig_ax=(plots[self.name].fig, plots[self.name].ax),
+                lw=3,
+                zorder=2,
+                use_colors=True,
+                show_changes=False,
+                no_label=self.msid != "1dpamzt",
+            )
         plots[self.name].ax.set_title(self.msid.upper(), loc="left", pad=10)
-        plots[self.name].add_limit_line(self.limits["yellow_hi"], "Yellow")
-        plots[self.name].add_limit_line(self.limits["planning_hi"], "Planning")
-        if self.flag_cold_viols:
-            ymin = min(self.limits["yellow_lo"].value - 1, ymin)
-            plots[self.name].add_limit_line(self.limits["yellow_lo"], None)
-            plots[self.name].add_limit_line(self.limits["planning_lo"], None)
         plots[self.name].ax.set_ylim(ymin, ymax)
         plots[self.name].filename = self.msid.lower() + ".png"
 
@@ -829,10 +757,6 @@ class ACISThermalCheck:
         self._make_state_plots(plots, 1, w1, plot_start, states, load_start)
 
         plots["default"] = plots[self.name]
-
-        # This call allows the specific check tool
-        # to customize plots after the fact
-        self.custom_prediction_plots(plots)
 
         # Make the legend on the temperature plot
         # only now after we've allowed for
@@ -857,18 +781,6 @@ class ACISThermalCheck:
                 plots[key].fig.savefig(outfile)
 
         return plots
-
-    def custom_prediction_plots(self, plots):
-        """
-        Customization of prediction plots.
-
-        Parameters
-        ----------
-        plots : dict of dicts
-            Contains the hooks to the plot figures, axes, and filenames
-            and can be used to customize plots before they are written,
-            e.g. add limit lines, etc.
-        """
 
     def get_histogram_mask(self, tlm, limits):
         """
@@ -918,6 +830,13 @@ class ACISThermalCheck:
         stop = tlm["date"][-1]
         states = self.state_builder.get_validation_states(start, stop)
 
+        # We have the states, and at this point the ACIS FP model
+        # needs to know the times of the observations to construct
+        # the limit later.
+        if self.msid == "fptemp":
+            obs_list = determine_obsid_info(states)
+            self.limit_object.set_obs_info(obs_list)
+
         mylog.info("Calculating %s thermal model for validation", self.name.upper())
 
         # Run the thermal model from the beginning of obtained telemetry
@@ -925,6 +844,20 @@ class ACISThermalCheck:
         model = self.calc_model(model_spec, states, start, stop)
 
         self.validate_model = model
+
+        # get the upper planning limit
+        upper_limit = self.limit_object.get_limit_line(
+            states,
+            which="high",
+        )
+        if self._flag_cold_viols:
+            # get the lower planning limit
+            lower_limit = self.limit_object.get_limit_line(
+                states,
+                which="low",
+            )
+        else:
+            lower_limit = None
 
         # Use an OrderedDict here because we want the plots on the validation
         # page to appear in this order
@@ -1019,7 +952,7 @@ class ACISThermalCheck:
                     fmt=".c",
                     zorder=10,
                 )
-            ax.set_title(msid.upper() + " validation", loc="left", pad=10)
+            ax.set_title(msid.upper() + " validation", loc="left", pad=10, fontsize=15)
             ax.set_xlabel("Date")
             ax.set_ylabel(labels[msid])
             ax.grid()
@@ -1029,77 +962,47 @@ class ACISThermalCheck:
                 ptimes = cxctime2plotdate([rz.tstart, rz.tstop])
                 for ptime in ptimes:
                     ax.axvline(ptime, ls="--", color="C2", linewidth=2, zorder=2)
-            # Add horizontal lines for the planning and caution limits
-            # or the limits for the focal plane model. Make sure we can
-            # see all of the limits.
+            # Add lines for all the limits and make sure we can see the
+            # lines by adjusting ymin/ymax accordingly.
             if self.msid == msid:
                 ymin, ymax = ax.get_ylim()
-                if msid == "fptemp":
-                    ax.axhline(
-                        self.limits["cold_ecs"].value,
-                        linestyle="--",
-                        label="Cold ECS",
-                        color=self.limits["cold_ecs"].color,
+                # Plot the upper planning limit
+                upper_limit.plot(
+                    fig_ax=(fig, ax),
+                    lw=3,
+                    zorder=2,
+                    use_colors=True,
+                    show_changes=False,
+                )
+                if lower_limit is not None:
+                    # Plot the lower planning limit
+                    lower_limit.plot(
+                        fig_ax=(fig, ax),
+                        lw=3,
                         zorder=2,
-                        linewidth=2,
+                        use_colors=True,
+                        show_changes=False,
+                        no_label=self.msid != "1dpamzt",
                     )
-                    ax.axhline(
-                        self.limits["acis_i"].value,
-                        linestyle="--",
-                        label="ACIS-I",
-                        color=self.limits["acis_i"].color,
-                        zorder=2,
-                        linewidth=2,
-                    )
-                    ax.axhline(
-                        self.limits["acis_s"].value,
-                        linestyle="--",
-                        label="ACIS-S",
-                        color=self.limits["acis_s"].color,
-                        zorder=2,
-                        linewidth=2,
-                    )
-                    ax.axhline(
-                        self.limits["acis_hot"].value,
-                        linestyle="--",
-                        label="Hot ACIS",
-                        color=self.limits["acis_hot"].color,
-                        zorder=2,
-                        linewidth=2,
-                    )
-                    ymax = max(self.limits["acis_hot"].value + 1, ymax)
-                else:
-                    ax.axhline(
-                        self.limits["yellow_hi"].value,
-                        linestyle="-",
-                        linewidth=2,
-                        zorder=2,
-                        color=self.limits["yellow_hi"].color,
-                    )
-                    ax.axhline(
-                        self.limits["planning_hi"].value,
-                        linestyle="-",
-                        linewidth=2,
-                        zorder=2,
-                        color=self.limits["planning_hi"].color,
-                    )
-                    ymax = max(self.limits["yellow_hi"].value + 1, ymax)
-                    if self.flag_cold_viols:
+                # Add horizontal lines for yellow limits, if necessary
+                label = "Yellow"
+                for key in self.limit_object.alt_names.values():
+                    if key.startswith("yellow"):
                         ax.axhline(
-                            self.limits["yellow_lo"].value,
+                            self.limits[key]["value"],
                             linestyle="-",
                             linewidth=2,
                             zorder=2,
-                            color=self.limits["yellow_lo"].color,
+                            color=self.limits[key]["color"],
+                            label=label,
                         )
-                        ax.axhline(
-                            self.limits["planning_lo"].value,
-                            linestyle="-",
-                            linewidth=2,
-                            zorder=2,
-                            color=self.limits["planning_lo"].color,
-                        )
-                        ymin = min(self.limits["yellow_lo"].value - 1, ymin)
+                        # Set label to None so we don't repeat it
+                        label = None
+                        # ymin and ymax for plots have to be at least
+                        # above/below their yellow limits or the data
+                        # extremes
+                        ymax = max(self.limits[key]["value"] + 1, ymax)
+                        ymin = min(self.limits[key]["value"] - 1, ymin)
                 ax.set_ylim(ymin, ymax)
             ax.set_xlim(xmin, xmax)
 
@@ -1272,19 +1175,16 @@ class ACISThermalCheck:
 
             fig_id += 1
 
-        # This call allows the specific check tool
-        # to customize plots after the fact
-        self.custom_validation_plots(plots)
-
         if self.msid == "fptemp":
-            anchor = (0.295, 0.99)
+            anchor = (0.21, 0.99)
         else:
             anchor = (0.4, 0.99)
         plots[self.msid]["lines"]["ax"].legend(
             bbox_to_anchor=anchor,
             loc="lower left",
-            ncol=3,
-            fontsize=14,
+            ncol=5 if self.msid == "fptemp" else 3,
+            fontsize=12 if self.msid == "fptemp" else 14,
+            columnspacing=1.5,
         )
 
         # Now write all of the plots after possible
@@ -1316,18 +1216,6 @@ class ACISThermalCheck:
 
         return plots
 
-    def custom_validation_plots(self, plots):
-        """
-        Customization of prediction plots.
-
-        Parameters
-        ----------
-        plots : dict of dicts
-            Contains the hooks to the plot figures, axes, and filenames
-            and can be used to customize plots before they are written,
-            e.g. add limit lines, etc.
-        """
-
     def rst_to_html(self, outdir):
         """
         Render index.rst as HTML
@@ -1351,22 +1239,27 @@ class ACISThermalCheck:
         )
 
         stylesheet_path = str(outdir / "acis_thermal_check.css")
-        infile = str(outdir / "index.rst")
-        outfile = str(outdir / "index.html")
-        publish_file(
-            source_path=infile,
-            destination_path=outfile,
-            writer_name="html",
-            settings_overrides={"stylesheet_path": stylesheet_path},
-        )
+        prefixes = ["index"]
+        if self.msid == "fptemp":
+            # For the ACIS FP limit we write out an obsid table
+            prefixes.append("obsid_table")
+        for prefix in prefixes:
+            infile = str(outdir / f"{prefix}.rst")
+            outfile = str(outdir / f"{prefix}.html")
+            publish_file(
+                source_path=infile,
+                destination_path=outfile,
+                writer_name="html",
+                settings_overrides={"stylesheet_path": stylesheet_path},
+            )
 
-        # Remove the stupid <colgroup> field that docbook inserts.  This
-        # <colgroup> prevents HTML table auto-sizing.
-        del_colgroup = re.compile(r"<colgroup>.*?</colgroup>", re.DOTALL)
-        with open(outfile) as f:
-            outtext = del_colgroup.sub("", f.read())
-        with open(outfile, "w") as f:
-            f.write(outtext)
+            # Remove the stupid <colgroup> field that docbook inserts.  This
+            # <colgroup> prevents HTML table auto-sizing.
+            del_colgroup = re.compile(r"<colgroup>.*?</colgroup>", re.DOTALL)
+            with open(outfile) as f:
+                outtext = del_colgroup.sub("", f.read())
+            with open(outfile, "w") as f:
+                f.write(outtext)
 
     def write_index_rst(self, outdir, context):
         """
@@ -1393,6 +1286,23 @@ class ACISThermalCheck:
         # Render the template and write it to a file
         with open(outfile, "w") as fout:
             fout.write(template.render(**context))
+        if self.msid == "fptemp":
+            # For the ACIS FP limit we write out an obsid table
+            context["acis_obs"] = self.acis_and_ecs_obs
+            template_path = (
+                TASK_DATA / "acis_thermal_check/templates/obsid_template.rst"
+            )
+            outfile = outdir / "obsid_table.rst"
+            # Open up the reST template and send the context to it using jinja2
+            with open(template_path) as fin:
+                index_template = fin.read()
+                index_template = re.sub(r" %}\n", " %}", index_template)
+                template = jinja2.Template(index_template)
+            # Render the template and write it to a file
+            with open(outfile, "w") as fout:
+                fout.write(
+                    template.render(acis_obs=self.acis_and_ecs_obs, bsdir=self.bsdir)
+                )
 
     def _setup_proc_and_logger(self, args):
         """
@@ -1549,6 +1459,8 @@ class ACISThermalCheck:
 
 
 class DPABoardTempCheck(ACISThermalCheck):
+    _flag_cold_viols = True
+
     def __init__(
         self,
         msid,
@@ -1566,6 +1478,5 @@ class DPABoardTempCheck(ACISThermalCheck):
             hist_limit,
             other_telem=other_telem,
             other_map=other_map,
-            flag_cold_viols=True,
             hist_ops=hist_ops,
         )

@@ -13,6 +13,7 @@ comparing predicted values to telemetry for the previous three weeks.
 import sys
 
 import matplotlib
+from chandra_limits import BEPPCBLimit
 
 from acis_thermal_check import DPABoardTempCheck, get_options
 
@@ -23,12 +24,10 @@ matplotlib.use("Agg")
 
 
 class BEPPCBCheck(DPABoardTempCheck):
+    _limit_class = BEPPCBLimit
+
     def __init__(self):
-        valid_limits = {
-            "TMP_BEP_PCB": [(1, 2.0), (50, 1.0), (99, 2.0)],
-            "PITCH": [(1, 3.0), (99, 3.0)],
-            "TSCPOS": [(1, 2.5), (99, 2.5)],
-        }
+        valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
         hist_limit = [20.0, 20.0]  # First limit is >=, second limit is <=
         super().__init__("tmp_bep_pcb", "bep_pcb", valid_limits, hist_limit)
 
