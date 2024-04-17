@@ -11,6 +11,7 @@ plots comparing predicted values to telemetry for the previous three
 weeks.
 """
 import sys
+
 import matplotlib
 
 from acis_thermal_check import ACISThermalCheck, get_options
@@ -22,19 +23,17 @@ matplotlib.use("Agg")
 
 class DPAMYTCheck(ACISThermalCheck):
     def __init__(self):
-        valid_limits = { "1DPAMYT": [(1, 2.0), (50, 1.0), (99, 2.0)],
-                                   "PITCH": [(1, 3.0), (99, 3.0)],
-                                   "TSCPOS": [(1, 2.5), (99, 2.5)], }
+        valid_limits = {
+            "1DPAMYT": [(1, 2.0), (50, 1.0), (99, 2.0)],
+            "PITCH": [(1, 3.0), (99, 3.0)],
+            "TSCPOS": [(1, 2.5), (99, 2.5)],
+        }
         # Specify the temperature where only those temps greater
         # than this temperature will be displayed on the histogram.
         hist_limit = [20.0]
-        
+
         # Call the superclass' __init__ with the arguments
-        super().__init__(
-            "1dpamyt",
-            "dpamyt",
-            valid_limits,
-            hist_limit)
+        super().__init__("1dpamyt", "dpamyt", valid_limits, hist_limit)
 
     def _calc_model_supp(self, model, state_times, states, ephem, state0):
         """
