@@ -13,6 +13,7 @@ weeks.
 import sys
 
 import matplotlib
+from chandra_limits import DPAMYTLimit
 
 from acis_thermal_check import ACISThermalCheck, get_options
 
@@ -22,6 +23,8 @@ matplotlib.use("Agg")
 
 
 class DPAMYTCheck(ACISThermalCheck):
+    _limit_class = DPAMYTLimit
+
     def __init__(self):
         valid_limits = [(1, 2.0), (50, 1.0), (99, 2.0)]
 
