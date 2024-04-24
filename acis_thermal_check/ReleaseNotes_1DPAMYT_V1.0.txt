@@ -11,7 +11,7 @@ of the instrument.
 
 If the 1DPAMZT transducer fails, we could switch to using the 1DPAMYT
 transducer values to substitute for the 1DPAMZT values. A new 1DPAMYT
-thermal model was created and fitted.  Limits have to be adjusted so that the 1DPAMYT
+thermal model was created and fitted.  Limits were selected so that the 1DPAMYT
 limits reflect the same FEP and BEP board temperatures as the 1DPAMZT limits.
 
 The new model uses the new Chandra Limits.
