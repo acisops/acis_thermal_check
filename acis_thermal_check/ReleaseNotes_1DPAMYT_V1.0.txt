@@ -1,0 +1,73 @@
+
+
+Change Description
+==================
+
+The  1PIN1AT and 1CRBT transducer failures had minimal mission impact. 
+
+1DPAMZT is used as a proxy for the internal BEP and FEP PC board temperatures.
+As such, it is an important value in determining the health and performance
+of the instrument.
+
+If the 1DPAMZT transducer fails, we could switch to using the 1DPAMYT
+transducer values to substitute for the 1DPAMZT values. A new 1DPAMYT
+thermal model was created and fitted.  Limits were selected so that the 1DPAMYT
+limits reflect the same FEP and BEP board temperatures as the 1DPAMZT limits.
+
+The new model uses the new Chandra Limits.
+ 
+
+Files Changed:
+==============
+
+The changed and added files can be seen in this PR:
+
+https://github.com/acisops/acis_thermal_check/pull/72
+https://github.com/sot/chandra_models/pull/124
+https://github.com/sot/chandra_limits/pull/14
+
+
+
+Testing:
+======== 
+
+The model and the updated Chandra Limits code was tested, using the
+following loads:
+
+JAN2224
+JAN2324
+FEB1124
+FEB1924
+FEB2624
+MAR0424
+MAR1124
+MAR1824
+APR0124
+APR0824
+APR1524
+APR2024
+
+The predicted vs actual temperatures were compared and found to agree
+within acceptable limits.
+
+The ACIS load review software will be modified to execute this new model
+in order to continue the test of the model and the fit. But it will not be used
+to plan missions.
+
+
+Interface impacts
+=================
+
+None
+
+
+Review
+====== 
+
+ACIS Ops
+
+
+Deployment Plan
+===============
+
+Deploy as soon as FSDS approval given.
