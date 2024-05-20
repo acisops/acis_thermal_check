@@ -447,7 +447,12 @@
             "planning.data_quality.high.aciss": -111.0,
             "planning.data_quality.high.aciss_hot": -109.0, 
             "planning.data_quality.high.aciss_hot_b": -105.0,
-            "planning.data_quality.high.cold_ecs": -118.2,
+            "planning.data_quality.high.cold_ecs": -118.2, 
+            "planning.data_quality.high.acis_0": -111.0,
+            "planning.data_quality.high.acis_1": -108.0,
+            "planning.data_quality.high.acis_2": -105.0,
+            "planning.data_quality.high.grating_0": -109.0,
+            "planning.data_quality.high.grating_1": -105.0,
             "planning.warning.high": -84.0,
             "safety.caution.high": -80.0,
             "unit": "degC"
