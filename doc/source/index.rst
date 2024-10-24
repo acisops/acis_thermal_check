@@ -18,9 +18,9 @@ Overview
 ``acis_thermal_check`` is a library which provides the tools to use and maintain
 *Chandra* thermal models.  More specifically, ``acis_thermal_check`` generates 
 backstop load review outputs for checking ACIS temperatures such as 1DEAMZT, 
-1DPAMZT, 1PDEAAT, and the ACIS focal plane temperature. It also generates model 
-validation plots for these temperatures comparing predicted values to telemetry 
-for the previous three weeks.
+1DPAMZT, 1PDEAAT, the ACIS focal plane temperature, and the HRC CEA model. It 
+also generates model validation plots for these temperatures comparing predicted 
+values to telemetry for the previous three weeks.
 
 Documentation Contents
 ----------------------
