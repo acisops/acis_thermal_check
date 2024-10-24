@@ -18,7 +18,7 @@ Validation plots are used to compare model outputs of the temperature and other
 quantities vs. actual past data which was telemetered from the spacecraft. 
 Histograms of data - model errors are shown and error quantiles are also listed.
 
-More information on how to use `acis_thermal_check` can be foun in the 
+More information on how to use `acis_thermal_check` can be found in the 
 [documentation](https://cxc.cfa.harvard.edu/acis/acis_thermal_check). Example 
 web pages for the most recent load review can be found 
 [here](https://asc.harvard.edu/acis/Thermal/index.html). 
