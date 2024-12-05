@@ -174,7 +174,7 @@ class ACISThermalCheck:
         # Record the selected state builder in the class attributes
         # If there is no "state_builder" command line argument assume
         # kadi
-        hrc_states = self.name in ["cea", "acisfp"]
+        hrc_states = any(p["comp_name"] == "215pcast_off" for p in model_spec["pars"])
         state_builder = getattr(args, "state_builder", "kadi")
         mylog.info(f"ACISThermalCheck is using the '{state_builder}' state builder.")
         self.state_builder = make_state_builder(
