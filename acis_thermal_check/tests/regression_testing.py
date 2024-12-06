@@ -167,6 +167,7 @@ class RegressionTester:
         atc_kwargs=None,
         test_root=None,
         sub_dir=None,
+        model_spec=None,
     ):
         if atc_args is None:
             atc_args = ()
@@ -185,7 +186,11 @@ class RegressionTester:
         if sub_dir is not None:
             rootdir = rootdir / sub_dir
         self.outdir = rootdir.resolve()
-        self.test_model_spec = tests_path / self.name / f"{self.name}_test_spec.json"
+        if model_spec is None:
+            specfile = f"{self.name}_test_spec.json"
+        else:
+            specfile = model_spec
+        self.test_model_spec = tests_path / self.name / specfile
         if not self.outdir.exists():
             self.outdir.mkdir(parents=True)
 
