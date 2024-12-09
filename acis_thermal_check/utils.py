@@ -453,6 +453,7 @@ def make_state_builder(name, args, hrc_states=False):
             outdir=args.outdir,
             verbose=args.verbose,
             logger=mylog,
+            hrc_states=hrc_states,
         )
     else:
         raise RuntimeError(f"No such state builder with name {name}!")

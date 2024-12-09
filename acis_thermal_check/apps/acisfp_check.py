@@ -98,6 +98,12 @@ class ACISFPCheck(ACISThermalCheck):
         model.comp["1cbat"].set_data(-53.0)
         model.comp["sim_px"].set_data(-120.0)
 
+        if "215pcast_off" in model.comp:
+            # Set the HRC 15 volt state
+            # NOTE: Because of an error in AP, the correct state is 215PCAST=OFF,
+            # which indicates that the HRC 15V is ON.
+            model.comp["215pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
+
     def make_prediction_plots(
         self, outdir, states, temps, load_start, upper_limit, lower_limit
     ):
@@ -253,11 +259,11 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Now write all the plots after possible
         # customizations have been made
-        for key in plots:
+        for key, plot in plots.items():
             if key != self.msid:
-                outfile = outdir / plots[key].filename
+                outfile = outdir / plot.filename
                 mylog.info("Writing plot file %s", outfile)
-                plots[key].fig.savefig(outfile)
+                plot.fig.savefig(outfile)
 
         return plots
 

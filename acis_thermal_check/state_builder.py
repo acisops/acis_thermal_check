@@ -41,12 +41,14 @@ class StateBuilder:
     should not be used by itself, but subclassed.
     """
 
-    def __init__(self, logger=None):
+    def __init__(self, logger=None, hrc_states=False):
         if logger is None:
             # Make a logger but with no output
             logger = logging.getLogger("statebuilder-no-logger")
         self.logger = logger
         self.state_keys = STATE_KEYS.copy()
+        if hrc_states:
+            self.state_keys += ["hrc_15v", "hrc_24v", "hrc_i", "hrc_s"]
 
     def get_prediction_states(self, tlm):
         """
@@ -132,9 +134,7 @@ class KadiStateBuilder(StateBuilder):
         hrc_states : boolean, optional
             Whether to add HRC-specific states. Default: False
         """
-        super().__init__(logger=logger)
-        if hrc_states:
-            self.state_keys += ["hrc_15v", "hrc_24v", "hrc_i", "hrc_s"]
+        super().__init__(logger=logger, hrc_states=hrc_states)
 
         # Note: `interrupt` is ignored in this class. This concept is not needed
         # since backstop 6.9, which provides the RUNNING_LOAD_TERMINATION_TIME
@@ -247,6 +247,7 @@ class ACISStateBuilder(StateBuilder):
         outdir=None,
         verbose=2,
         logger=None,
+        hrc_states=False,
     ):
         """
         Give the ACISStateBuilder arguments that were passed in
@@ -270,6 +271,8 @@ class ACISStateBuilder(StateBuilder):
               - obtained from the model invocation command line arguments.
         logger : Logger object, optional
             The Python Logger object to be used when logging.
+        hrc_states : boolean, optional
+            Whether to add HRC-specific states. Default: False
         """
         # Import the BackstopHistory class
         from backstop_history import BackstopHistory
@@ -284,7 +287,7 @@ class ACISStateBuilder(StateBuilder):
             outdir,
             verbose,
         )
-        super().__init__()
+        super().__init__(hrc_states=hrc_states)
 
         # Save some arguments to class attributes
         self.interrupt = interrupt
