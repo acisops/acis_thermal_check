@@ -257,11 +257,11 @@ class ACISFPCheck(ACISThermalCheck):
 
         # Now write all the plots after possible
         # customizations have been made
-        for key in plots:
+        for key, plot in plots.items():
             if key != self.msid:
-                outfile = outdir / plots[key].filename
+                outfile = outdir / plot.filename
                 mylog.info("Writing plot file %s", outfile)
-                plots[key].fig.savefig(outfile)
+                plot.fig.savefig(outfile)
 
         return plots
 
