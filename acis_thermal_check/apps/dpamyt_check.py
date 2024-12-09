@@ -10,6 +10,7 @@ DPA temperature 1DPAMYT.  It also generates 1DPAMYT model validation
 plots comparing predicted values to telemetry for the previous three
 weeks.
 """
+
 import sys
 
 import matplotlib
