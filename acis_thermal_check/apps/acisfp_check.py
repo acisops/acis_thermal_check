@@ -100,6 +100,8 @@ class ACISFPCheck(ACISThermalCheck):
 
         if "215pcast_off" in model.comp:
             # Set the HRC 15 volt state
+            # NOTE: Because of an error in AP, the correct state is 215PCAST=OFF,
+            # which indicates that the HRC 15V is ON.
             model.comp["215pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
 
     def make_prediction_plots(
