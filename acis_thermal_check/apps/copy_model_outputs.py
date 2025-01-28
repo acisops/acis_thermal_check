@@ -59,6 +59,8 @@ def main():
         copy_path = (
             base_path / f"{model}_thermPredic" / load_week / f"ofls{load_letter}"
         )
+        if not copy_path.exists() and not args.dry_run:
+            copy_path.mkdir(parents=True)
         if args.dry_run:
             print(f"Would copy {model_path} to {copy_path}.")
         else:
