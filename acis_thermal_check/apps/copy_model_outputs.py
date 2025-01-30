@@ -37,11 +37,6 @@ def main():
 
     load_name = args.load.upper()
     load_week, load_letter = load_name[:7], load_name[7].lower()
-    load_year = f"20{load_week[-2:]}"
-
-    load_dir = load_path / load_year / load_week / f"ofls{load_letter}"
-    if not load_dir.exists():
-        raise ValueError(f"Load directory {load_dir} does not exist")
 
     location = Path(args.location)
     if not location.exists():
