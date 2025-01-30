@@ -4,7 +4,7 @@ import shutil
 from argparse import ArgumentParser
 from pathlib import Path
 
-model_choices = ["DPA", "DEA", "PSMC", "FP"]
+model_choices = ["dpa", "dea", "psmc", "fp"]
 
 base_path = Path("/proj/web-cxc/htdocs/acis")
 load_path = Path("/data/acis/LoadReviews")
@@ -18,11 +18,15 @@ def main():
         type=str,
         help="The model to copy",
     )
-
+    parser.add_argument(
+        "location",
+        type=str,
+        help="The location of the model files to copy",
+    )
     parser.add_argument(
         "load",
         type=str,
-        help="The load name to copy. Must be 8 characters, e.g. 'JAN2725A'",
+        help="The load name. Must be 8 characters, e.g. 'JAN2725A'",
     )
     parser.add_argument(
         "--overwrite", action="store_true", help="Overwrite existing files."
@@ -44,24 +48,22 @@ def main():
     if not load_dir.exists():
         raise ValueError(f"Load directory {load_dir} does not exist")
 
-    if args.model == "all":
-        models = model_choices
-    else:
-        models = args.model.split(",")
+    if args.model not in model_choices:
+        raise ValueError(f"Model {args.model} is not a valid model!")
 
-    for model in models:
-        if model not in model_choices:
-            raise ValueError(f"Model {model} is not a valid model!")
-        model_dir = "out_fptemp" if model == "FP" else f"out_{model.lower()}"
-        model_path = load_dir / model_dir
-        if not model_path.exists():
-            raise ValueError(f"Model directory {model_path} does not exist")
-        copy_path = (
-            base_path / f"{model}_thermPredic" / load_week / f"ofls{load_letter}"
-        )
-        if not copy_path.exists() and not args.dry_run:
-            copy_path.mkdir(parents=True)
-        if args.dry_run:
-            print(f"Would copy {model_path} to {copy_path}.")
-        else:
-            shutil.copytree(model_path, copy_path, dirs_exist_ok=args.overwrite)
+    location = Path(args.location)
+    if not location.exists():
+        raise ValueError(f"Model location {location} does not exist!")
+
+    copy_path = (
+        base_path
+        / f"{args.model.upper()}_thermPredic"
+        / load_week
+        / f"ofls{load_letter}"
+    )
+    if not copy_path.exists() and not args.dry_run:
+        copy_path.mkdir(parents=True)
+    if args.dry_run:
+        print(f"Would copy {location} to {copy_path}.")
+    else:
+        shutil.copytree(location, copy_path, dirs_exist_ok=args.overwrite)
