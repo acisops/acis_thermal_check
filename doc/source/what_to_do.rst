@@ -7,7 +7,9 @@ The ACIS Load Review script ``lr`` runs the thermal models that are used to
 approve a load for flight. Occasionally, one of these model scripts might fail 
 to run. If help is not available to determine a reason for the failure, these
 are some steps that may be taken, which involve running the model script manually
-outside of ``lr``. 
+outside of ``lr``. Many of these scenarios invovle running the model script with
+additional flags, all of which are detailed in :ref:`cmd-line-args`, but we provide
+some examples here.
 
 Running a Model Manually
 ========================
@@ -36,6 +38,17 @@ can be done with the ``--pred-only`` flag:
 .. code-block:: text
 
     barth-v.acisdude:~[105]> dpa_check --oflsdir=/data/acis/LoadReviews/2025/JAN2725/ofls --pred-only --out=test_jan2725_dpa
+
+Running on Loads that are Interrupted
+=====================================
+
+If the load under review is a return to science from a shutdown, or a replan due to a TOO, then 
+you would have run ``lr`` with the ``--break`` flag. If you have to run a model manually under
+these circumstances, you should use the ``--interrupt`` flag:
+
+.. code-block:: text
+
+    barth-v.acisdude:~[105]> dpa_check --oflsdir=/data/acis/LoadReviews/2025/JAN2725/ofls --interrupt --out=test_jan2725_dpa
 
 Running with the ``kadi`` State Builder
 =======================================
