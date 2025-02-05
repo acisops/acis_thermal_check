@@ -21,6 +21,7 @@ entry_points = {
         "fep1_actel_check = acis_thermal_check.apps.fep1_actel_check:main",
         "bep_pcb_check = acis_thermal_check.apps.bep_pcb_check:main",
         "cea_check = acis_thermal_check.apps.cea_check:main",
+        "copy_model_outputs = acis_thermal_check.apps.copy_model_outputs:main",
     ],
 }
 

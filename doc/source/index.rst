@@ -33,3 +33,4 @@ Documentation Contents
    running_models
    developing_models
    test_suite
+   what_to_do

@@ -218,8 +218,10 @@ class ACISThermalCheck:
                 model_spec,
                 args.outdir,
             )
+            mylog.info("Model prediction complete.")
         else:
             pred = defaultdict(lambda: None)
+            mylog.info("No model prediction run.")
 
         # Validation
         if not args.pred_only:
@@ -232,9 +234,11 @@ class ACISThermalCheck:
             valid_viols = self.make_validation_viols(plots_validation)
             if len(valid_viols) > 0:
                 mylog.warning("validation warning(s) in output at %s" % args.outdir)
+            mylog.info("Model validation complete.")
         else:
             valid_viols = defaultdict(lambda: None)
             plots_validation = defaultdict(lambda: None)
+            mylog.info("No model validation run.")
 
         if pred["viols"] is not None:
             any_viols = sum(len(viol) for viol in pred["viols"].values())

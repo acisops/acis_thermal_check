@@ -54,6 +54,8 @@ do not have this alias, you can set it up in your startup file:
 In either case, all commands (e.g. ``dpa_check``, ``dea_check``, etc.) should 
 be in your path after running one of the two aliases.
 
+.. _cmd-line-args:
+
 Base Command-Line Arguments
 ===========================
 
@@ -99,8 +101,8 @@ the path to the backstop file and the output directory for the files:
 In this case, we only supplied the directory containing the backstop file, 
 assuming that there is only one present. If the load being reviewed is a return 
 to science from a shutdown, or a replan due to a TOO, or any other interrupt, 
-the thermal model should be run with the ``--interrupt`` flag to ensure 
-commanded states are properly determined:
+the thermal model should be run with the ``--interrupt`` flag to ensure that the 
+continuity is properly handled:
 
 .. code-block:: text
 
@@ -130,3 +132,6 @@ validate:
 .. code-block:: text
 
     [~]$ dpa_check --run-start=2019:300:12:50:00 --outdir=validate_dec2019
+
+A page describing how to use these options if something goes wrong with the model runs
+performed by the ACIS Ops ``lr`` script can be found at :ref:`what-to-do`.
