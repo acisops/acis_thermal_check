@@ -1,3 +1,4 @@
+import logging
 import os
 import pickle
 import shutil
@@ -168,7 +169,11 @@ class RegressionTester:
         test_root=None,
         sub_dir=None,
         model_spec=None,
+        caplog=None,
     ):
+        if caplog is not None:
+            caplog.set_level(logging.WARNING, logger="matplotlib")
+            caplog.set_level(logging.WARNING, logger="numba")
         if atc_args is None:
             atc_args = ()
         if atc_kwargs is None:
@@ -589,5 +594,5 @@ class RegressionTester:
                     outlines = "Some entries did not match:\n"
                     for o1, o2 in zip(obsid_data, obsid_data_stored):
                         if not np.all(o1 == o2):
-                            outlines += f"{o1} != {o2}\n"
+                            outlines += f"Ref:  {o1}\nTest: {o2}\n\n"
                     raise AssertionError(outlines)
