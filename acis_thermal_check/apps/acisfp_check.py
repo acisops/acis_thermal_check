@@ -152,7 +152,7 @@ class ACISFPCheck(ACISThermalCheck):
         textypos = [-108.0, -119.3, -115.7]
         fontsize = [12, 9, 9]
         for i in range(3):
-            name = f"{self.name}_{i+1}"
+            name = f"{self.name}_{i + 1}"
             plots[name] = PredictPlot(
                 fig_id=i + 1,
                 x=times,
@@ -379,7 +379,7 @@ def draw_obsids(
         if obsid > 60000:
             # ECS observations during the science orbit are colored blue
             color = "blue"
-        else:
+        else:  # noqa: PLR5501
             # Color all ACIS-S observations green; all ACIS-I
             # observations red
             if in_fp == "ACIS-I":

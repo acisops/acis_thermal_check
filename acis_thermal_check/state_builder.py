@@ -187,9 +187,9 @@ class KadiStateBuilder(StateBuilder):
         ok = bs_cmds["event_type"] == "RUNNING_LOAD_TERMINATION_TIME"
         if np.any(ok):
             rltt = CxoTime(bs_dates[ok][0])
-        else:
+        else:  # noqa: PLR5501
             # Handle the case of old loads (prior to backstop 6.9) where there
-            # is no RLTT.  If the first command is AOACRSTD this indicates the
+            # is no RLTT. If the first command is AOACRSTD this indicates the
             # beginning of a maneuver ATS which may overlap by 3 mins with the
             # previous loads because of the AOACRSTD command. So move the RLTT
             # forward by 3 minutes (exactly 180.0 sec). If the first command is

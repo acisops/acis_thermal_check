@@ -80,10 +80,10 @@ def main():
         prefix = "Copied"
         try:
             shutil.copytree(location, copy_path, dirs_exist_ok=args.overwrite)
-        except FileExistsError:
+        except FileExistsError as exc:
             raise IOError(
                 f"Files already exist in {copy_path} and --overwrite is not specified!"
-            )
+            ) from exc
     print(f"{prefix} contents of {location} to {copy_path}.")
 
 
