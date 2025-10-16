@@ -1,3 +1,4 @@
+import logging
 import os
 import pickle
 import shutil
@@ -155,8 +156,8 @@ def exception_catcher(test, old, new, data_type, **kwargs):
         old = old.astype("U")
     try:
         test(old, new, **kwargs)
-    except AssertionError:
-        raise AssertionError(f"{data_type} are not the same!")
+    except AssertionError as exc:
+        raise AssertionError(f"{data_type} are not the same!") from exc
 
 
 class RegressionTester:
@@ -168,7 +169,11 @@ class RegressionTester:
         test_root=None,
         sub_dir=None,
         model_spec=None,
+        caplog=None,
     ):
+        if caplog is not None:
+            caplog.set_level(logging.WARNING, logger="matplotlib")
+            caplog.set_level(logging.WARNING, logger="numba")
         if atc_args is None:
             atc_args = ()
         if atc_kwargs is None:
@@ -507,7 +512,7 @@ class RegressionTester:
                 viol_data["limit"] = []
                 viol_data["obsids"] = []
         load_year = "20%s" % load_week[-3:-1]
-        next_year = f"{int(load_year)+1}"
+        next_year = f"{int(load_year) + 1}"
         self.run_model(
             load_week,
             run_start=viol_data["run_start"],
@@ -542,7 +547,7 @@ class RegressionTester:
                             viol_data["obsids"].append(obsid)
                     else:
                         try:
-                            assert viol_data["datestarts"][i] in line
+                            assert viol_data["datestarts"][i] in line  # noqa: S101
                             assert viol_data["datestops"][i] in line
                             assert viol_data["duration"][i] in line
                             assert viol_data["temps"][i] in line
@@ -550,10 +555,10 @@ class RegressionTester:
                                 assert viol_data["obsids"][i] in line
                                 assert viol_data["exposure"][i] in line
                                 assert viol_data["limit"][i] in line
-                        except AssertionError:
+                        except AssertionError as exc:
                             raise AssertionError(
                                 "Comparison failed. Check file at %s." % index_rst,
-                            )
+                            ) from exc
                     i += 1
         if answer_store:
             with open(viol_json, "w") as f:
@@ -585,9 +590,9 @@ class RegressionTester:
                 obsid_data_stored = json.load(f)
                 try:
                     assert_array_equal(obsid_data, obsid_data_stored)
-                except AssertionError:
+                except AssertionError as exc:
                     outlines = "Some entries did not match:\n"
                     for o1, o2 in zip(obsid_data, obsid_data_stored):
                         if not np.all(o1 == o2):
-                            outlines += f"{o1} != {o2}\n"
-                    raise AssertionError(outlines)
+                            outlines += f"Ref:  {o1}\nTest: {o2}\n\n"
+                    raise AssertionError(outlines) from exc
