@@ -5,6 +5,7 @@ import shutil
 import tempfile
 from pathlib import Path, PurePath
 
+import matplotlib.pyplot as plt
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 
@@ -251,6 +252,14 @@ class RegressionTester:
             model_spec=self.test_model_spec,
         )
         self.atc_obj.run(args, override_limits=override_limits)
+        # This next line clears all plots from memory from the model
+        # run that we just performed. We saved them all to disk, so
+        # we have not lost the plots. This is done because plots are
+        # given figure IDs and each run sets figure IDs identical
+        # to those in the previous run, raising harmless but voluminous
+        # warnings. This is not a warning that would occur in normal
+        # operations, but only in this testing framework.
+        plt.close("all")
 
     def run_models(
         self,
