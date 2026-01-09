@@ -22,6 +22,7 @@ entry_points = {
         "bep_pcb_check = acis_thermal_check.apps.bep_pcb_check:main",
         "cea_check = acis_thermal_check.apps.cea_check:main",
         "copy_model_outputs = acis_thermal_check.apps.copy_model_outputs:main",
+        "prelim_model_plots = acis_thermal_check.prelim:main",
     ],
 }
 
