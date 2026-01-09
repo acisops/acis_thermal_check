@@ -1253,7 +1253,7 @@ class ACISThermalCheck:
             publish_file(
                 source_path=infile,
                 destination_path=outfile,
-                writer_name="html",
+                writer="html",
                 settings_overrides={"stylesheet_path": stylesheet_path},
             )
 
