@@ -3,6 +3,7 @@ import json
 import re
 import shutil
 import time
+import warnings
 from collections import OrderedDict, defaultdict
 from pathlib import Path, PurePath
 from pprint import pformat
@@ -440,7 +441,9 @@ class ACISThermalCheck:
             htrbfn = TASK_DATA / "acis_thermal_check/data/dahtbon_history.rdb"
             mylog.info("Reading file of dahtrb commands from file %s" % htrbfn)
             htrb = ascii.read(htrbfn, format="rdb")
-            dh_heater_times = CxoTime(htrb["time"]).secs
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message=".*dubious year.*")
+                dh_heater_times = CxoTime(htrb["time"]).secs
             dh_heater = htrb["dahtbon"].astype(bool)
             model.comp["dh_heater"].set_data(dh_heater, dh_heater_times)
 
