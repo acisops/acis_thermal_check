@@ -1,5 +1,6 @@
 import getpass
 import json
+import os
 import re
 import shutil
 import time
@@ -157,6 +158,9 @@ class ACISThermalCheck:
 
         # First, do some initial setup and log important information.
 
+        if args.set_time_now:
+            os.environ["CXOTIME_NOW"] = CxoTime(args.set_time_now).yday
+
         proc, model_spec = self._setup_proc_and_logger(args)
 
         # This allows one to override the limits for a particular model
@@ -195,6 +199,7 @@ class ACISThermalCheck:
         tstart, tstop, t_run_start = self._determine_times(
             args.run_start,
             is_weekly_load,
+            args.pred_days,
         )
 
         # Store off the start date, and, if you have it, the
@@ -210,7 +215,7 @@ class ACISThermalCheck:
         tlm = self.get_telem_values(min(tstart, t_run_start), days=args.days)
 
         # make predictions on a backstop file if defined
-        if args.backstop_file is not None:
+        if not args.val_only:
             pred = self.make_week_predict(
                 tstart,
                 tstop,
@@ -218,6 +223,7 @@ class ACISThermalCheck:
                 args.T_init,
                 model_spec,
                 args.outdir,
+                is_weekly_load,
             )
             mylog.info("Model prediction complete.")
         else:
@@ -258,6 +264,7 @@ class ACISThermalCheck:
             "valid_viols": valid_viols,
             "proc": proc,
             "pred_only": args.pred_only,
+            "val_only": args.val_only,
             "plots_validation": plots_validation,
         }
 
@@ -315,7 +322,9 @@ class ACISThermalCheck:
 
         return states, state0
 
-    def make_week_predict(self, tstart, tstop, tlm, T_init, model_spec, outdir):
+    def make_week_predict(
+        self, tstart, tstop, tlm, T_init, model_spec, outdir, is_weekly_load
+    ):
         """
         Parameters
         ----------
@@ -334,6 +343,8 @@ class ACISThermalCheck:
             The path to the thermal model specification.
         outdir : Path
             The directory to write outputs to.
+        is_weekly_load : bool
+            Flag indicating if this is a weekly load.
         """
         mylog.info("Calculating %s thermal model" % self.name.upper())
 
@@ -378,7 +389,7 @@ class ACISThermalCheck:
         # make_prediction_plots runs the validation of the model
         # against previous telemetry
         plots = self.make_prediction_plots(
-            outdir, states, temps, tstart, upper_limit, lower_limit
+            outdir, states, temps, tstart, upper_limit, lower_limit, is_weekly_load
         )
 
         # write_states writes the commanded states to states.dat
@@ -611,16 +622,17 @@ class ACISThermalCheck:
             self.perigee_passages["exit"].append(rz.stop)
 
         # obtain the rest from the backstop file
-        for cmd in self.state_builder.bs_cmds:
-            if cmd["tlmsid"] == "OORMPDS":
-                key = "entry"
-            elif cmd["tlmsid"] == "OORMPEN":
-                key = "exit"
-            elif cmd["type"] == "ORBPOINT" and cmd["event_type"] == "EPERIGEE":
-                key = "perigee"
-            else:
-                continue
-            self.perigee_passages[key].append(cmd["time"])
+        if self.state_builder.bs_cmds:
+            for cmd in self.state_builder.bs_cmds:
+                if cmd["tlmsid"] == "OORMPDS":
+                    key = "entry"
+                elif cmd["tlmsid"] == "OORMPEN":
+                    key = "exit"
+                elif cmd["type"] == "ORBPOINT" and cmd["event_type"] == "EPERIGEE":
+                    key = "perigee"
+                else:
+                    continue
+                self.perigee_passages[key].append(cmd["time"])
 
     def _make_state_plots(self, plots, num_figs, w1, plot_start, states, load_start):
         # Make a plot of ACIS CCDs and SIM-Z position
@@ -684,7 +696,14 @@ class ACISThermalCheck:
         plots[plt_name].filename = f"{plt_name}.png"
 
     def make_prediction_plots(
-        self, outdir, states, temps, load_start, upper_limit, lower_limit
+        self,
+        outdir,
+        states,
+        temps,
+        load_start,
+        upper_limit,
+        lower_limit,
+        is_weekly_load,
     ):
         """
         Make plots of the thermal prediction as well as associated
@@ -706,7 +725,12 @@ class ACISThermalCheck:
 
         times = self.predict_model.times
 
-        self._gather_perigee(times[0], load_start + 86400.0)
+        if is_weekly_load:
+            tstop_perigee = load_start + 86400.0
+        else:
+            tstop_perigee = times[-1] + 86400.0
+
+        self._gather_perigee(times[0], tstop_perigee)
 
         # Start time of loads being reviewed expressed in units for plotdate()
         load_start = cxctime2plotdate([load_start])[0]
@@ -1372,7 +1396,7 @@ class ACISThermalCheck:
                 self.bsdir = PurePath(bf).parent
         return proc, model_spec
 
-    def _determine_times(self, run_start, is_weekly_load):
+    def _determine_times(self, run_start, is_weekly_load, pred_days):
         """
         Determine the start and stop times, as well as the
         "CXC time" corresponding to the run_start argument.
@@ -1383,6 +1407,8 @@ class ACISThermalCheck:
             The starting date/time of the run.
         is_weekly_load : boolean
             Whether or not this is a weekly load.
+        pred_days : float
+            Number of days to predict into the future.
         """
         # Note: if run_start is None, then it defaults to
         # whatever the time is RIGHT NOW
@@ -1399,7 +1425,7 @@ class ACISThermalCheck:
             # the start time for the run is whatever is in
             # args.run_start
             tstart = t_run_start
-            tstop = None
+            tstop = t_run_start + pred_days * 3600.0 * 24.0
 
         return tstart, tstop, t_run_start
 

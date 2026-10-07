@@ -41,12 +41,13 @@ class StateBuilder:
     should not be used by itself, but subclassed.
     """
 
-    def __init__(self, logger=None, hrc_states=False):
+    def __init__(self, logger=None, hrc_states=False, pred_days=5):
         if logger is None:
             # Make a logger but with no output
             logger = logging.getLogger("statebuilder-no-logger")
         self.logger = logger
         self.state_keys = STATE_KEYS.copy()
+        self.pred_days = pred_days
         if hrc_states:
             self.state_keys += ["hrc_15v", "hrc_24v", "hrc_i", "hrc_s"]
 
@@ -88,7 +89,7 @@ class StateBuilder:
                 merge_identical=True,
             )
 
-        # Set start and end state date/times to match telemetry span.  Extend the
+        # Set start and end state date/times to match telemetry span. Extend the
         # state durations by a small amount because of a precision issue converting
         # to date and back to secs.  (The reference tstop could be just over the
         # 0.001 precision of date and thus cause an out-of-bounds error when
@@ -116,6 +117,7 @@ class KadiStateBuilder(StateBuilder):
         backstop_file=None,
         logger=None,
         hrc_states=False,
+        pred_days=5,
     ):
         """
         Give the KadiStateBuilder arguments that were passed in
@@ -134,15 +136,19 @@ class KadiStateBuilder(StateBuilder):
         hrc_states : boolean, optional
             Whether to add HRC-specific states. Default: False
         """
-        super().__init__(logger=logger, hrc_states=hrc_states)
+        super().__init__(logger=logger, hrc_states=hrc_states, pred_days=pred_days)
 
         # Note: `interrupt` is ignored in this class. This concept is not needed
         # since backstop 6.9, which provides the RUNNING_LOAD_TERMINATION_TIME
         # (RLTT) that can be reliably used to remove scheduled commands that
         # will not be run.
         self.interrupt = interrupt
-        self.backstop_file = Path(backstop_file)
-        self._get_bs_cmds()
+        if backstop_file is not None:
+            self.backstop_file = Path(backstop_file)
+            self._get_bs_cmds()
+        else:
+            self.backstop_file = None
+            self.bs_cmds = None
 
     def _get_bs_cmds(self):
         """
@@ -174,45 +180,52 @@ class KadiStateBuilder(StateBuilder):
             The starting date/time from which to obtain states for
             prediction.
         """
-        # This is a kadi.commands.CommandTable (subclass of astropy Table)
-        bs_cmds = self.bs_cmds
-        bs_dates = bs_cmds["date"]
+        tbegin = CxoTime(tbegin)
 
-        # Running loads termination time is the last time of "current running
-        # loads" (or in the case of a safing action, "current approved load
-        # commands" in kadi commands) which should be included in propagation.
-        # Starting from around 2020-April (backstop 6.9) this is included as a
-        # commmand in the loads, while prior to that we just use the first
-        # command in the backstop loads.
-        ok = bs_cmds["event_type"] == "RUNNING_LOAD_TERMINATION_TIME"
-        if np.any(ok):
-            rltt = CxoTime(bs_dates[ok][0])
-        else:  # noqa: PLR5501
-            # Handle the case of old loads (prior to backstop 6.9) where there
-            # is no RLTT. If the first command is AOACRSTD this indicates the
-            # beginning of a maneuver ATS which may overlap by 3 mins with the
-            # previous loads because of the AOACRSTD command. So move the RLTT
-            # forward by 3 minutes (exactly 180.0 sec). If the first command is
-            # not AOACRSTD then that command time is used as RLTT.
-            if bs_cmds["tlmsid"][0] == "AOACRSTD":
-                rltt = CxoTime(bs_cmds["time"][0] + 180)
-            else:
-                rltt = CxoTime(bs_cmds["date"][0])
+        if self.bs_cmds is not None:
+            # This is a kadi.commands.CommandTable (subclass of astropy Table)
+            bs_cmds = self.bs_cmds
+            bs_dates = bs_cmds["date"]
 
-        # Scheduled stop time is the end of propagation, either the explicit
-        # time as a pseudo-command in the loads or the last backstop command time.
-        ok = bs_cmds["event_type"] == "SCHEDULED_STOP_TIME"
-        sched_stop = CxoTime(bs_dates[ok][0] if np.any(ok) else bs_dates[-1])
+            # Running loads termination time is the last time of "current running
+            # loads" (or in the case of a safing action, "current approved load
+            # commands" in kadi commands) which should be included in propagation.
+            # Starting from around 2020-April (backstop 6.9) this is included as a
+            # commmand in the loads, while prior to that we just use the first
+            # command in the backstop loads.
+            ok = bs_cmds["event_type"] == "RUNNING_LOAD_TERMINATION_TIME"
+            if np.any(ok):
+                rltt = CxoTime(bs_dates[ok][0])
+            else:  # noqa: PLR5501
+                # Handle the case of old loads (prior to backstop 6.9) where there
+                # is no RLTT. If the first command is AOACRSTD this indicates the
+                # beginning of a maneuver ATS which may overlap by 3 mins with the
+                # previous loads because of the AOACRSTD command. So move the RLTT
+                # forward by 3 minutes (exactly 180.0 sec). If the first command is
+                # not AOACRSTD then that command time is used as RLTT.
+                if bs_cmds["tlmsid"][0] == "AOACRSTD":
+                    rltt = CxoTime(bs_cmds["time"][0] + 180)
+                else:
+                    rltt = CxoTime(bs_cmds["date"][0])
 
-        self.logger.info("RLTT = %s", rltt.date)
-        self.logger.info("sched_stop = %s", sched_stop.date)
+            # Scheduled stop time is the end of propagation, either the explicit
+            # time as a pseudo-command in the loads or the last backstop command time.
+            ok = bs_cmds["event_type"] == "SCHEDULED_STOP_TIME"
+            sched_stop = CxoTime(bs_dates[ok][0] if np.any(ok) else bs_dates[-1])
 
-        # Get currently running (or approved) commands from tbegin up to and
-        # including commands at RLTT
-        cmds = kadi.commands.get_cmds(tbegin, rltt, inclusive_stop=True)
+            self.logger.info("RLTT = %s", rltt.date)
+            self.logger.info("sched_stop = %s", sched_stop.date)
 
-        # Add in the backstop commands
-        cmds = cmds.add_cmds(bs_cmds)
+            # Get currently running (or approved) commands from tbegin up to and
+            # including commands at RLTT
+            cmds = kadi.commands.get_cmds(tbegin, rltt, inclusive_stop=True)
+
+            # Add in the backstop commands
+            cmds = cmds.add_cmds(self.bs_cmds)
+
+        else:
+            sched_stop = tbegin + self.pred_days * u.day + 5 * 328.0 * u.second
+            cmds = None
 
         # Get the states for available commands, boxed by tbegin / sched_stop.
         # The merge_identical=False is for compatibility with legacy Chandra.cmd_states,
@@ -248,6 +261,7 @@ class ACISStateBuilder(StateBuilder):
         verbose=2,
         logger=None,
         hrc_states=False,
+        pred_days=5,
     ):
         """
         Give the ACISStateBuilder arguments that were passed in

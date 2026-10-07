@@ -339,6 +339,12 @@ def get_options(opts=None, use_acis_opts=True):
         "the model package.",
     )
     parser.add_argument(
+        "--pred_days",
+        type=float,
+        help="Days of prediction. Not used if a backstop file is supplied.",
+        default=5.0,
+    )
+    parser.add_argument(
         "--days",
         type=float,
         default=21.0,
@@ -364,6 +370,15 @@ def get_options(opts=None, use_acis_opts=True):
         "--pred-only",
         action="store_true",
         help="Only make predictions. Default: False",
+    )
+    parser.add_argument(
+        "--val-only",
+        action="store_true",
+        help="Only run the validation check. Default: False",
+    )
+    parser.add_argument(
+        "--set_time_now",
+        help="Override what the current time is for testing purposes. Default: None",
     )
     parser.add_argument(
         "--verbose",
