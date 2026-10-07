@@ -9,7 +9,7 @@ Processing Errors
 .. class:: red
 {% endif %}
 
-{% if bsdir %}
+{% if not val_only %}
 
 Summary
 --------         
@@ -31,7 +31,7 @@ Earth Solid Angles     `<earth_solid_angles.dat>`_
 States                 `<states.dat>`_
 =====================  =============================================
 
-{% if proc.msid == "FPTEMP" %}
+{% if proc.msid == "FPTEMP" and bsdir %}
 `ACIS Observations Table <obsid_table.html>`_
 {% endif %}
 
@@ -75,7 +75,11 @@ No {{proc.msid}} {{viol_type}} Violations
 
 {% endfor %}
 
+{% if proc.msid == "FPTEMP" and not bsdir %}
+.. image:: fptempM120toM79.png
+{% else %}
 .. image:: {{plots.default.filename}}
+{% endif %}
 {% if proc.msid == "2CEAHVPT" %}
 .. image:: {{plots.hrc.filename}}
 {% endif %}
@@ -178,7 +182,7 @@ Note: {{proc.msid}} residual histograms include only points where {{hist_string}
 
 {% endfor %}
 
-{% if proc.msid == "FPTEMP" %}
+{% if proc.msid == "FPTEMP" and bsdir %}
 
 ADDITIONAL PLOTS
 -----------------------
