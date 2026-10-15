@@ -3,10 +3,12 @@ from pathlib import Path
 from pprint import pformat
 
 import astropy.units as u
-import kadi.commands
 import kadi.commands.states as kadi_states
 import numpy as np
+from astropy.table import Table
 from cxotime import CxoTime
+from kadi.commands import get_cmds, get_cmds_from_backstop
+from kadi.commands.command_sets import get_cmds_from_event
 
 # Define state keys for states
 STATE_KEYS = [
@@ -33,6 +35,9 @@ STATE_KEYS = [
     "simpos",
     "vid_board",
 ]
+
+
+CSD_DIR = Path(__file__).parent / "data"
 
 
 class StateBuilder:
@@ -118,6 +123,7 @@ class KadiStateBuilder(StateBuilder):
         logger=None,
         hrc_states=False,
         pred_days=5,
+        non_load_events=None,
     ):
         """
         Give the KadiStateBuilder arguments that were passed in
@@ -143,6 +149,7 @@ class KadiStateBuilder(StateBuilder):
         # (RLTT) that can be reliably used to remove scheduled commands that
         # will not be run.
         self.interrupt = interrupt
+        self.non_load_events = non_load_events
         if backstop_file is not None:
             self.backstop_file = Path(backstop_file)
             self._get_bs_cmds()
@@ -163,7 +170,7 @@ class KadiStateBuilder(StateBuilder):
         self.logger.info("Using backstop file %s", self.backstop_file)
 
         # Read the backstop commands and add a `time` column
-        bs_cmds = kadi.commands.get_cmds_from_backstop(self.backstop_file)
+        bs_cmds = get_cmds_from_backstop(self.backstop_file)
         bs_cmds["time"] = CxoTime(bs_cmds["date"]).secs
 
         self.bs_cmds = bs_cmds
@@ -218,14 +225,37 @@ class KadiStateBuilder(StateBuilder):
 
             # Get currently running (or approved) commands from tbegin up to and
             # including commands at RLTT
-            cmds = kadi.commands.get_cmds(tbegin, rltt, inclusive_stop=True)
+            cmds = get_cmds(tbegin, rltt, inclusive_stop=True)
 
             # Add in the backstop commands
             cmds = cmds.add_cmds(self.bs_cmds)
 
         else:
             sched_stop = tbegin + self.pred_days * u.day + 5 * 328.0 * u.second
-            cmds = None
+            if self.non_load_events is None:
+                cmds = None
+            else:
+                t = Table.read(
+                    Path(self.non_load_events), format="ascii.commented_header"
+                )
+                tend = CxoTime(t["date"]).max()
+                cmds = get_cmds(tbegin, tend, inclusive_stop=True)
+                for row in t:
+                    if row["event_type"] == "MAN":
+                        event_cmds = maneuver_event(
+                            row["date"], row["params"].split(",")
+                        )
+                    elif row["event_type"] == "ECS":
+                        event_cmds = acis_ecs_event(
+                            row["date"],
+                            row["params"].split(",")[0],
+                            row["params"].split(",")[1],
+                        )
+                    else:
+                        self.logger.warning(
+                            "Unknown event type: %s. Skipping.", row["event_type"]
+                        )
+                    cmds = cmds.add_cmds(event_cmds)
 
         # Get the states for available commands, boxed by tbegin / sched_stop.
         # The merge_identical=False is for compatibility with legacy Chandra.cmd_states,
@@ -353,7 +383,7 @@ class ACISStateBuilder(StateBuilder):
         self.BSC.Assemble_History(self.backstop_file, tbegin, self.interrupt)
 
         # Read in the assembled history file as kadi commands
-        bs_cmds = kadi.commands.get_cmds_from_backstop(
+        bs_cmds = get_cmds_from_backstop(
             self.BSC.assembled_hist_file_path,
         )
 
@@ -400,3 +430,51 @@ class ACISStateBuilder(StateBuilder):
 
 
 state_builders = {"kadi": KadiStateBuilder, "acis": ACISStateBuilder}
+
+
+def maneuver_event(date, att):
+    """
+    Build a CommandTable for a maneuver to attitude ``att`` starting at
+    ``date``.
+
+    Parameters
+    ----------
+    date : CxoTime-like
+        The time of the start of the maneuver.
+    att : 3- or 4-element sequence of floats
+        The target attitude, compatible with the ``Quat()`` initializer:
+        either (ra, dec, roll) in degrees, or a normalized quaternion
+        (q1, q2, q3, q4).
+    """
+    if len(att) not in (3, 4):
+        raise ValueError(
+            "'att' must be a 3-element (ra, dec, roll) or 4-element "
+            f"(q1, q2, q3, q4) sequence, got {len(att)} elements."
+        )
+    params = " ".join(str(x) for x in att)
+    return get_cmds_from_event(date, "Maneuver", params)
+
+
+def acis_ecs_event(
+    date,
+    ecs_rts,
+    num_hours,
+):
+    """
+    Build a CommandTable for an ACIS ECS measurement starting at ``date``.
+
+    Parameters
+    ----------
+    date : CxoTime-like
+        The start time of the ECS measurement.
+    ecs_rts : str
+        The RTS load for the ECS measurement.
+    num_hours : str
+        The duration of the ECS measurement in hours.
+    """
+    from parse_cm.csd import csd_cmd_gen
+
+    args = f"RTSLOAD,{ecs_rts.upper()},SCS_NUM=135,NUM_HOURS=000:{num_hours}:00:00"
+    rts = f"SCS_CATEGORY,OBSERVING\n\n{args}"
+    cmds = csd_cmd_gen(rts, date=date, csd_dir=CSD_DIR)
+    return cmds
