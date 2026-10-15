@@ -245,8 +245,19 @@ class KadiStateBuilder(StateBuilder):
                         event_cmds = maneuver_event(
                             row["date"], row["params"].split(",")
                         )
+                        self.logger.info(
+                            "Adding a maneuver at %s to attitude %s",
+                            row["date"],
+                            row["params"],
+                        )
                     elif row["event_type"] == "ECS":
                         event_cmds = acis_ecs_event(
+                            row["date"],
+                            row["params"].split(",")[0],
+                            row["params"].split(",")[1],
+                        )
+                        self.logger.info(
+                            "Adding an ECS measurement at %s with RTS %s for %s hours",
                             row["date"],
                             row["params"].split(",")[0],
                             row["params"].split(",")[1],
