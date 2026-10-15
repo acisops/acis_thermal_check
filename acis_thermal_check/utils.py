@@ -401,8 +401,15 @@ def get_options(opts=None, use_acis_opts=True):
             "--nlet_file",
             default="/data/acis/LoadReviews/NonLoadTrackedEvents.txt",
             help="Full path to the Non-Load Event Tracking file that should be "
-            "used for this model run.",
+            "used for this model run. Only used with the 'acis' StateBuilder.",
         )
+    parser.add_argument(
+        "--non_load_events",
+        type=str,
+        help="ASCII text file containing non-load command events to use in case "
+        "of an anomaly or other non-load situations. Only used with the 'kadi' "
+        "StateBuilder.",
+    )
     parser.add_argument("--version", action="store_true", help="Print version")
 
     if opts is not None:
@@ -454,6 +461,8 @@ def make_state_builder(name, args, hrc_states=False):
             backstop_file=args.backstop_file,
             logger=mylog,
             hrc_states=hrc_states,
+            pred_days=args.pred_days,
+            non_load_events=args.non_load_events,
         )
 
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
@@ -465,6 +474,7 @@ def make_state_builder(name, args, hrc_states=False):
             interrupt=args.interrupt,
             backstop_file=args.backstop_file,
             nlet_file=args.nlet_file,
+            pred_days=args.pred_days,
             outdir=args.outdir,
             verbose=args.verbose,
             logger=mylog,
