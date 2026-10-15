@@ -394,8 +394,8 @@ def get_options(opts=None, use_acis_opts=True):
     if use_acis_opts:
         parser.add_argument(
             "--state-builder",
-            default="acis",
-            help="StateBuilder to use (kadi|acis). Default: acis",
+            default="kadi",
+            help="StateBuilder to use (kadi|acis). Default: kadi",
         )
         parser.add_argument(
             "--nlet_file",
