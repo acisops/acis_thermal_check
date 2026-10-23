@@ -187,6 +187,7 @@ class RegressionTester:
         sub_dir=None,
         model_spec=None,
         caplog=None,
+        verbose=0,
     ):
         if caplog is not None:
             caplog.set_level(logging.WARNING, logger="matplotlib")
@@ -215,6 +216,7 @@ class RegressionTester:
         self.test_model_spec = tests_path / self.name / specfile
         if not self.outdir.exists():
             self.outdir.mkdir(parents=True)
+        self.verbose = verbose
 
     def run_model(
         self,
@@ -268,6 +270,7 @@ class RegressionTester:
             state_builder=state_builder,
             model_spec=self.test_model_spec,
             set_time_now=set_time_now,
+            verbose=self.verbose,
         )
         self.atc_obj.run(args, override_limits=override_limits)
         # This next line clears all plots from memory from the model
