@@ -28,9 +28,10 @@ months = [
 
 # Loads for regression testing
 test_loads = {
-    "normal": ["JUN0820A", "SEP1922A"],
+    "normal": ["JUN0820A", "SEP1922A", "DEC0825A"],
+    "interrupt": ["MAY0521A", "MAY1123A", "FEB0626A"],
 }
-all_loads = test_loads["normal"] + test_loads.get("interrupt", [])
+all_loads = test_loads["normal"]
 
 hrc_loads = {"normal": ["SEP1922A", "SEP2622A"]}
 
