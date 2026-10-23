@@ -5,8 +5,10 @@ import shutil
 import tempfile
 from pathlib import Path, PurePath
 
+import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
+from cxotime import CxoTime
 from numpy.testing import assert_allclose, assert_array_equal
 
 months = [
@@ -26,19 +28,9 @@ months = [
 
 # Loads for regression testing
 test_loads = {
-    "normal": ["MAR0617A", "MAR2017E", "JUL3117B", "SEP0417A"],
-    "interrupt": [
-        "MAR1517B",
-        "JUL2717A",
-        "AUG2517C",
-        "AUG3017A",
-        "MAR0817B",
-        "MAR1117A",
-        "APR0217B",
-        "SEP0917C",
-    ],
+    "normal": ["JUN0820A", "SEP1922A"],
 }
-all_loads = test_loads["normal"] + test_loads["interrupt"]
+all_loads = test_loads["normal"] + test_loads.get("interrupt", [])
 
 hrc_loads = {"normal": ["SEP1922A", "SEP2622A"]}
 
@@ -101,6 +93,18 @@ class TestArgs:
     nlet_file : string, optional
         The path to an alternative NLET file to be used. Default: None,
         which is to use the default one.
+    set_time_now : string, optional
+        The "now" time to be used in the model run. If not set, it will
+        assume the actual current time.
+    pred_days : float, optional
+        The number of days to run the prediction for, if not obtained
+        from a backstop file. Default: 5.0
+    pred_only : boolean, optional
+        If True, only run the prediction, not the validation. Default: False
+    val_only : boolean, optional
+        If True, only run the validation, not the prediction. Default: False
+    non_load_events : str, optional
+        The path to a file containing non-load events. Default: None
     """
 
     def __init__(
@@ -115,6 +119,11 @@ class TestArgs:
         verbose=0,
         model_spec=None,
         nlet_file=None,
+        set_time_now=None,
+        pred_days=5.0,
+        pred_only=False,
+        val_only=False,
+        non_load_events=None,
     ):
         from datetime import datetime
 
@@ -124,7 +133,7 @@ class TestArgs:
             month = months.index(load_week[:3]) + 1
             day = int(load_week[3:5])
             run_start = datetime(year, month, day).strftime("%Y:%j:%H:%M:%S")
-        self.run_start = run_start
+        self.run_start = CxoTime(run_start)
         self.outdir = Path(outdir)
         lr_root = get_lr_root()  # Directory containing ACIS load review data
         # load_week sets the bsdir
@@ -142,12 +151,18 @@ class TestArgs:
         self.nlet_file = nlet_file
         self.interrupt = interrupt
         self.state_builder = state_builder
-        self.pred_only = False
+        self.pred_only = pred_only
+        self.val_only = val_only
         self.T_init = T_init
         self.traceback = True
         self.verbose = verbose
         self.model_spec = model_spec
         self.version = None
+        self.set_time_now = self.run_start - 1.0 * u.day
+        self.pred_days = pred_days
+        self.pred_only = pred_only
+        self.val_only = val_only
+        self.non_load_events = non_load_events
 
 
 def exception_catcher(test, old, new, data_type, **kwargs):
@@ -208,6 +223,7 @@ class RegressionTester:
         interrupt=False,
         override_limits=None,
         out_dir=None,
+        set_time_now=None,
     ):
         """
         Run a thermal model in test mode for a single load week.
@@ -250,6 +266,7 @@ class RegressionTester:
             nlet_file=nlet_file,
             state_builder=state_builder,
             model_spec=self.test_model_spec,
+            set_time_now=set_time_now,
         )
         self.atc_obj.run(args, override_limits=override_limits)
         # This next line clears all plots from memory from the model
