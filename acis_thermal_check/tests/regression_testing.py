@@ -295,50 +295,6 @@ class RegressionTester:
         # operations, but only in this testing framework.
         plt.close("all")
 
-    def run_models(
-        self,
-        normal=True,
-        interrupt=True,
-        state_builder="acis",
-        hrc=False,
-    ):
-        """
-        Run the internally set list of models for regression testing.
-
-        Parameters
-        ----------
-        normal : boolean, optional
-            Run the "normal" loads. Default: True
-        interrupt : boolean, optional
-            Run the "interrupt" loads. Default: True
-        run_start : string, optional
-            The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
-            specified, one will be created 3 days prior to the model run.
-        state_builder : string, optional
-            The mode used to create the list of commanded states. "kadi" or
-            "acis", default "acis".
-        hrc : boolean, optional
-            If True, use loads specified for HRC model testing. Default: False
-        """
-        if hrc:
-            loads = hrc_loads
-        else:
-            loads = test_loads
-        if normal and "normal" in loads:
-            for load in loads["normal"]:
-                self.run_model(
-                    load_week=load,
-                    state_builder=state_builder,
-                )
-        if interrupt and "interrupt" in loads:
-            for load in loads["interrupt"]:
-                self.run_model(
-                    load_week=load,
-                    interrupt=True,
-                    run_start=run_starts.get(load, None),
-                    state_builder=state_builder,
-                )
-
     def _set_answer_dir(self, load_week):
         answer_dir = tests_path / f"{self.name}/answers" / load_week
         if not answer_dir.exists():
