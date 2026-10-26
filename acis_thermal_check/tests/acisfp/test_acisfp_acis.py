@@ -8,7 +8,6 @@ from acis_thermal_check.tests.regression_testing import RegressionTester, all_lo
 def fp_rt(test_root):
     # ACIS state builder tests
     rt = RegressionTester(ACISFPCheck, test_root=test_root, sub_dir="acis")
-    rt.run_models(state_builder="acis")
     return rt
 
 
@@ -17,7 +16,7 @@ def fp_rt(test_root):
 
 @pytest.mark.parametrize("load", all_loads)
 def test_prediction(fp_rt, answer_store, load):
-    fp_rt.run_test("prediction", load, answer_store=answer_store)
+    fp_rt.run_test("prediction", load, "acis", answer_store=answer_store)
 
 
 # Validation tests
@@ -25,4 +24,4 @@ def test_prediction(fp_rt, answer_store, load):
 
 @pytest.mark.parametrize("load", all_loads)
 def test_validation(fp_rt, answer_store, load):
-    fp_rt.run_test("validation", load, answer_store=answer_store)
+    fp_rt.run_test("validation", load, "acis", answer_store=answer_store)
