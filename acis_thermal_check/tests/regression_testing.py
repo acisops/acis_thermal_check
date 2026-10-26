@@ -29,13 +29,26 @@ months = [
 # Loads for regression testing
 test_loads = {
     "normal": ["JUN0820A", "SEP1922A", "DEC0825A"],
-    "interrupt": ["MAY0521A", "MAY1123A", "FEB0626A"],
+    "interrupt": [
+        "MAY0521A",
+        "AUG1322A",
+        "OCT2722A",
+        "MAY1123A",
+        "JAN2624A",
+        "FEB0626A",
+    ],
 }
-all_loads = test_loads["normal"]
+all_loads = test_loads["normal"] + test_loads["interrupt"]
 
 hrc_loads = {"normal": ["SEP1922A", "SEP2622A"]}
 
-nlets = {"MAR0617A", "MAR0817B", "SEP0417A"}
+run_starts = {
+    "AUG1322A": "2022:225:05:00:00.000",
+    "JAN2624A": "2024:026:12:31:52.403",
+    "OCT2722A": "2022:300:12:00:00.000",
+}
+
+nlets = {"AUG1322A"}
 
 
 def get_lr_root():
@@ -286,7 +299,6 @@ class RegressionTester:
         self,
         normal=True,
         interrupt=True,
-        run_start=None,
         state_builder="acis",
         hrc=False,
     ):
@@ -316,7 +328,6 @@ class RegressionTester:
             for load in loads["normal"]:
                 self.run_model(
                     load_week=load,
-                    run_start=run_start,
                     state_builder=state_builder,
                 )
         if interrupt and "interrupt" in loads:
@@ -324,7 +335,7 @@ class RegressionTester:
                 self.run_model(
                     load_week=load,
                     interrupt=True,
-                    run_start=run_start,
+                    run_start=run_starts.get(load, None),
                     state_builder=state_builder,
                 )
 
@@ -334,7 +345,7 @@ class RegressionTester:
             answer_dir.mkdir(parents=True)
         return answer_dir
 
-    def run_test(self, test_name, load_week, answer_store=False):
+    def run_test(self, test_name, load_week, state_builder, answer_store=False):
         """
         This method runs the answer test in one of two modes:
         either comparing the answers from this test to the "gold
@@ -346,11 +357,28 @@ class RegressionTester:
             The name of the test to run. "prediction" or "validation".
         load_week : string
             The load week to be tested, in a format like "MAY2016A".
+        state_builder : string
+            The mode used to create the list of commanded states. "kadi" or
+            "acis".
         answer_store : boolean, optional
             If True, store the generated data as the new answers.
             If False, only test. Default: False
         """
         out_dir = self.outdir / load_week / self.name
+        if not out_dir.exists():
+            if load_week in test_loads["normal"]:
+                self.run_model(
+                    load_week=load_week,
+                    state_builder=state_builder,
+                )
+            elif load_week in test_loads["interrupt"]:
+                self.run_model(
+                    load_week=load_week,
+                    interrupt=True,
+                    run_start=run_starts.get(load_week, None),
+                    state_builder=state_builder,
+                )
+
         if test_name == "prediction":
             filenames = ["temperatures.dat", "states.dat"]
             if self.name == "acisfp":
