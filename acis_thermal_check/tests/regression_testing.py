@@ -320,19 +320,14 @@ class RegressionTester:
             If True, store the generated data as the new answers.
             If False, only test. Default: False
         """
-        if self.msid == "2ceahvpt":
-            loads = hrc_loads
-        else:
-            loads = test_loads
-
         out_dir = self.outdir / load_week / self.name
         if not out_dir.exists():
-            if load_week in loads["normal"]:
+            if load_week in test_loads["normal"] or load_week in hrc_loads["normal"]:
                 self.run_model(
                     load_week=load_week,
                     state_builder=state_builder,
                 )
-            elif load_week in loads["interrupt"]:
+            elif load_week in test_loads["interrupt"]:
                 self.run_model(
                     load_week=load_week,
                     interrupt=True,
