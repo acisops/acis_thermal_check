@@ -8,7 +8,6 @@ from acis_thermal_check.tests.regression_testing import RegressionTester, all_lo
 def dea_rt(test_root):
     # kadi state builder tests
     rt = RegressionTester(DEACheck, test_root=test_root, sub_dir="kadi")
-    rt.run_models(state_builder="kadi")
     return rt
 
 
@@ -17,10 +16,7 @@ def dea_rt(test_root):
 
 @pytest.mark.parametrize("load", all_loads)
 def test_prediction(dea_rt, answer_store, load):
-    if not answer_store:
-        dea_rt.run_test("prediction", load)
-    else:
-        pass
+    dea_rt.run_test("prediction", load, "kadi", answer_store=answer_store)
 
 
 # Validation tests
@@ -28,7 +24,4 @@ def test_prediction(dea_rt, answer_store, load):
 
 @pytest.mark.parametrize("load", all_loads)
 def test_validation(dea_rt, answer_store, load):
-    if not answer_store:
-        dea_rt.run_test("validation", load)
-    else:
-        pass
+    dea_rt.run_test("validation", load, "kadi", answer_store=answer_store)
