@@ -4,9 +4,12 @@ from acis_thermal_check.tests.regression_testing import RegressionTester, tests_
 
 def test_dpa_valid_only(answer_store, test_root):
     dpa_rt = RegressionTester(DPACheck, test_root=test_root, sub_dir="valid_only")
-    out_dir = dpa_rt.outdir / "dpa2019"
+    out_dir = dpa_rt.outdir / "dpa2024"
     dpa_rt.run_model(
-        run_start="2019:300:12:50:00", out_dir=out_dir, state_builder="kadi"
+        run_start="2024:300:12:50:00",
+        out_dir=out_dir,
+        state_builder="kadi",
+        val_only=True,
     )
     answer_dir = tests_path / "dpa/answers/valid_only"
     filenames = ["validation_data.pkl"]

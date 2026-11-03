@@ -48,6 +48,8 @@ run_starts = {
     "OCT2722A": "2022:300:12:00:00.000",
 }
 
+now_times = {"JAN2624A": "2024:026:00:00:00"}
+
 nlets = {"AUG1322A"}
 
 
@@ -172,10 +174,10 @@ class TestArgs:
         self.verbose = verbose
         self.model_spec = model_spec
         self.version = None
-        self.set_time_now = self.run_start - 1.0 * u.day
+        if set_time_now is None:
+            set_time_now = self.run_start - 1.0 * u.day
+        self.set_time_now = CxoTime(set_time_now)
         self.pred_days = pred_days
-        self.pred_only = pred_only
-        self.val_only = val_only
         self.non_load_events = non_load_events
 
 
@@ -240,6 +242,7 @@ class RegressionTester:
         override_limits=None,
         out_dir=None,
         set_time_now=None,
+        val_only=False,
     ):
         """
         Run a thermal model in test mode for a single load week.
@@ -265,6 +268,8 @@ class RegressionTester:
             Where to place the model results. If not set, one will be
             created based on the value of load_week, but an error will
             be raised if the latter is not set.
+        val_only : boolean, optional
+            If True, only run the validation, not the prediction. Default: False
         """
         if out_dir is None:
             if load_week is None:
@@ -274,6 +279,8 @@ class RegressionTester:
             nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
         else:
             nlet_file = None
+        if load_week in now_times:
+            set_time_now = now_times[load_week]
         args = TestArgs(
             out_dir,
             run_start=run_start,
@@ -284,6 +291,7 @@ class RegressionTester:
             model_spec=self.test_model_spec,
             set_time_now=set_time_now,
             verbose=self.verbose,
+            val_only=val_only,
         )
         self.atc_obj.run(args, override_limits=override_limits)
         # This next line clears all plots from memory from the model

@@ -1,0 +1,17 @@
+{
+    "run_start": "2025:342:01:01:51.789",
+    "limits": {
+        "safety.caution.high": 33.0,
+        "planning.warning.high": 31.0,
+        "safety.caution.low": 18.0,
+        "planning.warning.low": 16.0
+    },
+    "datestarts": [
+    ],
+    "datestops": [
+    ],
+    "temps": [
+    ],
+    "duration": [
+    ]
+}
