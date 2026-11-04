@@ -245,6 +245,7 @@ class RegressionTester:
         val_only=False,
         non_load_events=None,
         nlet_file=None,
+        pred_days=5,
     ):
         """
         Run a thermal model in test mode for a single load week.
@@ -297,6 +298,7 @@ class RegressionTester:
             verbose=self.verbose,
             val_only=val_only,
             non_load_events=non_load_events,
+            pred_days=pred_days,
         )
         self.atc_obj.run(args, override_limits=override_limits)
         # This next line clears all plots from memory from the model
