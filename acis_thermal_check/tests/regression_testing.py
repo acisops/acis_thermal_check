@@ -242,6 +242,7 @@ class RegressionTester:
         override_limits=None,
         out_dir=None,
         set_time_now=None,
+        pred_only=False,
         val_only=False,
         non_load_events=None,
         nlet_file=None,
@@ -271,12 +272,18 @@ class RegressionTester:
             Where to place the model results. If not set, one will be
             created based on the value of load_week, but an error will
             be raised if the latter is not set.
+        pred_only : boolean, optional
+            If True, only run the prediction, not the validation. Default: False
         val_only : boolean, optional
             If True, only run the validation, not the prediction. Default: False
         non_load_events : string, optional
-            A file containing non-load events. Default: None
+            The path to a file containing non-load events. Default: None
         nlet_file : string, optional
-            A non-default NLET file. Default: None
+            The path to an alternative NLET file to be used. Default: None,
+            which is to use the default one.
+        pred_days : float, optional
+            The number of days to run the prediction for, if not obtained
+            from a backstop file. Default: 5.0
         """
         if out_dir is None:
             if load_week is None:
@@ -296,6 +303,7 @@ class RegressionTester:
             model_spec=self.test_model_spec,
             set_time_now=set_time_now,
             verbose=self.verbose,
+            pred_only=pred_only,
             val_only=val_only,
             non_load_events=non_load_events,
             pred_days=pred_days,
