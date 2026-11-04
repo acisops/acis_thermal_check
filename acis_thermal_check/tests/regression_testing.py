@@ -50,7 +50,7 @@ run_starts = {
 
 now_times = {"JAN2624A": "2024:026:00:00:00"}
 
-nlets = {"AUG1322A"}
+nlets = {"AUG1322A", "JAN2624A"}
 
 
 def get_lr_root():
@@ -237,12 +237,14 @@ class RegressionTester:
         self,
         load_week=None,
         run_start=None,
-        state_builder="acis",
+        state_builder="kadi",
         interrupt=False,
         override_limits=None,
         out_dir=None,
         set_time_now=None,
         val_only=False,
+        non_load_events=None,
+        nlet_file=None,
     ):
         """
         Run a thermal model in test mode for a single load week.
@@ -270,15 +272,17 @@ class RegressionTester:
             be raised if the latter is not set.
         val_only : boolean, optional
             If True, only run the validation, not the prediction. Default: False
+        non_load_events : string, optional
+            A file containing non-load events. Default: None
+        nlet_file : string, optional
+            A non-default NLET file. Default: None
         """
         if out_dir is None:
             if load_week is None:
                 raise ValueError("Both 'out_dir' and 'load_week' cannot be None!")
             out_dir = self.outdir / load_week / self.name
-        if load_week in nlets:
+        if nlet_file is None and load_week in nlets:
             nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
-        else:
-            nlet_file = None
         if load_week in now_times:
             set_time_now = now_times[load_week]
         args = TestArgs(
@@ -292,6 +296,7 @@ class RegressionTester:
             set_time_now=set_time_now,
             verbose=self.verbose,
             val_only=val_only,
+            non_load_events=non_load_events,
         )
         self.atc_obj.run(args, override_limits=override_limits)
         # This next line clears all plots from memory from the model
