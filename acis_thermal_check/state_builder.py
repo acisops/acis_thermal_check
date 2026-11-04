@@ -262,6 +262,15 @@ class KadiStateBuilder(StateBuilder):
                             row["params"].split(",")[0],
                             row["params"].split(",")[1],
                         )
+                    elif row["event_type"] == "OBSID":
+                        event_cmds = get_cmds_from_event(
+                            row["date"], "Obsid", row["params"]
+                        )
+                        self.logger.info(
+                            "Adding an OBSID event at %s with OBSID %s",
+                            row["date"],
+                            row["params"],
+                        )
                     else:
                         self.logger.warning(
                             "Unknown event type: %s. Skipping.", row["event_type"]
