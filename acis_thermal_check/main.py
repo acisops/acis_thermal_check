@@ -87,13 +87,6 @@ class ACISThermalCheck:
         A dictionary which maps names to MSIDs, e.g.:
         {'sim_z': 'tscpos', 'dp_pitch': 'pitch'}. Used to map
         names understood by Xija to MSIDs.
-    limits_map : dictionary, optional
-        A dictionary mapping of limit names in the model specification
-        file to more user-friendly ones for use in acis_thermal_check.
-        The standard planning/yellow limits are already implemented
-        internally, so this dict is for "extra" ones such as the 0-FEPs
-        +12 C limit for 1DPAMZT. Default: None, meaning no extra
-        limits are specified.
     hist_ops : list of strings, optional
         This sets the operations which will be used to create the
         error histograms, e.g., including only temperatures above
