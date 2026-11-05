@@ -11,13 +11,14 @@ ACIS and HRC thermal models and produce web pages for prediction and validation.
 The current tools which use ``acis_thermal_check`` for load review are:
 
 * ``dpa_check`` for the 1DPAMZT model
+* ``dpamyt_check`` for the 1DPAMYT model
 * ``dea_check`` for the 1DEAMZT model
 * ``psmc_check`` for the 1PDEAAT model
 * ``acisfp_check`` for the ACIS Focal Plane model
 * ``cea_check`` for the HRC CEA model
 
 These tools run models for the BEP and FEP models which are not currently used
-for flight, but are still checked at every load review:
+for flight, but are still run at every load review:
 
 * ``fep1_mong_check`` for the FEP1 Mongoose model
 * ``fep1_actel_check`` for the FEP1 Actel model
@@ -53,24 +54,21 @@ need to begin the thermal model propagation before the load starts to "wash out"
 any errors in the initial condition, we need to begin the propagation before the
 load starts. In order to do that, we need the commanded states. 
 ``acis_thermal_check`` provides two different ways to construct a state history
-in the ``StateBuilder`` class: the "ACIS" ``StateBuilder`` (the default) and the
-"kadi" ``StateBuilder``. The first case constructs a history of states using a
-series of backstop files from the previous loads, as well as any information
-from the Non-Load Event Tracker (NLET) file in case of an interrupted load. This
-``StateBuilder`` requires the full ``/data/acis/LoadReviews`` structure, at 
-least for the last several loads. The "kadi" state builder uses the commanded 
-states database to construct a history of states. 
-
-In theory, both ``StateBuilder`` types should give the same results if the
-sources for the states are fully updated. In most situations, this should be the
-case. However, if one is responding to an interrupt condition, the "ACIS" 
-``StateBuilder`` will be more up-to-date and accurate, since once a non-load 
-event such as a safing action or a long ECS run occurs, the ACIS on-duty person
-should update the NLET file. See 
-`here <https://asc.harvard.edu/acis/memos/webpage/NonLoadEventTracker.html>`_
-and `here <https://cxc.cfa.harvard.edu/acis/memos/webpage/WhenToUseNLETGUI.html>`_
-for more information on how to do this. 
+in the ``StateBuilder`` class: the "kadi" ``StateBuilder`` (the default) and the
+"ACIS" ``StateBuilder``. The "kadi" ``StateBuilder`` uses kadi commands from both
+mission history, including the
+`Chandra Command Events Sheet <https://docs.google.com/spreadsheets/d/19d6XqBhWoFjC-z1lS1nM6wLE_zjr4GYB1lOvrEGCbKQ/edit?gid=0#gid=0>`_,
+and a backstop file to construct a history of states. The "ACIS" ``StateBuilder``
+constructs a history of states using a series of backstop files from previous loads,
+as well as any information from the Non-Load Event Tracker (NLET) file in case of
+an interrupted load. This ``StateBuilder`` requires the full ``/data/acis/LoadReviews``
+structure, at least for the last several loads. In theory, both ``StateBuilder``
+types should give the same results if the sources for the states are fully updated,
+but there may be small differences if a command history includes non-load commands
+that may have been entered slightly differently in the NLET file and the Chandra
+Command Events Sheet.
 
 .. warning::
 
-    The HRC CEA model can only use the "kadi" ``StateBuilder``.
+    As of autumn 2026 the "ACIS" ``StateBuilder`` is deprecated. The HRC CEA
+    model cannot use the "ACIS" ``StateBuilder``.
