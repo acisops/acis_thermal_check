@@ -41,6 +41,12 @@ standard" versions of these files, and validation tests check the values in the
 "gold standard" version of this file. These tests are run for both the "ACIS" and
 "kadi" state builders.
 
+.. note::
+
+    In the case of the ACIS FP model, an additional file ``earth_solid_angles.dat``
+    is generated for the prediction tests and is checked against its gold standard
+    answers.
+
 Violations Tests
 ++++++++++++++++
 
@@ -59,9 +65,21 @@ determine the science data quality limit for those observations. Accordingly, th
 are also regression tests that check the values stored in this table for a few
 loads. The "gold standard" answers for these tests are stored in a JSON file.
 
+Prediction and Validation Only Tests
+++++++++++++++++++++++++++++++++++++
+
+There are two additional regression tests for the 1DPAMZT model, which test the conditions
+whether only predictions or validations are run. These generate the products for prediction
+or validation only, and test that the other products are not generated.
+
 Unit Tests
 ==========
 
+At the current time, the only "unit" tests which do not check regression are related to
+non-load events. The 1DPAMZT model tests in ``test_dpa_non_load.py`` check for correct
+inclusion of non-load commands from NLET and non-load event files, and that the resulting
+state histories and temperature predictions agree. The tests in ``test_nonload_cmds.py``
+are for checking the outputs of particular non-load commands.
 
 Running Tests
 =============
@@ -142,6 +160,9 @@ can call ``py.test`` on the file containing those tests:
 
     # Run the violation tests only for 1DEAMZT
     [~]$ py.test -s acis_thermal_check/tests/dea/test_dea_viols.py
+
+    # Run the non-load tests
+    [~]$ py.test -s acis_thermal_check/tests/test_nonload_cmds.py
 
 What Happens if Some or All of the Tests Fail? 
 ++++++++++++++++++++++++++++++++++++++++++++++
@@ -319,12 +340,24 @@ either the ``"normal"`` or ``"interrupt"`` list as appropriate. There is a speci
 set of loads for the HRC cea model, which are specified in the ``hrc_loads``
 dictionary.
 
-Note also the ``nlets`` set below this dictionary. The standard NLET file in 
-use for creating histories may not always be the "correct" one for the test 
-load in question, since at the time the model was originally run for the load
-review the contents of the NLET file at that time may not have included events 
-which happened later. If you want to recreate the situation at the time the
-model was originally run as precisely as possible, specify the name of the load
-in the ``nlets`` set and add the NLET file to the 
-``acis_thermal_check/tests/data/nlets`` directory, with the naming convention
-``"TEST_NLET_{load_name}.txt"``, where ``"load_name"`` is of the form``"MAR0617A"``.
+Note also that there are a few dictionaries below those for the loads that are
+supplementary and necessary for certain loads:
+
+* ``run_starts``: This is a dictionary of load week / start time pairs that
+  indicate what the value of the ``run_start`` parameter should be for this
+  load test. This is especially sometimes necessary in the case where there
+  is a non-load event in the command history before the load in question
+  and one wants to set the start time to be sure to include or exclude it,
+  depending on the needs of the test.
+* ``now_times``: Similarly, this dictionary sets the "now time" (see above)
+  for a subset of loads to control what non-load states are assumed to be
+  included. If a load does not appear in this dictionary, the "now time" is
+  set to one day before the time specified in the ``run_start`` parameter.
+* ``nlets``: The standard NLET file in use for creating histories may not
+  always be the "correct" one for the test load in question, since at the time
+  the model was originally run for the load review the contents of the NLET file
+  at that time may not have included events which happened later. If you want to
+  recreate the situation at the time the model was originally run as precisely as
+  possible, specify the name of the load in the ``nlets`` set and add the NLET file
+  to the ``acis_thermal_check/tests/data/nlets`` directory, with the naming convention
+  ``"TEST_NLET_{load_name}.txt"``, where ``"load_name"`` is of the form``"MAR0617A"``.
