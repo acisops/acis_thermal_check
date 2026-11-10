@@ -233,7 +233,7 @@ of hours that the ECS measurement will run, comma-separated. The available CAP i
 * "4": A 4-CCD ECS measurement, corresponding to, "CAPXXXX_acisi_4_RTS_ECS_SCS_v18.doc"
 * "4ALT": A 4-CCD ECS measurement, corresponding to "CAPXXXX_aciss_4ALT_RTS_ECS_SCS_v18.doc"
 * "5": A 5-CCD ECS measurement, corresponding to "CAPXXXX_acisi_5_RTS_ECS_SCS_v18.doc"
-" "6": A 6-CCD ECS measurement, corresponding to "CAPXXXX_acisi_6_RTS_ECS_SCS_v18.doc"
+* "6": A 6-CCD ECS measurement, corresponding to "CAPXXXX_acisi_6_RTS_ECS_SCS_v18.doc"
 
 If we were to add a line for a "3B" ECS measurement running for 24 hours to the previous
 maneuver line above, the non-load events file would look like this:
@@ -242,7 +242,7 @@ maneuver line above, the non-load events file would look like this:
 
     # event_type	date	params
     MAN     2024:025:12:59:00.000   -0.34908674,-0.72584198,-0.59196114,0.02956150
-    ECS		2024:025:19:00:00.000	3B,24
+    ECS     2024:025:19:00:00.000   3B,24
 
 To include an "OBSID" event, specify the event type as "OBSID", add a time in the
 YYY:DOY:HH:MM:SS.ddd format, and specify the OBSID. If you were to add it to the two lines
@@ -252,7 +252,7 @@ above, it would look like this:
 
     # event_type	date	params
     MAN     2024:025:12:59:00.000   -0.34908674,-0.72584198,-0.59196114,0.02956150
-    ECS		2024:025:19:00:00.000	3B,24
+    ECS     2024:025:19:00:00.000   3B,24
     OBSID   2024:025:19:03:46.739   62620
 
 Once you have created the file, save it to your chosen name, and then point whatever
