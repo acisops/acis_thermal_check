@@ -22,8 +22,8 @@ def test_maneuver_event_bad_att():
         maneuver_event("2026:290:13:00:00", (1.0, 2.0))
 
 
-def test_acis_cti_event():
-    cmds = acis_ecs_event("2026:291:00:00:00", "1_ECS3B", 24)
+def test_acis_ecs_event():
+    cmds = acis_ecs_event("2026:291:00:00:00", "3B", 24)
     assert list(cmds["tlmsid"]) == [
         "OORMPEN",
         "AA00000000",

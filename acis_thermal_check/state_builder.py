@@ -506,7 +506,7 @@ def acis_ecs_event(
     }
     if cap_vers not in ecs_rts:
         raise ValueError(f"An invalid CAP version was entered: {cap_vers}!!")
-    args = f"RTSLOAD,1_ECS{cap_vers}.RTS,SCS_NUM=135,NUM_HOURS=000:{num_hours}:00:00"
+    args = f"RTSLOAD,1_ECS{cap_vers},SCS_NUM=135,NUM_HOURS=000:{num_hours}:00:00"
     rts = f"SCS_CATEGORY,OBSERVING\n\n{args}"
     cmds = csd_cmd_gen(rts, date=date, csd_dir=CSD_DIR)
     return cmds
