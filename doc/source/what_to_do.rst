@@ -30,10 +30,10 @@ located, and ``--out`` is the name of the directory into which the files will be
 Running Predictions Only
 ========================
 
-``acis_thermal_check`` scripts run both predictions and validations, the latter so we can 
-check the performance of the model against actual telemetry on a regular basis. If the code 
-is crashing during the validation phase, it is possible to run with predictions only. This
-can be done with the ``--pred-only`` flag:
+``acis_thermal_check`` scripts run both predictions and validations, where we run the latter
+so we can check the performance of the model against actual telemetry on a regular basis. If
+the code is crashing during the validation phase, it is possible to run with predictions only.
+This can be done with the ``--pred-only`` flag:
 
 .. code-block:: text
 
