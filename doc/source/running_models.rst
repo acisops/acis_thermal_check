@@ -189,9 +189,81 @@ choose a different value for the ``--pred_days`` argument:
 
     [~]$ dpa_check --outdir=bright_star_hold --pred_days=3.5
 
+Running Thermal Models with Non-Load Events Files
+=================================================
+
 Suppose, however, that non-load commands are executed before a new science load is reviewed.
 This may take the form of a slew to a new attitude, or a long ECS measurement. Once these
 commands are approved, they will appear in the Chandra Command Events Sheet. However, if you
 want to determine the thermal prediction ahead of time for these types of events, you can
-construct an ASCII text file 
+construct an ASCII text file which includes them.
+
+Three types of events are supported by this file:
+
+* "MAN" events: this is an event where a manuever to a specified attitude quaternion is
+  executed at a particular time.
+* "ECS" events: this is an event where a long ECS measurement is executed, starting at a particular
+  time.
+* "OBSID" events: this is an event where a change to a specified obsid occurs at a particular
+  time.
+
+The format of the non-load events file is a simple text file which begins by specifying a line
+with the following columns:
+
+.. code-block:: text
+
+    # event_type	date	params
+
+To include a "MAN" event, specify the event type as "MAN", add a time in the YYY:DOY:HH:MM:SS.ddd
+format, and specify the attitude quaternion as a set of 4 floats, separated by commas. It should
+look like this:
+
+.. code-block:: text
+
+    # event_type	date	params
+    MAN     2024:025:12:59:00.000   -0.34908674,-0.72584198,-0.59196114,0.02956150
+
+If you wanted to add an "ECS" event to it, specify the event time as "ECS", add a time in the
+YYY:DOY:HH:MM:SS.ddd format, and specify the "CAP identifier" you will use as well as the number
+of hours that the ECS measurement will run, comma-separated. The available CAP identifiers are:
+
+* "2": A 2-CCD ECS measurement, corresponding to "CAPXXXX_acis_2_RTS_ECS_SCS_v18.doc"
+* "3A": A 3-CCD ECS measurement, corresponding to "CAPXXXX_aciss_3A_RTS_ECS_SCS_v18.doc"
+* "3B": A 3-CCD ECS measurement, corresponding to "CAPXXXX_acisi_3B_RTS_ECS_SCS_v18.doc"
+* "4": A 4-CCD ECS measurement, corresponding to, "CAPXXXX_acisi_4_RTS_ECS_SCS_v18.doc"
+* "4ALT": A 4-CCD ECS measurement, corresponding to "CAPXXXX_aciss_4ALT_RTS_ECS_SCS_v18.doc"
+* "5": A 5-CCD ECS measurement, corresponding to "CAPXXXX_acisi_5_RTS_ECS_SCS_v18.doc"
+" "6": A 6-CCD ECS measurement, corresponding to "CAPXXXX_acisi_6_RTS_ECS_SCS_v18.doc"
+
+If we were to add a line for a "3B" ECS measurement running for 24 hours to the previous
+maneuver line above, the non-load events file would look like this:
+
+.. code-block:: text
+
+    # event_type	date	params
+    MAN     2024:025:12:59:00.000   -0.34908674,-0.72584198,-0.59196114,0.02956150
+    ECS		2024:025:19:00:00.000	3B,24
+
+To include an "OBSID" event, specify the event type as "OBSID", add a time in the
+YYY:DOY:HH:MM:SS.ddd format, and specify the OBSID. If you were to add it to the two lines
+above, it would look like this:
+
+.. code-block:: text
+
+    # event_type	date	params
+    MAN     2024:025:12:59:00.000   -0.34908674,-0.72584198,-0.59196114,0.02956150
+    ECS		2024:025:19:00:00.000	3B,24
+    OBSID   2024:025:19:03:46.739   62620
+
+Once you have created the file, save it to your chosen name, and then point whatever
+thermal model script you are running to that file using the ``--non_load_events``
+argument:
+
+.. code-block:: text
+
+    [~]$ dpa_check --outdir=bright_star_hold --non_load_events=non_load_events.txt
+
+
+
+
 
