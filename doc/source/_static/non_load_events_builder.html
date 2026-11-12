@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Non-Load Events Builder &#8212; acis_thermal_check</title>
+<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,600" rel="stylesheet" type="text/css">
+<style>
+/* Layout: a docs-style topbar, then the builder's two-column grid (cards + sticky output) below it */
+:root{
+  --bg:#ffffff; --surface:#ffffff; --surface-2:#f8f8f8; --border:#dddddd; --border-soft:rgba(0,0,0,.12);
+  --fg:#404040; --fg-dim:#767676;
+  --link:#0069d6; --link-hover:#00438a;
+  --accent:#0069d6; --accent-fg:#ffffff;
+  --note-bg:#e9ffe9; --note-border:#609060; --note-title:#70A070;
+  --warn-bg:#ffe9e9; --warn-border:#900000; --warn-title:#b04040;
+  --man:#0069d6; --ecs:#b5651d; --obsid:#6a4fa8;
+  --font-body:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --font-mono:Consolas,Menlo,Monaco,"Courier New",monospace;
+  --font-brand:'Source Sans Pro',sans-serif;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--font-body); font-size:14px; line-height:1.5;
+}
+a{color:var(--link); text-decoration:none;}
+a:hover{color:var(--link-hover); text-decoration:underline;}
+
+/* Topbar, matching the Sphinx docs theme's brand bar */
+div.topbar{
+  background:#222222;
+  background-image:linear-gradient(to top, #333333, #222222);
+  color:#fff; display:flex; align-items:center; justify-content:space-between;
+  padding:0 16px; height:40px;
+}
+div.topbar a.brand{
+  font-family:var(--font-brand); font-size:24px; font-weight:600; color:#fff;
+}
+div.topbar a.brand:hover{ text-decoration:none; }
+div.topbar a.brand .logotext2{ font-weight:200; color:#ff5000; }
+div.topbar nav a{
+  font-family:var(--font-brand); font-size:13px; color:#bfbfbf; padding:5px 8px; border-radius:4px;
+}
+div.topbar nav a:hover{ color:#ffffff; text-decoration:none; }
+
+.wrap{max-width:1180px; margin:0 auto; padding:26px 16px 60px;}
+
+header.page-head{margin-bottom:18px;}
+header.page-head h1{font-size:24px; font-weight:700; color:var(--fg); margin:0 0 8px;}
+header.page-head p{margin:0; color:var(--fg-dim); font-size:14px; max-width:136ch; line-height:1.5;}
+
+code{
+  font-family:var(--font-mono); background:var(--surface-2); border:1px solid var(--border-soft);
+  border-radius:3px; padding:1px 4px; font-size:.92em;
+}
+
+/* Format reference, styled like a Sphinx "note" admonition */
+.info-card{
+  border:1px solid var(--note-border); background:var(--note-bg); border-radius:3px;
+  margin:18px 0 24px; font-size:14px; line-height:1.6;
+}
+.info-card summary{
+  cursor:pointer; list-style:none; background:var(--note-title); color:#fff; font-weight:bold;
+  padding:.3em .5em; border-radius:2px 2px 0 0; display:flex; align-items:center; gap:8px;
+}
+.info-card summary::-webkit-details-marker{display:none;}
+.info-card summary::before{content:"\25B8"; transition:transform .15s;}
+.info-card[open] summary::before{transform:rotate(90deg);}
+.info-card ul{margin:0; padding:.6em 1em .8em 2em;}
+.info-card li{margin-bottom:6px;}
+.info-card code{background:rgba(255,255,255,.6);}
+
+.cols{display:grid; grid-template-columns: 1fr 440px; gap:24px; align-items:start;}
+@media (max-width: 900px){ .cols{grid-template-columns: 1fr;} }
+
+.toolbar{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
+button{font-family:var(--font-body); cursor:pointer;}
+.btn{
+  border:1px solid var(--border); background:var(--surface); color:var(--fg);
+  padding:7px 12px; border-radius:3px; font-size:13px; font-weight:500;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.btn:hover{border-color:var(--accent); color:var(--accent);}
+.btn:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+.btn-add-man{border-color:var(--man); color:var(--man);}
+.btn-add-ecs{border-color:var(--ecs); color:var(--ecs);}
+.btn-add-obsid{border-color:var(--obsid); color:var(--obsid);}
+.btn-primary{background:var(--accent); color:var(--accent-fg); border-color:var(--accent); font-weight:600;}
+.btn-primary:hover{color:var(--accent-fg); background:var(--link-hover); border-color:var(--link-hover);}
+.btn-ghost{border-color:transparent; background:transparent; color:var(--fg-dim);}
+.btn-ghost:hover{color:var(--fg); border-color:var(--border);}
+
+#rowList{display:flex; flex-direction:column; gap:14px;}
+.empty{
+  border:1px dashed var(--border); border-radius:3px; padding:32px 20px; text-align:center;
+  color:var(--fg-dim); font-size:14px;
+}
+
+.card{
+  background:var(--surface); border:1px solid var(--border); border-left:4px solid var(--border);
+  border-radius:3px; padding:14px 16px 16px;
+}
+.card.err{border-left-color:var(--warn-title);}
+
+.card-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.badge{
+  font-family:var(--font-mono); font-size:12px; font-weight:600; letter-spacing:.03em;
+  padding:3px 8px; border-radius:3px; color:#fff;
+}
+.badge-MAN{background:var(--man);} .badge-ECS{background:var(--ecs);} .badge-OBSID{background:var(--obsid);}
+.card-idx{color:var(--fg-dim); font-size:13px; font-family:var(--font-mono);}
+.card-head .spacer{flex:1;}
+
+.field-row{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:10px;}
+.field{display:flex; flex-direction:column; gap:4px; min-width:0;}
+.field label{font-size:12px; color:var(--fg-dim); font-weight:500;}
+.field input, .field select{
+  background:var(--surface); border:1px solid var(--border); border-radius:3px;
+  color:var(--fg); padding:6px 8px; font-size:14px; font-family:var(--font-body);
+}
+.field input.mono{font-family:var(--font-mono); font-size:13px;}
+.field.grow{flex:1 1 180px;}
+.field.num input{width:6.5em;}
+
+.segmented{display:inline-flex; border:1px solid var(--border); border-radius:3px; overflow:hidden; width:fit-content;}
+.segmented button{
+  border:none; background:var(--surface-2); color:var(--fg-dim); padding:6px 11px; font-size:13px; font-weight:500;
+}
+.segmented button.active{background:var(--man); color:#fff;}
+.segmented button + button{border-left:1px solid var(--border);}
+.hint{font-size:12px; color:var(--fg-dim); margin:6px 0 10px;}
+
+.quad{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;}
+@media (max-width:520px){ .quad{grid-template-columns:repeat(2,minmax(0,1fr));} }
+
+.row-preview{
+  margin-top:8px; padding:7px 10px; background:var(--surface-2); border:1px solid var(--border-soft); border-radius:3px;
+  font-family:var(--font-mono); font-size:13px; overflow-x:auto; white-space:pre; color:var(--fg-dim);
+}
+.row-msgs{margin-top:6px; display:flex; flex-direction:column; gap:3px;}
+.msg{font-size:13px; display:flex; gap:6px;}
+.msg.err{color:var(--warn-title);}
+
+.output-panel{
+  background:var(--surface); border:1px solid var(--border); border-radius:3px;
+  padding:16px; position:sticky; top:16px;
+}
+.output-head{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+.output-head h2{font-size:17px; margin:0; flex:1; color:var(--fg); font-weight:700;}
+.status-line{display:flex; gap:14px; font-size:13px; margin-bottom:10px; flex-wrap:wrap;}
+.status-pill{display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:3px; background:var(--surface-2); border:1px solid var(--border-soft);}
+.dot{width:7px; height:7px; border-radius:50%;}
+.dot.ok{background:var(--note-title);} .dot.err{background:var(--warn-title);}
+
+textarea#outputText{
+  width:100%; min-height:220px; resize:vertical; font-family:var(--font-mono); font-size:13px;
+  background:var(--surface-2); color:var(--fg); border:1px solid var(--border-soft); border-radius:3px;
+  padding:10px 12px; line-height:1.6; white-space:pre;
+}
+.output-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+.copied-flash{color:var(--note-title); font-size:13px; margin-left:4px; opacity:0; transition:opacity .2s;}
+.copied-flash.show{opacity:1;}
+
+footer.note{margin-top:28px; color:var(--fg-dim); font-size:13px; line-height:1.6; border-top:1px solid #eee; padding-top:16px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="brand" href="../index.html"><span class="logotext1">Ska!</span><span class="logotext2">acis_thermal_check</span></a>
+  <nav><a href="../running_models.html">&#8592; Running Models docs</a></nav>
+</div>
+<div class="wrap">
+  <header class="page-head">
+    <h1>Non-Load Events Builder</h1>
+    <p>Build a <code>non_load_events</code> file for <code>acis_thermal_check</code> — used with <code>--state-builder=kadi --non_load_events &lt;file&gt;</code> to add in maneuvers, ECS measurements, or an obsid change into a thermal model run.</p>
+  </header>
+
+  <details class="info-card" id="formatInfo">
+    <summary>File format reference</summary>
+    <ul>
+      <li>Whitespace/tab-delimited ASCII table with a commented header: <code>#&nbsp;event_type&nbsp;&nbsp;date&nbsp;&nbsp;params</code></li>
+      <li><strong>date</strong> is Chandra day-of-year, UTC: <code>YYYY:DDD:HH:MM:SS.sss</code> (fractional seconds optional).</li>
+      <li><strong>MAN</strong> params: either 4 quaternion components <code>q1,q2,q3,q4</code>, or <code>ra,dec,roll</code> in degrees — comma-separated, no spaces.</li>
+      <li><strong>ECS</strong> params: <code>cap,hours</code> — CAP id is one of <code>2, 3A, 3B, 4, 4ALT, 5, 6</code> (CCD count/config), hours is the RTS duration (max 39 hours).</li>
+      <li><strong>OBSID</strong> params: the obsid number by itself, greater than 38000 and no larger than 65535.</li>
+    </ul>
+  </details>
+
+  <div class="cols">
+    <div>
+      <div class="toolbar">
+        <button class="btn btn-add-man" onclick="addRow('MAN')">+ Maneuver</button>
+        <button class="btn btn-add-ecs" onclick="addRow('ECS')">+ ECS measurement</button>
+        <button class="btn btn-add-obsid" onclick="addRow('OBSID')">+ Obsid change</button>
+        <span class="spacer" style="flex:1"></span>
+        <button class="btn btn-ghost" onclick="loadExample()">Load example</button>
+        <button class="btn btn-ghost" onclick="clearAll()">Clear all</button>
+      </div>
+      <div id="rowList"></div>
+    </div>
+
+    <div class="output-panel">
+      <div class="output-head">
+        <h2>Generated file</h2>
+      </div>
+      <div class="status-line" id="statusLine"></div>
+      <textarea id="outputText" class="mono" readonly spellcheck="false" onclick="this.select()"></textarea>
+      <div class="output-actions">
+        <button class="btn btn-primary" onclick="copyOutput()">Copy file contents</button>
+        <span class="copied-flash" id="copiedFlash">Copied</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="note">
+    Times are treated as UTC. Edit the Chandra DOY text directly for each event. Save the copied text as a plain <code>.txt</code> file and pass its path to <code>--non_load_events</code>.
+  </footer>
+</div>
+
+<script>
+let nextId = 1;
+let rows = [];
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+function pad3(n){ return String(n).padStart(3,'0'); }
+
+function nowLocalValue(){
+  return new Date().toISOString().slice(0,19);
+}
+
+function parseLocalDT(value){
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?$/.exec(value || "");
+  if(!m) return null;
+  return { y:+m[1], mo:+m[2], d:+m[3], h:+m[4], mi:+m[5], s: m[6]?+m[6]:0, ms: m[7]||"" };
+}
+
+function doyFromLocalValue(value){
+  const p = parseLocalDT(value);
+  if(!p) return "";
+  const date = Date.UTC(p.y, p.mo-1, p.d);
+  const start = Date.UTC(p.y, 0, 1);
+  const doy = Math.round((date-start)/86400000) + 1;
+  let s = `${p.y}:${pad3(doy)}:${pad2(p.h)}:${pad2(p.mi)}:${pad2(p.s)}`;
+  if(p.ms) s += "." + p.ms;
+  return s;
+}
+
+const DOY_RE = /^(\d{4}):(\d{1,3}):(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?$/;
+
+function doySortKey(doy){
+  const m = DOY_RE.exec((doy||"").trim());
+  if(!m) return Infinity;
+  const frac = m[6] ? parseFloat("0."+m[6]) : 0;
+  return (+m[1])*1e7 + (+m[2])*1e4 + (+m[3])*100*60 + (+m[4])*100 + (+m[5]) + frac;
+}
+
+function defaultsFor(type){
+  const base = { id: nextId++, type, doy: doyFromLocalValue(nowLocalValue()) };
+  if(type === 'MAN'){
+    return Object.assign(base, { mode:'quat', q1:"0", q2:"0", q3:"0", q4:"1", ra:"", dec:"", roll:"" });
+  }
+  if(type === 'ECS'){
+    return Object.assign(base, { cap:"4", hours:"24" });
+  }
+  return Object.assign(base, { obsid:"" });
+}
+
+function addRow(type, data){
+  const row = data ? Object.assign(defaultsFor(type), data, {id: nextId++}) : defaultsFor(type);
+  rows.push(row);
+  renderRows();
+  refreshOutput();
+}
+
+function removeRow(id){
+  rows = rows.filter(r => r.id !== id);
+  renderRows();
+  refreshOutput();
+}
+
+function findRow(id){ return rows.find(r => r.id === id); }
+
+function clearAll(){
+  rows = [];
+  renderRows();
+  refreshOutput();
+}
+
+function loadExample(){
+  rows = [];
+  addRow('MAN', { doy:"2024:025:12:59:00.000", mode:'quat',
+    q1:"-0.34908674", q2:"-0.72584198", q3:"-0.59196114", q4:"0.02956150" });
+  addRow('ECS', { doy:"2024:025:19:00:00", cap:"3B", hours:"24" });
+  addRow('OBSID', { doy:"2024:025:19:03:46.739", obsid:"62620" });
+}
+
+function validateRow(row){
+  const errors = [];
+  if(!DOY_RE.test((row.doy||"").trim())) errors.push("Date must look like YYYY:DDD:HH:MM:SS(.sss)");
+
+  if(row.type === 'MAN'){
+    if(row.mode === 'quat'){
+      const qs = [row.q1,row.q2,row.q3,row.q4].map(parseFloat);
+      if(qs.some(isNaN)) errors.push("All four quaternion components are required");
+      else {
+        const mag = Math.sqrt(qs.reduce((a,v)=>a+v*v,0));
+        if(Math.abs(mag-1) > 0.01) errors.push(`Quaternion magnitude is ${mag.toFixed(4)}, expected ~1.0`);
+      }
+    } else {
+      const ra=parseFloat(row.ra), dec=parseFloat(row.dec), roll=parseFloat(row.roll);
+      if([ra,dec,roll].some(isNaN)) errors.push("RA, Dec, and roll are all required");
+      else {
+        if(ra<0||ra>=360) errors.push("RA must be in [0, 360)");
+        if(dec<-90||dec>90) errors.push("Dec must be in [-90, 90]");
+        if(roll<0||roll>=360) errors.push("Roll must be in [0, 360)");
+      }
+    }
+  } else if(row.type === 'ECS'){
+    const hours = parseFloat(row.hours);
+    if(isNaN(hours) || hours<=0) errors.push("Duration must be a positive number of hours");
+    else if(hours>39) errors.push("ECS measurements cannot be longer than 39 hours");
+  } else if(row.type === 'OBSID'){
+    const obsid = parseInt(row.obsid,10);
+    if(row.obsid==="" || isNaN(obsid)) errors.push("Obsid must be an integer");
+    else if(obsid<=38000) errors.push("Obsid must be greater than 38000");
+    else if(obsid>65535) errors.push("Obsid cannot be larger than 65535");
+  }
+  return { errors };
+}
+
+function rowParams(row){
+  if(row.type === 'MAN'){
+    return row.mode === 'quat' ? `${row.q1},${row.q2},${row.q3},${row.q4}` : `${row.ra},${row.dec},${row.roll}`;
+  }
+  if(row.type === 'ECS') return `${row.cap},${row.hours}`;
+  return `${row.obsid}`;
+}
+
+function rowLine(row){
+  return `${row.type}\t${row.doy}\t${rowParams(row)}`;
+}
+
+function cardTemplate(row){
+  const idx = rows.indexOf(row) + 1;
+  let body = "";
+  if(row.type === 'MAN'){
+    body = `
+      <div class="segmented">
+        <button class="${row.mode==='quat'?'active':''}" onclick="setManMode(${row.id},'quat')">Quaternion</button>
+        <button class="${row.mode==='radec'?'active':''}" onclick="setManMode(${row.id},'radec')">RA / Dec / Roll</button>
+      </div>
+      <div class="hint">Switching converts the values below automatically.</div>
+      ${row.mode==='quat' ? `
+      <div class="quad" style="margin-top:10px">
+        <div class="field"><label for="q1-${row.id}">q1</label><input id="q1-${row.id}" class="mono" value="${row.q1}" oninput="updateField(${row.id},'q1',this.value)"></div>
+        <div class="field"><label for="q2-${row.id}">q2</label><input id="q2-${row.id}" class="mono" value="${row.q2}" oninput="updateField(${row.id},'q2',this.value)"></div>
+        <div class="field"><label for="q3-${row.id}">q3</label><input id="q3-${row.id}" class="mono" value="${row.q3}" oninput="updateField(${row.id},'q3',this.value)"></div>
+        <div class="field"><label for="q4-${row.id}">q4</label><input id="q4-${row.id}" class="mono" value="${row.q4}" oninput="updateField(${row.id},'q4',this.value)"></div>
+      </div>` : `
+      <div class="field-row" style="margin-top:10px">
+        <div class="field num"><label for="ra-${row.id}">RA (deg)</label><input id="ra-${row.id}" class="mono" value="${row.ra}" oninput="updateField(${row.id},'ra',this.value)"></div>
+        <div class="field num"><label for="dec-${row.id}">Dec (deg)</label><input id="dec-${row.id}" class="mono" value="${row.dec}" oninput="updateField(${row.id},'dec',this.value)"></div>
+        <div class="field num"><label for="roll-${row.id}">Roll (deg)</label><input id="roll-${row.id}" class="mono" value="${row.roll}" oninput="updateField(${row.id},'roll',this.value)"></div>
+      </div>`}`;
+  } else if(row.type === 'ECS'){
+    body = `
+      <div class="field-row">
+        <div class="field">
+          <label for="cap-${row.id}">CAP id</label>
+          <select id="cap-${row.id}" onchange="updateField(${row.id},'cap',this.value)">
+            ${['2','3A','3B','4','4ALT','5','6'].map(c=>`<option value="${c}" ${row.cap===c?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field num"><label for="hours-${row.id}">Duration (hr)</label><input id="hours-${row.id}" class="mono" value="${row.hours}" oninput="updateField(${row.id},'hours',this.value)"></div>
+      </div>`;
+  } else {
+    body = `
+      <div class="field-row">
+        <div class="field grow"><label for="obsid-${row.id}">Obsid</label><input id="obsid-${row.id}" class="mono" value="${row.obsid}" oninput="updateField(${row.id},'obsid',this.value)"></div>
+      </div>`;
+  }
+
+  return `
+    <div class="card" id="card-${row.id}">
+      <div class="card-head">
+        <span class="badge badge-${row.type}">${row.type}</span>
+        <span class="card-idx">#${idx}</span>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" onclick="removeRow(${row.id})" aria-label="Remove event">Remove</button>
+      </div>
+      <div class="field-row">
+        <div class="field grow">
+          <label for="doy-${row.id}">Chandra DOY (UTC) — YYYY:DDD:HH:MM:SS.sss</label>
+          <input id="doy-${row.id}" class="mono" placeholder="2024:025:12:59:00.000" value="${row.doy}" oninput="updateField(${row.id},'doy',this.value)">
+        </div>
+      </div>
+      ${body}
+      <div class="row-preview mono" id="preview-${row.id}"></div>
+      <div class="row-msgs" id="msgs-${row.id}"></div>
+    </div>`;
+}
+
+function toRad(d){ return d * Math.PI / 180; }
+function toDeg(r){ return r * 180 / Math.PI; }
+
+// Chandra attitude convention (matches Ska's Quaternion.equatorial <-> q)
+function quatToRadec(q1,q2,q3,q4){
+  const xa = q1*q1 - q2*q2 - q3*q3 + q4*q4;
+  const xb = 2*(q1*q2 + q3*q4);
+  const xn = 2*(q1*q3 - q2*q4);
+  const yn = 2*(q2*q3 + q1*q4);
+  const zn = q4*q4 + q3*q3 - q1*q1 - q2*q2;
+  const oneMinusXn2 = Math.max(0, 1 - xn*xn);
+  let ra = toDeg(Math.atan2(xb, xa));
+  const dec = toDeg(Math.atan2(xn, Math.sqrt(oneMinusXn2)));
+  let roll = toDeg(Math.atan2(yn, zn));
+  if(ra < 0) ra += 360;
+  if(roll < 0) roll += 360;
+  return { ra, dec, roll };
+}
+
+function radecToQuat(raDeg, decDeg, rollDeg){
+  const ra = toRad(raDeg), dec = toRad(decDeg), roll = toRad(rollDeg);
+  const ca=Math.cos(ra), sa=Math.sin(ra), cd=Math.cos(dec), sd=Math.sin(dec), cr=Math.cos(roll), sr=Math.sin(roll);
+  const T00=ca*cd, T01=sa*cd, T02=sd;
+  const T10=-ca*sd*sr - sa*cr, T11=-sa*sd*sr + ca*cr, T12=cd*sr;
+  const T20=-ca*sd*cr + sa*sr, T21=-sa*sd*cr - ca*sr, T22=cd*cr;
+  const den = [1+T00-T11-T22, 1-T00+T11-T22, 1-T00-T11+T22, 1+T00+T11+T22];
+  let idx = 0;
+  for(let i=1;i<4;i++) if(den[i] > den[idx]) idx = i;
+  const halfRt = 0.5 * Math.sqrt(Math.max(den[idx], 0));
+  const denom = 4 * halfRt;
+  if(idx===0) return [halfRt, (T10+T01)/denom, (T20+T02)/denom, (T21-T12)/denom];
+  if(idx===1) return [(T10+T01)/denom, halfRt, (T21+T12)/denom, (T02-T20)/denom];
+  if(idx===2) return [(T20+T02)/denom, (T21+T12)/denom, halfRt, (T10-T01)/denom];
+  return [(T21-T12)/denom, (T02-T20)/denom, (T10-T01)/denom, halfRt];
+}
+
+function setManMode(id, mode){
+  const row = findRow(id);
+  if(mode !== row.mode){
+    if(mode === 'radec'){
+      const qs = [row.q1,row.q2,row.q3,row.q4].map(parseFloat);
+      if(!qs.some(isNaN)){
+        const { ra, dec, roll } = quatToRadec(...qs);
+        row.ra = ra.toFixed(6); row.dec = dec.toFixed(6); row.roll = roll.toFixed(6);
+      }
+    } else {
+      const ra=parseFloat(row.ra), dec=parseFloat(row.dec), roll=parseFloat(row.roll);
+      if(![ra,dec,roll].some(isNaN)){
+        const q = radecToQuat(ra,dec,roll);
+        row.q1=q[0].toFixed(8); row.q2=q[1].toFixed(8); row.q3=q[2].toFixed(8); row.q4=q[3].toFixed(8);
+      }
+    }
+  }
+  row.mode = mode;
+  renderRows();
+  refreshOutput();
+}
+
+function updateField(id, field, value){
+  const row = findRow(id);
+  row[field] = value;
+  refreshRowPreview(id);
+  refreshOutput();
+}
+
+function refreshRowPreview(id){
+  const row = findRow(id);
+  if(!row) return;
+  const card = document.getElementById(`card-${id}`);
+  const { errors } = validateRow(row);
+  card.classList.toggle('err', errors.length>0);
+  document.getElementById(`preview-${id}`).textContent = rowLine(row);
+  document.getElementById(`msgs-${id}`).innerHTML =
+    errors.map(e=>`<div class="msg err">⨯ ${e}</div>`).join('');
+}
+
+function renderRows(){
+  const list = document.getElementById('rowList');
+  if(rows.length === 0){
+    list.innerHTML = `<div class="empty">No events yet — add a maneuver, ECS measurement, or obsid change above, or load the example file.</div>`;
+    return;
+  }
+  list.innerHTML = rows.map(cardTemplate).join('');
+  rows.forEach(r => refreshRowPreview(r.id));
+}
+
+function refreshOutput(){
+  const sorted = [...rows].sort((a,b) => doySortKey(a.doy) - doySortKey(b.doy));
+  const lines = ["# event_type\tdate\tparams", ...sorted.map(rowLine)];
+  document.getElementById('outputText').value = lines.join('\n') + (rows.length ? '\n' : '');
+
+  let errCount=0;
+  rows.forEach(r => { errCount += validateRow(r).errors.length; });
+  const statusEl = document.getElementById('statusLine');
+  if(rows.length === 0){
+    statusEl.innerHTML = `<span class="status-pill"><span class="dot ok"></span>No events</span>`;
+  } else {
+    statusEl.innerHTML = `
+      <span class="status-pill"><span class="dot ${errCount?'err':'ok'}"></span>${errCount} error${errCount===1?'':'s'}</span>
+      <span class="status-pill"><span class="dot ok"></span>${rows.length} row${rows.length===1?'':'s'}</span>`;
+  }
+}
+
+async function copyOutput(){
+  const text = document.getElementById('outputText').value;
+  const flash = document.getElementById('copiedFlash');
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    const ta = document.getElementById('outputText');
+    ta.focus(); ta.select();
+  }
+  flash.classList.add('show');
+  setTimeout(()=>flash.classList.remove('show'), 1400);
+}
+renderRows();
+refreshOutput();
+
+</script>
+</body>
+</html>

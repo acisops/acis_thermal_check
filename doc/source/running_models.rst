@@ -198,6 +198,15 @@ commands are approved, they will appear in the Chandra Command Events Sheet. How
 want to determine the thermal prediction ahead of time for these types of events, you can
 construct an ASCII text file which includes them.
 
+.. note::
+
+    An interactive `Non-Load Events Builder <_static/non_load_events_builder.html>`_
+    web page is available for constructing this file without having to hand-edit the text
+    format. It lets you add "MAN", "ECS", and "OBSID" events through a form, converts
+    between attitude quaternions and RA/Dec/Roll, validates values (e.g. ECS duration,
+    obsid range, quaternion normalization) as you go, and generates the finished file for
+    copying.
+
 Three types of events are supported by this file:
 
 * "MAN" events: this is an event where a manuever to a specified attitude quaternion is

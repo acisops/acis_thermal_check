@@ -360,4 +360,4 @@ supplementary and necessary for certain loads:
   recreate the situation at the time the model was originally run as precisely as
   possible, specify the name of the load in the ``nlets`` set and add the NLET file
   to the ``acis_thermal_check/tests/data/nlets`` directory, with the naming convention
-  ``"TEST_NLET_{load_name}.txt"``, where ``"load_name"`` is of the form``"MAR0617A"``.
+  ``"TEST_NLET_{load_name}.txt"``, where ``"load_name"`` is of the form ``"MAR0617A"``.
