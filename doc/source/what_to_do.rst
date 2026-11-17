@@ -30,10 +30,10 @@ located, and ``--out`` is the name of the directory into which the files will be
 Running Predictions Only
 ========================
 
-``acis_thermal_check`` scripts run both predictions and validations, the latter so we can 
-check the performance of the model against actual telemetry on a regular basis. If the code 
-is crashing during the validation phase, it is possible to run with predictions only. This
-can be done with the ``--pred-only`` flag:
+``acis_thermal_check`` scripts run both predictions and validations, where we run the latter
+so we can check the performance of the model against actual telemetry on a regular basis. If
+the code is crashing during the validation phase, it is possible to run with predictions only.
+This can be done with the ``--pred-only`` flag:
 
 .. code-block:: text
 
@@ -49,21 +49,6 @@ these circumstances, you should use the ``--interrupt`` flag:
 .. code-block:: text
 
     barth-v.acisdude:~[105]> dpa_check --oflsdir=/data/acis/LoadReviews/2025/JAN2725/ofls --interrupt --out=test_jan2725_dpa
-
-Running with the ``kadi`` State Builder
-=======================================
-
-The ``"acis"`` State Builder constructs a history of states using a series of backstop files and
-the Non-Load Event Tracker (NLET) file. This is the default state builder used with 
-``acis_thermal_check``, and is used by ``lr``. The ``"kadi"`` state builder constructs a history 
-of states using ``kadi``-based commands (though even for the ``"acis"`` state builder ``kadi`` is
-used to get states from commands). If there is a suspicion that something has gone wrong with the 
-ACIS continuity files that the ``"acis"`` state builder uses to construct a mission history, then 
-the script can be run with the ``"kadi"`` state builder using the ``--state-builder`` flag:
-
-.. code-block:: text
-
-    barth-v.acisdude:~[105]> dea_check --oflsdir=/data/acis/LoadReviews/2025/JAN2725/ofls --state-builder=kadi --out=test_jan2725_dea
 
 Changing the Run Start Time
 ===========================

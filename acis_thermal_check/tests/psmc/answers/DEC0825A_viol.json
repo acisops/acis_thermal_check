@@ -1,0 +1,19 @@
+{
+    "datestarts": [
+        "2025:343:05:57:18.816"
+    ],
+    "datestops": [
+        "2025:343:07:19:18.816"
+    ],
+    "temps": [
+        "44.82"
+    ],
+    "run_start": "2025:342:01:01:51.789",
+    "limits": {
+        "odb.caution.high": 48.5,
+        "planning.warning.high": 44.0
+    },
+    "duration": [
+        "4.92"
+    ]
+}

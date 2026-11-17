@@ -66,26 +66,39 @@ may be added by individual models in the call to, as further detailed in
 
 .. code-block:: text
 
-    --outdir OUTDIR       Output directory. If it does not exist it will be created. Default: 'out'
-    --backstop_file BACKSTOP_FILE
-                          Path to the backstop file. If a directory, the backstop file will be searched for within this directory. Default: None
-    --oflsdir OFLSDIR     Path to the directory containing the backstop file (legacy argument). If specified, it will override the value of the
-                          backstop_file argument. Default: None
-    --model-spec MODEL_SPEC
-                          Model specification file. Defaults to the one included with the model package.
-    --days DAYS           Days of validation data. Default: 21
-    --run-start RUN_START
-                          Reference time to replace run start time for regression testing. The default is to use the current time. Default: None
-    --interrupt           Set this flag if this is an interrupt load.
-    --traceback           Enable tracebacks. Default: True
-    --pred-only           Only make predictions. Default: False
-    --verbose VERBOSE     Verbosity (0=quiet, 1=normal, 2=debug)
-    --T-init T_INIT       Starting temperature (degC). Default is to compute it from telemetry.
-    --state-builder STATE_BUILDER
-                          StateBuilder to use (kadi|acis). Default: acis
-    --nlet_file NLET_FILE
-                          Full path to the Non-Load Event Tracking file that should be used for this model run.
-    --version             Print version
+      -h, --help            show this help message and exit
+      --outdir OUTDIR       Output directory. If it does not exist it will be created. Default: 'out'
+      --backstop_file BACKSTOP_FILE
+                            Path to the backstop file. If a directory, the backstop file will be searched for within this directory.
+                            Default: None
+      --oflsdir OFLSDIR     Path to the directory containing the backstop file (legacy argument). If specified, it will override the value
+                            of the backstop_file argument. Default: None
+      --model-spec MODEL_SPEC
+                            Model specification file. Defaults to the one included with the model package.
+      --pred_days PRED_DAYS
+                            Days of prediction. Not used if a backstop file is supplied.
+      --days DAYS           Days of validation data. Default: 21
+      --run-start RUN_START
+                            Reference time to replace run start time for regression testing. The default is to use the current time.
+                            Default: None
+      --interrupt           Set this flag if this is an interrupt load.
+      --traceback           Enable tracebacks. Default: True
+      --pred-only           Only make predictions. Default: False
+      --val-only            Only run the validation check. Default: False
+      --set_time_now SET_TIME_NOW
+                            Override what the current time is for testing purposes. Default: None
+      --verbose VERBOSE     Verbosity (0=quiet, 1=normal, 2=debug)
+      --T-init T_INIT       Starting temperature (degC). Default is to compute it from telemetry.
+      --state-builder STATE_BUILDER
+                            StateBuilder to use (kadi|acis). Default: kadi
+      --nlet_file NLET_FILE
+                            Full path to the Non-Load Event Tracking file that should be used for this model run. Only used with the 'acis'
+                            StateBuilder.
+      --non_load_events NON_LOAD_EVENTS
+                            ASCII text file containing non-load command events to use in case of an anomaly or other non-load situations.
+                            Only used with the 'kadi' StateBuilder.
+      --version             Print version
+
 
 Running Thermal Models: Examples
 ================================
@@ -124,6 +137,12 @@ using the ``--pred-only`` flag:
 
     [~]$ dea_check --backstop_file=/data/acis/LoadReviews/2017/AUG3017/ofls --outdir=dea_aug3017 --pred-only
 
+Or, if you want to run with validation only, use the ``--val-only`` flag:
+
+.. code-block:: text
+
+    [~]$ dea_check --backstop_file=/data/acis/LoadReviews/2017/AUG3017/ofls --outdir=dea_aug3017 --val-only
+
 Finally, if one wishes to run validation without prediction for a specific load,
 simply omit the ``backstop_file`` argument. It may make sense here to supply a 
 ``run_start`` argument, if one wants a different time than the current time to 
@@ -135,3 +154,168 @@ validate:
 
 A page describing how to use these options if something goes wrong with the model runs
 performed by the ACIS Ops ``lr`` script can be found at :ref:`what-to-do`.
+
+Running Thermal Models in Case of a Radiation Shutdown
+======================================================
+
+If a radiation shutdown has occurred and SCS-107 has been run as a result, the science loads
+will be halted but the vehicle loads will continue to execute. If a new science load needs to be
+reviewed which has a vehicle load as its continuity, the thermal model scripts can be run in the
+same way as above. Similarly, if there is a need to run a second set of vehicle loads which have
+to be approved at a load review, the thermal model scripts can also be run in the same way as
+above, as the new vehicle loads will not contain any science commands but the rest of the
+commands will be picked up appropriately.
+
+Running Thermal Models in Case of an Anomaly
+============================================
+
+If a spacecraft anomaly has occurred, ACIS has (hopefully) safed itself and we are either
+in a Normal Sun Mode (NSM) or a Bright Star Hold (BSH). In this circumstance, both the
+science and vehicle loads are halted. After we have come up on comm and the time and nature of
+the safing action has been determined, it will be entered into the
+`Chandra Command Events Sheet <https://docs.google.com/spreadsheets/d/19d6XqBhWoFjC-z1lS1nM6wLE_zjr4GYB1lOvrEGCbKQ/edit#gid=0>`_.
+From this point on, one can determine the thermal prediction for a given temperature by running
+the corresponding thermal model script without a backstop file or OFLS directory:
+
+.. code-block:: text
+
+    [~]$ dpa_check --outdir=bright_star_hold
+
+By default, this run will predict temperatures forward in time assuming the same states and
+projected ephemeris for 5 days. If you want to change the number of days it predicts forward,
+choose a different value for the ``--pred_days`` argument:
+
+.. code-block:: text
+
+    [~]$ dpa_check --outdir=bright_star_hold --pred_days=3.5
+
+Running Thermal Models with Non-Load Events Files
+=================================================
+
+Suppose, however, that non-load commands are executed before a new science load is reviewed.
+This may take the form of a slew to a new attitude, or a long ECS measurement. Once these
+commands are approved, they will appear in the Chandra Command Events Sheet. However, if you
+want to determine the thermal prediction ahead of time for these types of events, you can
+construct an ASCII text file which includes them.
+
+.. note::
+
+    An interactive `Non-Load Events Builder <_static/non_load_events_builder.html>`_
+    web page is available for constructing this file without having to hand-edit the text
+    format. It lets you add "MAN", "ECS", and "OBSID" events through a form, converts
+    between attitude quaternions and RA/Dec/Roll, validates values (e.g. ECS duration,
+    obsid range, quaternion normalization) as you go, and generates the finished file for
+    copying.
+
+Three types of events are supported by this file:
+
+* "MAN" events: this is an event where a manuever to a specified attitude quaternion is
+  executed at a particular time.
+* "ECS" events: this is an event where a long ECS measurement is executed, starting at a particular
+  time.
+* "OBSID" events: this is an event where a change to a specified obsid occurs at a particular
+  time.
+
+The format of the non-load events file is a simple text file which begins by specifying a line
+with the following columns:
+
+.. code-block:: text
+
+    # event_type	date	params
+
+To include a "MAN" event, specify the event type as "MAN", add a time in the YYY:DOY:HH:MM:SS.ddd
+format, and specify the attitude quaternion as a set of 4 floats, separated by commas. It should
+look like this:
+
+.. code-block:: text
+
+    # event_type	date	params
+    MAN     2024:025:12:59:00.000   -0.34908674,-0.72584198,-0.59196114,0.02956150
+
+If you wanted to add an "ECS" event to it, specify the event time as "ECS", add a time in the
+YYY:DOY:HH:MM:SS.ddd format, and specify the "CAP identifier" you will use as well as the number
+of hours that the ECS measurement will run, comma-separated. The available CAP identifiers are:
+
+* "2": A 2-CCD ECS measurement, corresponding to "CAPXXXX_acis_2_RTS_ECS_SCS_v18.doc"
+* "3A": A 3-CCD ECS measurement, corresponding to "CAPXXXX_aciss_3A_RTS_ECS_SCS_v18.doc"
+* "3B": A 3-CCD ECS measurement, corresponding to "CAPXXXX_acisi_3B_RTS_ECS_SCS_v18.doc"
+* "4": A 4-CCD ECS measurement, corresponding to, "CAPXXXX_acisi_4_RTS_ECS_SCS_v18.doc"
+* "4ALT": A 4-CCD ECS measurement, corresponding to "CAPXXXX_aciss_4ALT_RTS_ECS_SCS_v18.doc"
+* "5": A 5-CCD ECS measurement, corresponding to "CAPXXXX_acisi_5_RTS_ECS_SCS_v18.doc"
+* "6": A 6-CCD ECS measurement, corresponding to "CAPXXXX_acisi_6_RTS_ECS_SCS_v18.doc"
+
+If we were to add a line for a "3B" ECS measurement running for 24 hours to the previous
+maneuver line above, the non-load events file would look like this:
+
+.. code-block:: text
+
+    # event_type	date	params
+    MAN     2024:025:12:59:00.000   -0.34908674,-0.72584198,-0.59196114,0.02956150
+    ECS     2024:025:19:00:00.000   3B,24
+
+To include an "OBSID" event, specify the event type as "OBSID", add a time in the
+YYY:DOY:HH:MM:SS.ddd format, and specify the OBSID. If you were to add it to the two lines
+above, it would look like this:
+
+.. code-block:: text
+
+    # event_type	date	params
+    MAN     2024:025:12:59:00.000   -0.34908674,-0.72584198,-0.59196114,0.02956150
+    ECS     2024:025:19:00:00.000   3B,24
+    OBSID   2024:025:19:03:46.739   62620
+
+Once you have created the file, save it to your chosen name, and then point whatever
+thermal model script you are running to that file using the ``--non_load_events``
+argument:
+
+.. code-block:: text
+
+    [~]$ dpa_check --outdir=bright_star_hold --non_load_events=non_load_events.txt
+
+Running Multiple Thermal Models at Once
+========================================
+
+If you want to run several thermal models together against the same backstop
+file or other command-line options, use ``multi_model_check``. It runs each
+of the models (currently ``dpa_check``, ``dea_check``, ``psmc_check``, and
+``acisfp_check``) with the arguments you give it, placing each model's full
+set of outputs into its own subdirectory of a single output directory
+(``out_dpa``, ``out_dea``, ``out_psmc``, and ``out_fptemp``, respectively).
+It then writes a combined ``index.html`` in that output directory showing
+each model's prediction plot, linked to that model's own report page.
+
+Any argument accepted by the individual model scripts (e.g.
+``--backstop_file``, ``--interrupt``, ``--state-builder``,
+``--non_load_events``) can be passed to ``multi_model_check`` and will be
+forwarded, unchanged, to every model that is run, with the exception of
+``--outdir``, which instead controls where the per-model subdirectories and
+the combined index page are written:
+
+.. code-block:: text
+
+    [~]$ multi_model_check --backstop_file=/data/acis/LoadReviews/2017/OCT1617/ofls --outdir=multi_oct1617
+
+``--T-init`` is handled specially, since passing a single starting
+temperature to every model is rarely correct. A bare value is used as the
+default starting temperature for any model that doesn't have its own
+override, and a ``MODEL=TEMP`` entry sets the starting temperature for just
+that one model (choices for ``MODEL`` are ``dpa``, ``dea``, ``psmc``, and
+``acisfp``). Models with no value at all, and no default given, compute
+their starting temperature from telemetry as usual. For example, to give
+all models a starting temperature of -50 degC except for ``acisfp``, which
+should start at -105 degC:
+
+.. code-block:: text
+
+    [~]$ multi_model_check --backstop_file=/data/acis/LoadReviews/2017/OCT1617/ofls --outdir=multi_oct1617 --T-init -50.0 acisfp=-105.0
+
+If any individual model fails, ``multi_model_check`` still runs the rest,
+marks the failed model(s) as such on the combined index page, and exits
+with a non-zero status once all of the models have finished.
+
+Passing ``--web`` instead writes the output to ACIS Ops' web-accessible test
+area, ``/proj/web-cxc/htdocs/acis/Thermal/tests/<year>/<outdir>``, and prints
+the URL where the combined report will be visible once it has been published.
+
+
+

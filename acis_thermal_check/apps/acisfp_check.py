@@ -105,7 +105,14 @@ class ACISFPCheck(ACISThermalCheck):
             model.comp["215pcast_off"].set_data(states["hrc_15v"] == "ON", state_times)
 
     def make_prediction_plots(
-        self, outdir, states, temps, load_start, upper_limit, lower_limit
+        self,
+        outdir,
+        states,
+        temps,
+        load_start,
+        upper_limit,
+        lower_limit,
+        is_weekly_load,
     ):
         """
         Make plots of the thermal prediction as well as associated
@@ -126,7 +133,12 @@ class ACISFPCheck(ACISThermalCheck):
         times = self.predict_model.times
 
         # Gather perigee passages
-        self._gather_perigee(times[0], load_start + 86400.0)
+        if is_weekly_load:
+            tstop_perigee = load_start + 86400.0
+        else:
+            tstop_perigee = times[-1] + 86400.0
+
+        self._gather_perigee(times[0], tstop_perigee)
 
         """
         Next we need to find all the ACIS-S observations within the start/stop
@@ -152,6 +164,8 @@ class ACISFPCheck(ACISThermalCheck):
         textypos = [-108.0, -119.3, -115.7]
         fontsize = [12, 9, 9]
         for i in range(3):
+            if not is_weekly_load and i != 0:
+                continue
             name = f"{self.name}_{i + 1}"
             plots[name] = PredictPlot(
                 fig_id=i + 1,
@@ -186,54 +200,55 @@ class ACISFPCheck(ACISThermalCheck):
             if i == 0:
                 w1, _ = plots[name].fig.get_size_inches()
 
-            # Now draw horizontal lines on the plot running from start to stop
-            # and label them with the Obsid
-            draw_obsids(
-                self.acis_and_ecs_obs,
-                plots,
-                name,
-                ypos[i],
-                ypos[i] - 0.5 * capwidth[i],
-                ypos[i] + 0.5 * capwidth[i],
-                textypos[i],
-                fontsize[i],
-                plot_start,
-            )
+            if is_weekly_load:
+                # Now draw horizontal lines on the plot running from start to stop
+                # and label them with the Obsid
+                draw_obsids(
+                    self.acis_and_ecs_obs,
+                    plots,
+                    name,
+                    ypos[i],
+                    ypos[i] - 0.5 * capwidth[i],
+                    ypos[i] + 0.5 * capwidth[i],
+                    textypos[i],
+                    fontsize[i],
+                    plot_start,
+                )
 
-            # These next lines are dummies so we can get the obsids in the legend
-            plots[name].ax.errorbar(
-                [0.0, 0.0],
-                [1.0, 1.0],
-                xerr=1.0,
-                lw=2,
-                xlolims=True,
-                color="blue",
-                capsize=4,
-                capthick=2,
-                label="Cold ECS",
-            )
-            plots[name].ax.errorbar(
-                [0.0, 0.0],
-                [1.0, 1.0],
-                xerr=1.0,
-                lw=2,
-                xlolims=True,
-                color="red",
-                capsize=4,
-                capthick=2,
-                label="ACIS-I",
-            )
-            plots[name].ax.errorbar(
-                [0.0, 0.0],
-                [1.0, 1.0],
-                xerr=1.0,
-                lw=2,
-                xlolims=True,
-                color="green",
-                capsize=4,
-                capthick=2,
-                label="ACIS-S",
-            )
+                # These next lines are dummies so we can get the obsids in the legend
+                plots[name].ax.errorbar(
+                    [0.0, 0.0],
+                    [1.0, 1.0],
+                    xerr=1.0,
+                    lw=2,
+                    xlolims=True,
+                    color="blue",
+                    capsize=4,
+                    capthick=2,
+                    label="Cold ECS",
+                )
+                plots[name].ax.errorbar(
+                    [0.0, 0.0],
+                    [1.0, 1.0],
+                    xerr=1.0,
+                    lw=2,
+                    xlolims=True,
+                    color="red",
+                    capsize=4,
+                    capthick=2,
+                    label="ACIS-I",
+                )
+                plots[name].ax.errorbar(
+                    [0.0, 0.0],
+                    [1.0, 1.0],
+                    xerr=1.0,
+                    lw=2,
+                    xlolims=True,
+                    color="green",
+                    capsize=4,
+                    capthick=2,
+                    label="ACIS-S",
+                )
 
             # Make the legend on the temperature plot
             plots[name].ax.legend(
@@ -255,7 +270,8 @@ class ACISFPCheck(ACISThermalCheck):
         # for eachpassage in perigee_passages:
         paint_perigee(self.perigee_passages, plots)
 
-        plots["default"] = plots[f"{self.name}_3"]
+        default_plt = 3 if is_weekly_load else 1
+        plots["default"] = plots[f"{self.name}_{default_plt}"]
 
         # Now write all the plots after possible
         # customizations have been made

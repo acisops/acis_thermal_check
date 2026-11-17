@@ -5,8 +5,10 @@ import shutil
 import tempfile
 from pathlib import Path, PurePath
 
+import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
+from cxotime import CxoTime
 from numpy.testing import assert_allclose, assert_array_equal
 
 months = [
@@ -26,23 +28,29 @@ months = [
 
 # Loads for regression testing
 test_loads = {
-    "normal": ["MAR0617A", "MAR2017E", "JUL3117B", "SEP0417A"],
+    "normal": ["JUN0820A", "SEP1922A", "DEC0825A"],
     "interrupt": [
-        "MAR1517B",
-        "JUL2717A",
-        "AUG2517C",
-        "AUG3017A",
-        "MAR0817B",
-        "MAR1117A",
-        "APR0217B",
-        "SEP0917C",
+        "MAY0521A",
+        "AUG1322A",
+        "OCT2722A",
+        "MAY1123A",
+        "JAN2624A",
+        "FEB0626A",
     ],
 }
 all_loads = test_loads["normal"] + test_loads["interrupt"]
 
 hrc_loads = {"normal": ["SEP1922A", "SEP2622A"]}
 
-nlets = {"MAR0617A", "MAR0817B", "SEP0417A"}
+run_starts = {
+    "AUG1322A": "2022:225:05:00:00.000",
+    "JAN2624A": "2024:026:12:31:52.403",
+    "OCT2722A": "2022:300:12:00:00.000",
+}
+
+now_times = {"JAN2624A": "2024:026:00:00:00"}
+
+nlets = {"AUG1322A", "JAN2624A"}
 
 
 def get_lr_root():
@@ -101,6 +109,18 @@ class TestArgs:
     nlet_file : string, optional
         The path to an alternative NLET file to be used. Default: None,
         which is to use the default one.
+    set_time_now : string, optional
+        The "now" time to be used in the model run. If not set, it will
+        assume the actual current time.
+    pred_days : float, optional
+        The number of days to run the prediction for, if not obtained
+        from a backstop file. Default: 5.0
+    pred_only : boolean, optional
+        If True, only run the prediction, not the validation. Default: False
+    val_only : boolean, optional
+        If True, only run the validation, not the prediction. Default: False
+    non_load_events : str, optional
+        The path to a file containing non-load events. Default: None
     """
 
     def __init__(
@@ -115,6 +135,11 @@ class TestArgs:
         verbose=0,
         model_spec=None,
         nlet_file=None,
+        set_time_now=None,
+        pred_days=5.0,
+        pred_only=False,
+        val_only=False,
+        non_load_events=None,
     ):
         from datetime import datetime
 
@@ -124,7 +149,7 @@ class TestArgs:
             month = months.index(load_week[:3]) + 1
             day = int(load_week[3:5])
             run_start = datetime(year, month, day).strftime("%Y:%j:%H:%M:%S")
-        self.run_start = run_start
+        self.run_start = CxoTime(run_start)
         self.outdir = Path(outdir)
         lr_root = get_lr_root()  # Directory containing ACIS load review data
         # load_week sets the bsdir
@@ -142,12 +167,18 @@ class TestArgs:
         self.nlet_file = nlet_file
         self.interrupt = interrupt
         self.state_builder = state_builder
-        self.pred_only = False
+        self.pred_only = pred_only
+        self.val_only = val_only
         self.T_init = T_init
         self.traceback = True
         self.verbose = verbose
         self.model_spec = model_spec
         self.version = None
+        if set_time_now is None:
+            set_time_now = self.run_start - 1.0 * u.day
+        self.set_time_now = CxoTime(set_time_now)
+        self.pred_days = pred_days
+        self.non_load_events = non_load_events
 
 
 def exception_catcher(test, old, new, data_type, **kwargs):
@@ -171,6 +202,7 @@ class RegressionTester:
         sub_dir=None,
         model_spec=None,
         caplog=None,
+        verbose=0,
     ):
         if caplog is not None:
             caplog.set_level(logging.WARNING, logger="matplotlib")
@@ -199,15 +231,22 @@ class RegressionTester:
         self.test_model_spec = tests_path / self.name / specfile
         if not self.outdir.exists():
             self.outdir.mkdir(parents=True)
+        self.verbose = verbose
 
     def run_model(
         self,
         load_week=None,
         run_start=None,
-        state_builder="acis",
+        state_builder="kadi",
         interrupt=False,
         override_limits=None,
         out_dir=None,
+        set_time_now=None,
+        pred_only=False,
+        val_only=False,
+        non_load_events=None,
+        nlet_file=None,
+        pred_days=5,
     ):
         """
         Run a thermal model in test mode for a single load week.
@@ -233,15 +272,27 @@ class RegressionTester:
             Where to place the model results. If not set, one will be
             created based on the value of load_week, but an error will
             be raised if the latter is not set.
+        pred_only : boolean, optional
+            If True, only run the prediction, not the validation. Default: False
+        val_only : boolean, optional
+            If True, only run the validation, not the prediction. Default: False
+        non_load_events : string, optional
+            The path to a file containing non-load events. Default: None
+        nlet_file : string, optional
+            The path to an alternative NLET file to be used. Default: None,
+            which is to use the default one.
+        pred_days : float, optional
+            The number of days to run the prediction for, if not obtained
+            from a backstop file. Default: 5.0
         """
         if out_dir is None:
             if load_week is None:
                 raise ValueError("Both 'out_dir' and 'load_week' cannot be None!")
             out_dir = self.outdir / load_week / self.name
-        if load_week in nlets:
+        if nlet_file is None and load_week in nlets:
             nlet_file = tests_path / "data" / f"nlets/TEST_NLET_{load_week}.txt"
-        else:
-            nlet_file = None
+        if load_week in now_times:
+            set_time_now = now_times[load_week]
         args = TestArgs(
             out_dir,
             run_start=run_start,
@@ -250,6 +301,12 @@ class RegressionTester:
             nlet_file=nlet_file,
             state_builder=state_builder,
             model_spec=self.test_model_spec,
+            set_time_now=set_time_now,
+            verbose=self.verbose,
+            pred_only=pred_only,
+            val_only=val_only,
+            non_load_events=non_load_events,
+            pred_days=pred_days,
         )
         self.atc_obj.run(args, override_limits=override_limits)
         # This next line clears all plots from memory from the model
@@ -261,59 +318,13 @@ class RegressionTester:
         # operations, but only in this testing framework.
         plt.close("all")
 
-    def run_models(
-        self,
-        normal=True,
-        interrupt=True,
-        run_start=None,
-        state_builder="acis",
-        hrc=False,
-    ):
-        """
-        Run the internally set list of models for regression testing.
-
-        Parameters
-        ----------
-        normal : boolean, optional
-            Run the "normal" loads. Default: True
-        interrupt : boolean, optional
-            Run the "interrupt" loads. Default: True
-        run_start : string, optional
-            The run start time in YYYY:DOY:HH:MM:SS.SSS format. If not
-            specified, one will be created 3 days prior to the model run.
-        state_builder : string, optional
-            The mode used to create the list of commanded states. "kadi" or
-            "acis", default "acis".
-        hrc : boolean, optional
-            If True, use loads specified for HRC model testing. Default: False
-        """
-        if hrc:
-            loads = hrc_loads
-        else:
-            loads = test_loads
-        if normal and "normal" in loads:
-            for load in loads["normal"]:
-                self.run_model(
-                    load_week=load,
-                    run_start=run_start,
-                    state_builder=state_builder,
-                )
-        if interrupt and "interrupt" in loads:
-            for load in loads["interrupt"]:
-                self.run_model(
-                    load_week=load,
-                    interrupt=True,
-                    run_start=run_start,
-                    state_builder=state_builder,
-                )
-
     def _set_answer_dir(self, load_week):
         answer_dir = tests_path / f"{self.name}/answers" / load_week
         if not answer_dir.exists():
             answer_dir.mkdir(parents=True)
         return answer_dir
 
-    def run_test(self, test_name, load_week, answer_store=False):
+    def run_test(self, test_name, load_week, state_builder, answer_store=False):
         """
         This method runs the answer test in one of two modes:
         either comparing the answers from this test to the "gold
@@ -325,11 +336,28 @@ class RegressionTester:
             The name of the test to run. "prediction" or "validation".
         load_week : string
             The load week to be tested, in a format like "MAY2016A".
+        state_builder : string
+            The mode used to create the list of commanded states. "kadi" or
+            "acis".
         answer_store : boolean, optional
             If True, store the generated data as the new answers.
             If False, only test. Default: False
         """
         out_dir = self.outdir / load_week / self.name
+        if not out_dir.exists():
+            if load_week in test_loads["normal"] or load_week in hrc_loads["normal"]:
+                self.run_model(
+                    load_week=load_week,
+                    state_builder=state_builder,
+                )
+            elif load_week in test_loads["interrupt"]:
+                self.run_model(
+                    load_week=load_week,
+                    interrupt=True,
+                    run_start=run_starts.get(load_week, None),
+                    state_builder=state_builder,
+                )
+
         if test_name == "prediction":
             filenames = ["temperatures.dat", "states.dat"]
             if self.name == "acisfp":

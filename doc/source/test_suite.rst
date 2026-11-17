@@ -1,16 +1,17 @@
 .. _test_suite:
 
-Using the ``acis_thermal_check`` Regression Testing Framework
--------------------------------------------------------------
+Using the ``acis_thermal_check`` Testing Framework
+--------------------------------------------------
 
-``acis_thermal_check`` includes a regression test framework which allows one to
+``acis_thermal_check`` includes a testing framework that includes both unit tests
+of various functionalities, as well as regression tests which allow one to
 develop tests for a given thermal model against a set of "gold standard" model 
 outputs for a number of load weeks. This section describes the test suite, how 
 to run it, how to add new loads for testing, and how to update the gold standard
 model answers.
 
-An Overview of ``acis_thermal_check`` Regression Testing
-========================================================
+Regression Tests
+================
 
 When an ``acis_thermal_check`` model is run, it produces numerical outputs for 
 model prediction and validation in addition to the plots and tables on the 
@@ -23,28 +24,28 @@ This allows us to track the effect of code changes in a systematic way and flag
 those changes which are not expected to change results but do, so that bugs can 
 be identified and fixed before merging the new code into master. 
 
-The different types of tests will now be detailed:
+Load Tests
+++++++++++
 
-ACIS State Builder Tests
-++++++++++++++++++++++++
+The bulk of the regression tests consists of checking the outputs of
+``acis_thermal_check`` runs against known correct answers. These consist of
+prediction tests and validation tests. These are run for a number of previous
+load scenarios, including loads which have a "normal" continuity with a previous
+load and those which have continuity with some kind of "interrupt". We also set
+the "now" time for the tests to be contemporaneous with the load in question.
 
-The ACIS state builder constructs a history of commands and states prior to the
-load using the ``backstop_history`` package. There are two basic kinds of tests 
-that are run for the ACIS state builder: prediction tests and validation tests.
-These are run for a number of previous load scenarios. For a given load, the 
-prediction tests check the values in the ``temperatures.dat`` and ``states.dat``
-files produced by the model run against those in the "gold standard" versions of 
-these files. The validation tests check the values in the ``validation_data.pkl``
-file produced by the model run against the ones in the "gold standard" version of
-this file. 
+For a given load, the prediction tests check the values in the ``temperatures.dat``
+and ``states.dat`` files produced by the model run against those in the "gold
+standard" versions of these files, and validation tests check the values in the
+``validation_data.pkl`` file produced by the model run against the ones in the
+"gold standard" version of this file. These tests are run for both the "ACIS" and
+"kadi" state builders.
 
-kadi State Builder Tests
-++++++++++++++++++++++++
+.. note::
 
-The kadi state builder tests run the same prediction and validation comparisons
-as the ACIS state builder tests, except using the kadi state builder which 
-constructs the history prior to the start of the load using commands from the 
-kadi database. 
+    In the case of the ACIS FP model, an additional file ``earth_solid_angles.dat``
+    is generated for the prediction tests and is checked against its gold standard
+    answers.
 
 Violations Tests
 ++++++++++++++++
@@ -56,13 +57,29 @@ and stop times for the violations, the maximum or minimum temperatures for the
 violations, and (in the case of the focal plane model) the obsids. The "gold 
 standard" answers for these tests are stored in a JSON file.
 
-The Model Specification for Tests
-+++++++++++++++++++++++++++++++++
+Observation Table Tests
++++++++++++++++++++++++
 
-A model specification file in JSON format is set aside for testing, and can be
-different from the one currently in use for thermal models. It should only be
-updated sparingly, usually if there are major changes to the structure of a 
-model. For directions on how to update, see :ref:`update_model_spec`.
+For the ACIS FP model, a table of observations and a number of properties which
+determine the science data quality limit for those observations. Accordingly, there
+are also regression tests that check the values stored in this table for a few
+loads. The "gold standard" answers for these tests are stored in a JSON file.
+
+Prediction and Validation Only Tests
+++++++++++++++++++++++++++++++++++++
+
+There are two additional regression tests for the 1DPAMZT model, which test the conditions
+whether only predictions or validations are run. These generate the products for prediction
+or validation only, and test that the other products are not generated.
+
+Unit Tests
+==========
+
+At the current time, the only "unit" tests which do not check regression are related to
+non-load events. The 1DPAMZT model tests in ``test_dpa_non_load.py`` check for correct
+inclusion of non-load commands from NLET and non-load event files, and that the resulting
+state histories and temperature predictions agree. The tests in ``test_nonload_cmds.py``
+are for checking the outputs of particular non-load commands.
 
 Running Tests
 =============
@@ -115,8 +132,8 @@ want to test:
     [~]$ cd ~/Source/acis_thermal_check
 
     [~]$ ls acis_thermal_check/tests/
-    __init__.py  acisfp  conftest.py  dea  fep1actel  psmc
-    __pycache__  beppcb  data         dpa  fep1mong   regression_testing.py
+    __init__.py  acisfp   cea          data  dpa         fep1_mong  regression_testing.py
+    __pycache__  bep_pcb  conftest.py  dea   fep1_actel  psmc       test_nonload_cmds.py
 
     # Run all the 1PDEAAT tests only
     [~]$ py.test -s acis_thermal_check/tests/psmc
@@ -144,23 +161,11 @@ can call ``py.test`` on the file containing those tests:
     # Run the violation tests only for 1DEAMZT
     [~]$ py.test -s acis_thermal_check/tests/dea/test_dea_viols.py
 
+    # Run the non-load tests
+    [~]$ py.test -s acis_thermal_check/tests/test_nonload_cmds.py
+
 What Happens if Some or All of the Tests Fail? 
 ++++++++++++++++++++++++++++++++++++++++++++++
-
-Most warnings when running the tests are normal and benign. At this current time,
-they typically look like this:
-
-.. code-block:: text
-
-    ../../miniconda3/envs/ska/lib/python3.8/site-packages/ipyparallel/client/view.py:8
-    /Users/jzuhone/miniconda3/envs/ska/lib/python3.8/site-packages/ipyparallel/client/view.py:8: DeprecationWarning: the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses
-    import imp
-
-    acis_thermal_check/tests/dpa/test_dpa_acis.py::test_prediction[MAR0617A]
-    <frozen importlib._bootstrap>:219: RuntimeWarning: numpy.ufunc size changed, may indicate binary incompatibility. Expected 192 from C header, got 216 from PyObject
-
-Any other warnings should be reported at the 
-`acis_thermal_check issues page <https://github.com/acisops/acis_thermal_check>`_.
 
 If you get errors or failures, you can investigate them by running with the 
 ``--test_root`` option (see above) and comparing the contents of the 
@@ -176,31 +181,29 @@ failures in the 1DPAMZT model, I would first run with the ``--test_root`` option
 
     # list the output directory
     [~]$ ls test_dpa_outputs
-    acis  kadi  viols
+    acis  kadi  non_load  pred_only  valid_only  viols
 
     # list the contents of the acis state builder tests
     [~]$ ls test_dpa_outputs/acis
-    APR0217B  AUG3017A  JUL3117B  MAR0817B  MAR1517B  SEP0417A
-    AUG2517C  JUL2717A  MAR0617A  MAR1117A  MAR2017E  SEP0917C
+    AUG1322A  DEC0825A  FEB0626A  JAN2624A  JUN0820A
+    MAY0521A  MAY1123A  OCT2722A  SEP1922A
 
-    # list the contents of the acis state builder tests for 
-    [~]$ ls test_dpa_outputs/acis/APR0217B
-    1dpamzt.png               index.rst             states.dat
-    1dpamzt_valid.png         pitch_valid.png       temperatures.dat
-    1dpamzt_valid_hist.png    pitch_valid_hist.png  tscpos_valid.png
-    acis_thermal_check.css    pow_sim.png           tscpos_valid_hist.png
-    ccd_count_valid.png       roll.png              validation_data.pkl
-    CR092_0107.backstop.hist  roll_valid.png        validation_quant.csv
-    html4css1.css             roll_valid_hist.png
-    index.html                run.dat
+    # list the contents of the acis state builder tests for dpa
+    [~]$ ls test_dpa_outputs/acis/AUG1322A/dpa
+    1dpamzt.png             ccd_count_valid.png     index.rst             roll.png
+    states.dat              validation_data.pkl     1dpamzt_valid.png     CR225_1108.backstop.hist
+    pitch_valid.png         roll_valid.png          temperatures.dat      validation_quant.csv
+    1dpamzt_valid_hist.png  html4css1.css           pitch_valid_hist.png  roll_valid_hist.png
+    tscpos_valid.png        acis_thermal_check.css  index.html            pow_sim.png
+    run.dat                 tscpos_valid_hist.png
 
     # now check the "gold standard" answers
     [~]$ ls acis_thermal_check/tests/dpa/answers
-    APR0217B  AUG3017A  JUL3018A_viol.json  MAR0617A  MAR1117A  MAR2017E  SEP0917C
-    AUG2517C  JUL2717A  JUL3117B            MAR0817B  MAR1517B  SEP0417A
-    
-    # Check the answers for the APR0217B load for either the ACIS or kadi tests
-    [~]$ ls acis_thermal_check/tests/dpa/answers/APR0217B
+    AUG1322A  DEC0825A_viol.json  JAN2624A  MAY0521A  OCT2722A   SEP1922A
+    DEC0825A  FEB0626A            JUN0820A  MAY1123A  pred_only  valid_only
+
+    # Check the answers for the AUG1322A load for either the ACIS or kadi tests
+    [~]$ ls acis_thermal_check/tests/dpa/answers/AUG1322A
     states.dat  temperatures.dat  validation_data.pkl
 
 You can use Python or a diffing tool to check the ``states.dat`` or 
@@ -208,40 +211,37 @@ You can use Python or a diffing tool to check the ``states.dat`` or
 ``validation_data.pkl`` file.
 
 If you want to check the violations tests, then look at the values in the (say)
-``JUL3018A_viol.json`` file and compare them to the ``index.rst`` file generated
+``DEC0825A_viol.json`` file and compare them to the ``index.rst`` file generated
 under the ``viols`` directory where you specified the ``--test_root``:
 
 .. code-block:: text
 
-    # Check for the violations JSON file for JUL3018A
+    # Check for the violations JSON file for DEC0825A
     [~]$ ls acis_thermal_check/tests/dpa/answers
-    APR0217B  AUG3017A  JUL3018A_viol.json  MAR0617A  MAR1117A  MAR2017E  SEP0917C
-    AUG2517C  JUL2717A  JUL3117B            MAR0817B  MAR1517B  SEP0417A
+    AUG1322A  DEC0825A_viol.json  JAN2624A  MAY0521A  OCT2722A   SEP1922A
+    DEC0825A  FEB0626A            JUN0820A  MAY1123A  pred_only  valid_only
 
     # Check for the index.rst file run by the violations test
     [~]$ ls test_dpa_outputs/viols
-    JUL3018A
+    DEC0825A
     
-    [~]$ ls test_dpa_outputs/viols/JUL3018A
-    1dpamzt.png               index.rst             states.dat
-    1dpamzt_valid.png         pitch_valid.png       temperatures.dat
-    1dpamzt_valid_hist.png    pitch_valid_hist.png  tscpos_valid.png
-    acis_thermal_check.css    pow_sim.png           tscpos_valid_hist.png
-    ccd_count_valid.png       roll.png              validation_data.pkl
-    CR211_1004.backstop.hist  roll_valid.png        validation_quant.csv
-    html4css1.css             roll_valid_hist.png
-    index.html                run.dat
+    [~]$ ls test_dpa_outputs/viols/DEC0825A/dpa
+    1dpamzt.png             ccd_count_valid.png     index.rst             roll.png
+    states.dat              validation_data.pkl     1dpamzt_valid.png     CR342_0101.backstop.hist
+    pitch_valid.png         roll_valid.png          temperatures.dat      validation_quant.csv
+    1dpamzt_valid_hist.png  html4css1.css           pitch_valid_hist.png  roll_valid_hist.png
+    tscpos_valid.png        acis_thermal_check.css  index.html            pow_sim.png
+    run.dat                 tscpos_valid_hist.png
 
 Updating the "Gold Standard" Answers
 ====================================
 
 New "gold standard" answers for a given model may need to be generated for two
 reasons. First, you may be making a new model and need to generate the initial 
-set of answers. Second, if you are updating ACIS code and the regression tests 
-failed to pass for one or more models, but the failures are understood and they 
-are due to changes you made which need to become part of the software (such as 
-a bugfix or a feature enhancement), then the "gold standard" answers need to be
-updated. 
+set of answers. Second, if you are updating code and the regression tests failed
+to pass for one or more models, but the failures are understood and they are due
+to changes you made which need to become part of the software (such as a bugfix
+or a feature enhancement), then the "gold standard" answers need to be updated.
 
 To generate new answers for all of the models, go to the root of the 
 ``acis_thermal_check`` directory that you are working in, and run ``py.test`` 
@@ -266,15 +266,20 @@ want to update:
     [~]$ cd ~/Source/acis_thermal_check
 
     [~]$ ls acis_thermal_check/tests/
-    __init__.py  acisfp  conftest.py  dea  fep1actel  psmc
-    __pycache__  beppcb  data         dpa  fep1mong   regression_testing.py
+    __init__.py  acisfp   cea          data  dpa         fep1_mong  regression_testing.py
+    __pycache__  bep_pcb  conftest.py  dea   fep1_actel  psmc       test_nonload_cmds.py
 
     [~]$ py.test -s acis_thermal_check/tests/dpa --answer_store
 
-.. _update_model_spec:
+.. _test_model_spec:
 
-Updating the Model Specification File
-=====================================
+The Model Specification for Tests
+=================================
+
+A model specification file in JSON format is set aside for testing, and can be
+different from the one currently in use for thermal models. It should only be
+updated sparingly, usually if there are major changes to the structure of a
+model.
 
 If you need to update the model specification file, simply replace the current
 version of the file in its respective directory:
@@ -284,8 +289,8 @@ version of the file in its respective directory:
     [~]$ cd ~/Source/acis_thermal_check
 
     [~]$ ls acis_thermal_check/tests/acisfp
-    __init__.py  acisfp_test_spec.json  test_acisfp_acis.py  test_acisfp_viols.py
-    __pycache__  answers                test_acisfp_kadi.py
+    __init__.py  acisfp_test_spec.json  test_acisfp_acis.py         test_acisfp_kadi.py      test_acisfp_viols.py
+    __pycache__  answers                test_acisfp_acis_obsids.py  test_acisfp_non_load.py
 
 where in this case ``acisfp_test_spec.json`` is the file you want to replace. 
 
@@ -302,25 +307,57 @@ directory:
 .. code-block:: python
 
     # Loads for regression testing
-    test_loads = {"normal": ["MAR0617A", "MAR2017E", "JUL3117B", "SEP0417A"],
-                  "interrupt": ["MAR1517B", "JUL2717A", "AUG2517C", "AUG3017A",
-                                "MAR0817B", "MAR1117A", "APR0217B", "SEP0917C"]}
-    all_loads = test_loads["normal"]+test_loads["interrupt"]
+    test_loads = {
+        "normal": ["JUN0820A", "SEP1922A", "DEC0825A"],
+        "interrupt": [
+            "MAY0521A",
+            "AUG1322A",
+            "OCT2722A",
+            "MAY1123A",
+            "JAN2624A",
+            "FEB0626A",
+        ],
+    }
+    all_loads = test_loads["normal"] + test_loads["interrupt"]
 
-    nlets = {"MAR0617A", "MAR0817B", "SEP0417A"}
+    hrc_loads = {"normal": ["SEP1922A", "SEP2622A"]}
+
+    run_starts = {
+        "AUG1322A": "2022:225:05:00:00.000",
+        "JAN2624A": "2024:026:12:31:52.403",
+        "OCT2722A": "2022:300:12:00:00.000",
+    }
+
+    now_times = {"JAN2624A": "2024:026:00:00:00"}
+
+    nlets = {"AUG1322A", "JAN2624A"}
 
 Note that the dictionary is split up into two lists, one for ``"normal"`` loads
 and another for ``"interrupt"`` loads, the latter including loads which begin
 after an interrupt of any kind, including safing actions, radiation replans, ToOs,
 etc. If you want to add new loads to the list to be tested, simply add them to
-either the ``"normal"`` or ``"interrupt"`` list as appropriate. 
+either the ``"normal"`` or ``"interrupt"`` list as appropriate. There is a special
+set of loads for the HRC cea model, which are specified in the ``hrc_loads``
+dictionary.
 
-Note also the ``nlets`` set below this dictionary. The standard NLET file in 
-use for creating histories may not always be the "correct" one for the test 
-load in question, since at the time the model was originally run for the load
-review the contents of the NLET file at that time may not have included events 
-which happened later. If you want to recreate the situation at the time the
-model was originally run as precisely as possible, specify the name of the load
-in the ``nlets`` set and add the NLET file to the 
-``acis_thermal_check/tests/data/nlets`` directory, with the naming convention
-``"TEST_NLET_{load_name}.txt"``, where ``"load_name"`` is of the form``"MAR0617A"``.
+Note also that there are a few dictionaries below those for the loads that are
+supplementary and necessary for certain loads:
+
+* ``run_starts``: This is a dictionary of load week / start time pairs that
+  indicate what the value of the ``run_start`` parameter should be for this
+  load test. This is especially sometimes necessary in the case where there
+  is a non-load event in the command history before the load in question
+  and one wants to set the start time to be sure to include or exclude it,
+  depending on the needs of the test.
+* ``now_times``: Similarly, this dictionary sets the "now time" (see above)
+  for a subset of loads to control what non-load states are assumed to be
+  included. If a load does not appear in this dictionary, the "now time" is
+  set to one day before the time specified in the ``run_start`` parameter.
+* ``nlets``: The standard NLET file in use for creating histories may not
+  always be the "correct" one for the test load in question, since at the time
+  the model was originally run for the load review the contents of the NLET file
+  at that time may not have included events which happened later. If you want to
+  recreate the situation at the time the model was originally run as precisely as
+  possible, specify the name of the load in the ``nlets`` set and add the NLET file
+  to the ``acis_thermal_check/tests/data/nlets`` directory, with the naming convention
+  ``"TEST_NLET_{load_name}.txt"``, where ``"load_name"`` is of the form ``"MAR0617A"``.

@@ -339,6 +339,12 @@ def get_options(opts=None, use_acis_opts=True):
         "the model package.",
     )
     parser.add_argument(
+        "--pred_days",
+        type=float,
+        help="Days of prediction. Not used if a backstop file is supplied.",
+        default=5.0,
+    )
+    parser.add_argument(
         "--days",
         type=float,
         default=21.0,
@@ -366,6 +372,15 @@ def get_options(opts=None, use_acis_opts=True):
         help="Only make predictions. Default: False",
     )
     parser.add_argument(
+        "--val-only",
+        action="store_true",
+        help="Only run the validation check. Default: False",
+    )
+    parser.add_argument(
+        "--set_time_now",
+        help="Override what the current time is for testing purposes. Default: None",
+    )
+    parser.add_argument(
         "--verbose",
         type=int,
         default=1,
@@ -379,15 +394,22 @@ def get_options(opts=None, use_acis_opts=True):
     if use_acis_opts:
         parser.add_argument(
             "--state-builder",
-            default="acis",
-            help="StateBuilder to use (kadi|acis). Default: acis",
+            default="kadi",
+            help="StateBuilder to use (kadi|acis). Default: kadi",
         )
         parser.add_argument(
             "--nlet_file",
             default="/data/acis/LoadReviews/NonLoadTrackedEvents.txt",
             help="Full path to the Non-Load Event Tracking file that should be "
-            "used for this model run.",
+            "used for this model run. Only used with the 'acis' StateBuilder.",
         )
+    parser.add_argument(
+        "--non_load_events",
+        type=str,
+        help="ASCII text file containing non-load command events to use in case "
+        "of an anomaly or other non-load situations. Only used with the 'kadi' "
+        "StateBuilder.",
+    )
     parser.add_argument("--version", action="store_true", help="Print version")
 
     if opts is not None:
@@ -439,6 +461,8 @@ def make_state_builder(name, args, hrc_states=False):
             backstop_file=args.backstop_file,
             logger=mylog,
             hrc_states=hrc_states,
+            pred_days=args.pred_days,
+            non_load_events=args.non_load_events,
         )
 
     # Instantiate the ACIS OPS History Builder: ACISStateBuilder
@@ -450,6 +474,7 @@ def make_state_builder(name, args, hrc_states=False):
             interrupt=args.interrupt,
             backstop_file=args.backstop_file,
             nlet_file=args.nlet_file,
+            pred_days=args.pred_days,
             outdir=args.outdir,
             verbose=args.verbose,
             logger=mylog,
