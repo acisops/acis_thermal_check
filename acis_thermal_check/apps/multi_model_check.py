@@ -56,15 +56,41 @@ def find_plot_file(model_outdir, candidates):
     return None
 
 
+def t_init_entry(value):
+    """
+    Parse a single --T-init entry, either a bare temperature (applied to
+    any model that doesn't get its own override) or a "MODEL=TEMP" pair
+    (applied only to that model).
+    """
+    if "=" in value:
+        model, _, val = value.partition("=")
+        model = model.strip()
+        if model not in MODELS:
+            raise argparse.ArgumentTypeError(
+                f"Unknown model {model!r} in --T-init. Choices are: "
+                + ", ".join(sorted(MODELS))
+            )
+    else:
+        model, val = None, value
+    try:
+        temp = float(val)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"Invalid temperature {val!r} in --T-init entry {value!r}"
+        ) from None
+    return model, temp
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Any other argument accepted by the individual model scripts "
         "(e.g. --backstop_file, --interrupt, --state-builder, "
-        "--non_load_events, --T-init, etc.) is forwarded to every model run "
+        "--non_load_events, etc.) is forwarded to every model run "
         "unchanged, except for --outdir, which is used here to construct a "
-        "per-model subdirectory.",
+        "per-model subdirectory, and --T-init, which is handled specially "
+        "(see above).",
     )
     parser.add_argument(
         "--outdir",
@@ -72,6 +98,19 @@ def parse_args():
         help="Output directory. A subdirectory will be created within it "
         "for each model, and a combined index page will be written to it. "
         "If it does not exist it will be created. Default: 'out'",
+    )
+    parser.add_argument(
+        "--T-init",
+        dest="t_init",
+        nargs="+",
+        type=t_init_entry,
+        metavar="[MODEL=]TEMP",
+        help="Starting temperature(s) (degC). A bare value (e.g. -105.0) is "
+        "used as the default for any model that doesn't have its own "
+        "override. A 'MODEL=TEMP' entry (e.g. acisfp=-110.0) sets the "
+        "starting temperature for just that model. Models with no value "
+        "(and no default given) compute it from telemetry, as usual. "
+        "Choices for MODEL are: " + ", ".join(sorted(MODELS)),
     )
     head_path = Path("/proj/web-cxc/htdocs/acis/Thermal/tests")
     parser.add_argument(
@@ -84,13 +123,27 @@ def parse_args():
         args.outdir = head_path / f"{date.today().year}" / args.outdir
     else:
         args.outdir = Path(args.outdir)
+
+    args.t_init_default = None
+    args.t_init_map = {}
+    for model, temp in args.t_init or []:
+        if model is None:
+            args.t_init_default = temp
+        else:
+            args.t_init_map[model] = temp
+
     return args, remaining
 
 
-def run_model(model_name, remaining_args, top_outdir):
+def run_model(model_name, remaining_args, top_outdir, t_init=None):
     """
     Run a single model's checking script as a subprocess, writing its
     outputs to a subdirectory of ``top_outdir`` named ``out_<model_name>``.
+
+    Parameters
+    ----------
+    t_init : float, optional
+        If given, passed to this model's run as its own ``--T-init``.
 
     Returns
     -------
@@ -109,6 +162,8 @@ def run_model(model_name, remaining_args, top_outdir):
         f"--outdir={model_outdir}",
         *remaining_args,
     ]
+    if t_init is not None:
+        cmd.append(f"--T-init={t_init}")
     mylog.info("Running %s -> %s", model_name, model_outdir)
     result = subprocess.run(cmd, check=False)
     return result.returncode == 0, model_outdir
@@ -215,7 +270,10 @@ def main():
     results = []
     any_failed = False
     for model_name in MODELS:
-        success, model_outdir = run_model(model_name, remaining, args.outdir)
+        t_init = args.t_init_map.get(model_name, args.t_init_default)
+        success, model_outdir = run_model(
+            model_name, remaining, args.outdir, t_init=t_init
+        )
         results.append((model_name, success, model_outdir))
         if not success:
             any_failed = True
