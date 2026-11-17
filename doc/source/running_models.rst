@@ -272,7 +272,50 @@ argument:
 
     [~]$ dpa_check --outdir=bright_star_hold --non_load_events=non_load_events.txt
 
+Running Multiple Thermal Models at Once
+========================================
 
+If you want to run several thermal models together against the same backstop
+file or other command-line options, use ``multi_model_check``. It runs each
+of the models (currently ``dpa_check``, ``dea_check``, ``psmc_check``, and
+``acisfp_check``) with the arguments you give it, placing each model's full
+set of outputs into its own subdirectory of a single output directory
+(``out_dpa``, ``out_dea``, ``out_psmc``, and ``out_fptemp``, respectively).
+It then writes a combined ``index.html`` in that output directory showing
+each model's prediction plot, linked to that model's own report page.
+
+Any argument accepted by the individual model scripts (e.g.
+``--backstop_file``, ``--interrupt``, ``--state-builder``,
+``--non_load_events``) can be passed to ``multi_model_check`` and will be
+forwarded, unchanged, to every model that is run, with the exception of
+``--outdir``, which instead controls where the per-model subdirectories and
+the combined index page are written:
+
+.. code-block:: text
+
+    [~]$ multi_model_check --backstop_file=/data/acis/LoadReviews/2017/OCT1617/ofls --outdir=multi_oct1617
+
+``--T-init`` is handled specially, since passing a single starting
+temperature to every model is rarely correct. A bare value is used as the
+default starting temperature for any model that doesn't have its own
+override, and a ``MODEL=TEMP`` entry sets the starting temperature for just
+that one model (choices for ``MODEL`` are ``dpa``, ``dea``, ``psmc``, and
+``acisfp``). Models with no value at all, and no default given, compute
+their starting temperature from telemetry as usual. For example, to give
+all models a starting temperature of -50 degC except for ``acisfp``, which
+should start at -105 degC:
+
+.. code-block:: text
+
+    [~]$ multi_model_check --backstop_file=/data/acis/LoadReviews/2017/OCT1617/ofls --outdir=multi_oct1617 --T-init -50.0 acisfp=-105.0
+
+If any individual model fails, ``multi_model_check`` still runs the rest,
+marks the failed model(s) as such on the combined index page, and exits
+with a non-zero status once all of the models have finished.
+
+Passing ``--web`` instead writes the output to ACIS Ops' web-accessible test
+area, ``/proj/web-cxc/htdocs/acis/Thermal/tests/<year>/<outdir>``, and prints
+the URL where the combined report will be visible once it has been published.
 
 
 
